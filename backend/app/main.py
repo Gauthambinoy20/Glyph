@@ -10,6 +10,7 @@ from functools import lru_cache
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 
+from app.analyze.graph import build_import_graph
 from app.config import get_settings
 from app.embed.base import Embedder
 from app.embed.factory import make_embedder
@@ -17,6 +18,7 @@ from app.ingest.pipeline import ingest_path, ingest_repo
 from app.llm.catalog import is_known_model, list_models
 from app.llm.client import LLMClient, LLMError
 from app.obs.logging import log_query
+from app.rag.overview import build_overview
 from app.rag.prompt import build_messages, parse_citations
 from app.retrieve.hybrid import HybridRetriever
 from app.store.chroma_store import ChromaStore
@@ -166,10 +168,36 @@ def ask(
     citations = parse_citations(answer, chunks)
     log_query(request.question, chunk_ids, latency_ms, token_usage)
     # `sources` carries each retrieved chunk (with its code) so the UI can show the code
-    # behind a citation without another round-trip.
+    # behind a citation; `meta` surfaces observability (model, latency, tokens) in the UI.
     return {
         "answer": answer,
         "citations": citations,
         "retrieved_chunk_ids": chunk_ids,
         "sources": chunks,
+        "meta": {
+            "model": request.model or get_settings().llm_model,
+            "latency_ms": latency_ms,
+            "token_usage": token_usage,
+        },
     }
+
+
+@app.get("/api/overview")
+def overview(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+    llm: LLMClient = Depends(get_llm),
+) -> dict:
+    """Return a short 'what this codebase does' summary of the ingested repo."""
+    _ = embedder  # ensures the store/embedder are built before reading
+    return {"overview": build_overview(store, llm)}
+
+
+@app.get("/api/graph")
+def graph(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return the dependency graph (files as nodes, internal imports as edges)."""
+    _ = embedder
+    return build_import_graph(store)

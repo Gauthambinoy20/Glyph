@@ -38,6 +38,19 @@ def test_ask_returns_answer_and_citations(tmp_path) -> None:  # T39 + T41
     assert body["citations"] == [{"file_path": "auth.py", "start_line": 1, "end_line": 2}]
 
 
+def test_overview_endpoint_summarises_repo(tmp_path) -> None:
+    chunk = make_chunk("def login(): ...", name="login", path="auth.py")
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
+    app.dependency_overrides[get_llm] = lambda: FakeLLM("This project handles authentication.")
+    try:
+        body = TestClient(app).get("/api/overview").json()
+    finally:
+        app.dependency_overrides.clear()
+
+    assert body["overview"] == "This project handles authentication."
+
+
 def test_ask_on_empty_index_has_no_citations(tmp_path) -> None:  # T40
     empty = ChromaStore(path=str(tmp_path / "c"), embed_model="fake", dim=8)
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)

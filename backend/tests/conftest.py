@@ -20,6 +20,7 @@ _GROUP_TITLES = {
     "test_llm.py": "AI client  (OpenRouter call, fallback, clear errors)",
     "test_prompt.py": "Prompt  (grounded prompt, citations, query logs)",
     "test_answer.py": "Answer  (the /api/ask and /api/models endpoints)",
+    "test_graph.py": "Graph  (dependency graph from internal imports)",
 }
 
 # Terminal colour codes.
