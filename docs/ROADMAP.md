@@ -102,7 +102,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 
 ## Phase 7 - Conversation & extra endpoints
 - [x] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
-- [ ] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
+- [x] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
 - [ ] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`
 - [ ] 64. `GET /repos/{id}/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`
 - [ ] 65. SQLite chat history (sessions + messages) + endpoints `(polish)`
@@ -151,7 +151,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 
 ## Phase 12 - Stretch (only if everything above is green)
 - [ ] 99. File-tree browser: click a file/function and ask about it `(stretch)`
-- [ ] 100. Dependency / architecture graph view of the repo `(stretch)`
+- [x] 100. Dependency / architecture graph view of the repo `(stretch)`
 - [ ] 101. Light/dark theme toggle + polished empty-state illustration `(stretch)`
 - [ ] 102. Export chat / shareable answer link `(stretch)`
 

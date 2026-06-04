@@ -237,4 +237,13 @@ VIBE CODER/
   starting from scratch. The web UI sends the prior turns automatically. Backend + frontend both
   green, 44 tests.
 
+- **Standout UI batch (done).** Added five things that make Glyph feel like a real product and show
+  the engine off. (1) Every answer now shows a small line with the model, how long it took, and the
+  token count, so the observability is visible right in the UI. (2) A collapsible "sources retrieved"
+  list under each answer, and the citation chips, both open the exact code on click. (3) After each
+  answer it suggests a few smart follow-up questions. (4) When you load a repo it shows a short
+  "what this codebase does" overview. (5) A "Map" view: a live force-directed graph of the repo's
+  files and which file imports which, where clicking a file asks Glyph to explain it. The import
+  graph is built straight from the indexed code. Backend (46 tests) and frontend both green.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
