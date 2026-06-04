@@ -118,7 +118,15 @@ def test_ingest_endpoint_with_local_path(tmp_path) -> None:
 
 
 def test_ingest_endpoint_requires_input() -> None:
-    assert TestClient(app).post("/api/ingest", json={}).status_code == 400
+    # Override the deps so the endpoint does not try to build the real model just to 400.
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: None
+    try:
+        response = TestClient(app).post("/api/ingest", json={})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 400
 
 
 def test_ingest_endpoint_rejects_bad_repo_url() -> None:
