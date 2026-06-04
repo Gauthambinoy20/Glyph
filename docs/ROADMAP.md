@@ -101,12 +101,12 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 60. Commit: grounded answer endpoint with model picker and logging `(core)`  ← you commit this
 
 ## Phase 7 - Conversation & extra endpoints
-- [ ] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
+- [x] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
 - [ ] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
 - [ ] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`
 - [ ] 64. `GET /repos/{id}/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`
 - [ ] 65. SQLite chat history (sessions + messages) + endpoints `(polish)`
-- [ ] 66. Suggested starter questions after ingest (3-5, one click to ask) `(polish)`
+- [x] 66. Suggested starter questions after ingest (in the web UI) `(polish)`
 - [ ] 67. Tests: follow-up keeps context, snippet returns right lines, endpoints found, history roundtrip `(core)`
 - [ ] 68. Commit: conversation, overview, snippets, endpoint detection, history `(core)`
 
@@ -218,7 +218,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T42. Log record has all required keys; token_usage defaults to 0 when omitted
 
 **Conversation / extra endpoints**
-- [ ] T43. Follow-up question keeps the last turns in the prompt
+- [x] T43. Follow-up question carries prior turns into the prompt
 - [ ] T44. `/api/file` returns the exact requested line range
 - [ ] T45. Endpoint detector finds routes in a sample file
 - [ ] T46. Chat history save → load roundtrip

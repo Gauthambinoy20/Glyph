@@ -80,6 +80,17 @@ export default function App() {
   async function ask(question: string) {
     const q = question.trim();
     if (!q || busy) return;
+
+    // Build the conversation history (completed question/answer pairs) for follow-ups.
+    const history: { question: string; answer: string }[] = [];
+    for (let i = 0; i < messages.length - 1; i++) {
+      const u = messages[i];
+      const a = messages[i + 1];
+      if (u.role === "user" && u.text && a.role === "assistant" && a.data) {
+        history.push({ question: u.text, answer: a.data.answer });
+      }
+    }
+
     const userId = idSeq++;
     const botId = idSeq++;
     setMessages((m) => [
@@ -91,7 +102,7 @@ export default function App() {
     setBusy(true);
     setError("");
     try {
-      const res = await api.ask({ question: q, model: selectedModel || null });
+      const res = await api.ask({ question: q, model: selectedModel || null, history });
       setMessages((m) => m.map((x) => (x.id === botId ? { ...x, thinking: false, data: res } : x)));
     } catch (e) {
       setMessages((m) => m.filter((x) => x.id !== botId));

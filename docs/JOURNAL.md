@@ -231,4 +231,10 @@ VIBE CODER/
   code to the answer response so a citation can open its source instantly. Built with React + Vite +
   TypeScript and hand-written CSS; it type-checks and builds clean.
 
+- **Conversational follow-ups (done).** Glyph now remembers the chat. Each question carries the last
+  few question/answer turns into the prompt, and the retrieval query borrows the previous question for
+  context, so a follow-up like "and where is that called?" resolves "that" correctly instead of
+  starting from scratch. The web UI sends the prior turns automatically. Backend + frontend both
+  green, 44 tests.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

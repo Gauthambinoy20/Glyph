@@ -22,8 +22,14 @@ SYSTEM_PROMPT = (
 _CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):(\d+)-(\d+)\s*[\])】]")
 
 
-def build_messages(question: str, chunks: list[dict]) -> tuple[str, str]:
-    """Return (system_prompt, user_prompt) grounding the model in the retrieved chunks."""
+def build_messages(
+    question: str, chunks: list[dict], history: list[dict] | None = None
+) -> tuple[str, str]:
+    """Return (system_prompt, user_prompt) grounding the model in the retrieved chunks.
+
+    Any prior question/answer turns in `history` are included first, so a follow-up like
+    "and where is that called?" has the earlier context to resolve "that".
+    """
     blocks = []
     for index, chunk in enumerate(chunks, start=1):
         header = (
@@ -32,8 +38,14 @@ def build_messages(question: str, chunks: list[dict]) -> tuple[str, str]:
         )
         blocks.append(f"### Context {index} {header}\n{chunk.get('code', '')}")
     context = "\n\n".join(blocks) if blocks else "(no code found)"
-    user_prompt = f"Question: {question}\n\nCode context:\n{context}"
-    return SYSTEM_PROMPT, user_prompt
+
+    sections = []
+    if history:
+        turns = "\n\n".join(f"Q: {turn['question']}\nA: {turn['answer']}" for turn in history)
+        sections.append(f"Conversation so far:\n{turns}")
+    sections.append(f"Question: {question}")
+    sections.append(f"Code context:\n{context}")
+    return SYSTEM_PROMPT, "\n\n".join(sections)
 
 
 def parse_citations(answer: str, chunks: list[dict]) -> list[dict]:

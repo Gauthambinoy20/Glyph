@@ -57,8 +57,11 @@ export const api = {
   ingest: (body: { repo_url?: string; local_path?: string }) =>
     post<IngestResponse>("/api/ingest", body),
 
-  ask: (body: { question: string; model?: string | null }) =>
-    post<AskResponse>("/api/ask", body),
+  ask: (body: {
+    question: string;
+    model?: string | null;
+    history?: { question: string; answer: string }[];
+  }) => post<AskResponse>("/api/ask", body),
 
   models: async (): Promise<{ models: ModelInfo[]; default: string }> => {
     const res = await fetch("/api/models");

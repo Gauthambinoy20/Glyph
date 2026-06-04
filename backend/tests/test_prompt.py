@@ -46,6 +46,19 @@ def test_citations_handle_bracket_styles() -> None:
     assert {"file_path": "main.py", "start_line": 85, "end_line": 85} in citations
 
 
+def test_prompt_includes_conversation_history() -> None:  # T43
+    chunks = [
+        {"file_path": "a.py", "start_line": 1, "end_line": 2, "symbol_name": "f", "code": "x"}
+    ]
+    history = [{"question": "what is f", "answer": "f adds two numbers"}]
+
+    _, user_prompt = build_messages("where is it called", chunks, history)
+
+    assert "Conversation so far" in user_prompt
+    assert "f adds two numbers" in user_prompt  # the prior answer is carried in
+    assert "where is it called" in user_prompt  # plus the new question
+
+
 def test_log_query_writes_all_fields(capsys) -> None:  # T42
     record = log_query(
         "q?", ["id1", "id2"], 12, {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3}

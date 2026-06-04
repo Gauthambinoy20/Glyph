@@ -69,12 +69,20 @@ class SearchRequest(BaseModel):
     top_k: int = 5
 
 
+class Turn(BaseModel):
+    """One earlier question/answer pair, for conversational follow-ups."""
+
+    question: str
+    answer: str
+
+
 class AskRequest(BaseModel):
-    """Body for /api/ask: a question, an optional model id, and how many chunks to use."""
+    """Body for /api/ask: a question, an optional model id, top_k, and prior turns."""
 
     question: str
     model: str | None = None
     top_k: int = 5
+    history: list[Turn] = []
 
 
 @app.get("/api/health")
@@ -136,9 +144,16 @@ def ask(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
-    # Retrieve the most relevant chunks, then ground the model in exactly those.
-    chunks = HybridRetriever(store, embedder).search(request.question, top_k=request.top_k)
-    system_prompt, user_prompt = build_messages(request.question, chunks)
+    # For a follow-up, prepend the previous question so retrieval has the subject context
+    # (e.g. "where is that called?" alone would not retrieve much).
+    recent = " ".join(turn.question for turn in request.history[-1:])
+    retrieval_query = f"{recent} {request.question}".strip()
+
+    # Retrieve the most relevant chunks, then ground the model in exactly those, plus the
+    # last few conversation turns so follow-ups make sense.
+    chunks = HybridRetriever(store, embedder).search(retrieval_query, top_k=request.top_k)
+    recent_history = [{"question": t.question, "answer": t.answer} for t in request.history[-4:]]
+    system_prompt, user_prompt = build_messages(request.question, chunks, recent_history)
 
     started = time.perf_counter()
     try:
