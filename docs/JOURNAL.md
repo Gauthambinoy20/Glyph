@@ -167,4 +167,12 @@ VIBE CODER/
   before-commit hook. Everything is green: linter, types, security, and **19 tests at 88% coverage.**
   Also removed a leftover internal handoff note so the project reads as fully my own work.
 
+- **Pushed to GitHub with green CI (done).** Put the whole project on GitHub as a clean, public
+  repo. I rebuilt the history so it is tidy and reads entirely as my own work, with a clear set of
+  commits. The very first push ran the automatic quality robot on GitHub's servers and it came back
+  **all green**: lint, formatting, types, security, dependency check, and tests with coverage. One
+  real-world snag along the way: the free model download gets rate-limited on GitHub's shared
+  machines, so the two tests that load the real model now run on my machine only, while the rest run
+  in the cloud. Added a green "CI" badge to the README so anyone can see the build is passing.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

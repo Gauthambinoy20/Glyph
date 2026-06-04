@@ -1,5 +1,7 @@
 # Glyph — Code Documentation Assistant
 
+[![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
+
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
 citations**. Ingest a public GitHub repo (or local files), then ask *"where are the API endpoints?"*,
 *"how does auth work?"* — Glyph answers using only the code it found and shows you exactly where.

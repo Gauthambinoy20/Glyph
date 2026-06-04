@@ -139,7 +139,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 89. GitHub Actions CI: install → ruff → format → mypy → bandit → pip-audit → pytest+cov `(core)`
 - [ ] 90. Orchestration note in README: why NO framework (LangChain/LlamaIndex) on purpose `(core)`
 - [ ] 91. Fill README: setup, architecture diagram, productionize/scale, RAG decisions; keep `✍️` blanks `(core)`
-- [ ] 92. Create the GitHub repo and push (submission needs a GitHub link) `(core)`
+- [x] 92. Create the GitHub repo and push (github.com/Gauthambinoy20/Glyph, CI green) `(core)`
 - [ ] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
 - [ ] 94. Final pass: all tests green, fresh `docker compose up` works from scratch `(core)`
 - [ ] 95. Commit: dockerize, CI, finalize docs `(core)`
