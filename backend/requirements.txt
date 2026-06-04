@@ -16,6 +16,9 @@ chromadb==1.5.9
 # Keyword search (BM25) for the keyword half of hybrid retrieval.
 rank-bm25==0.2.2
 
+# LLM client: the OpenAI SDK, pointed at OpenRouter for the chat models.
+openai==1.109.1
+
 # Testing
 pytest==9.0.3
 httpx==0.28.1

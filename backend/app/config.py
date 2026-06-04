@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     # Where the vector store keeps its data on disk.
     chroma_dir: str = "chroma_db"
 
+    # LLM (chat) via OpenRouter by default; all free, no card needed.
+    llm_base_url: str = "https://openrouter.ai/api/v1"
+    llm_api_key: str = ""
+    llm_model: str = "qwen/qwen3-coder:free"
+    llm_fallback_model: str = "deepseek/deepseek-r1:free"
+    app_url: str = "http://localhost:5173"
+
 
 def get_settings() -> Settings:
     """Build and return the settings object."""
