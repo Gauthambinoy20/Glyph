@@ -214,6 +214,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T39. `/api/ask` (mock LLM) → answer + citation + retrieved_chunk_ids
 - [x] T40. `/api/ask` on empty index → retrieved_chunk_ids == [] and citations == []
 - [x] T41. Returned citations map to retrieved chunks and are 1-indexed
+- [x] T41b. Citations accept varied brackets ([ ], 【 】, ( )) and lines inside a chunk
 - [x] T42. Log record has all required keys; token_usage defaults to 0 when omitted
 
 **Conversation / extra endpoints**

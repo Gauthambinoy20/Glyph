@@ -210,4 +210,15 @@ VIBE CODER/
   or a key. Result: **42 tests passing**, full gate green. To see a *real* answer, all that is left
   is dropping a free OpenRouter key into `.env`.
 
+- **Glyph answered for real (done, milestone).** Plugged in a free OpenRouter key and asked Glyph
+  a real question about its own code. First try failed: one of my default models had been retired by
+  the provider and another was momentarily busy. I checked every free model on the account, found
+  two that respond reliably, and switched to those (still free, still $0). After that Glyph answered
+  perfectly: asked "how does the content-hash cache work", it explained the SHA-256 idea and pointed
+  at the exact functions with file:line citations. Also made the citation reader more forgiving,
+  because different models wrap citations in different bracket styles, and a citation now counts as
+  long as it points at lines inside a chunk that was actually shown. Nice detail: for a vague
+  question it correctly says "Not found in the provided code" instead of guessing. The whole engine
+  now works end to end, live.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
