@@ -36,7 +36,7 @@ jobs:
         run: mypy app
 
       - name: Security scan (bandit)
-        run: bandit -r app -q
+        run: bandit -c pyproject.toml -r app -q
 
       - name: Dependency audit (pip-audit)
         # chromadb CVE-2026-45829 has no fixed release yet; remove this ignore once it does.
