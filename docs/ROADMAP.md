@@ -88,17 +88,17 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 49. Commit: hybrid retrieval with RRF `(core)`  ← you commit this
 
 ## Phase 6 - Answers (the AI)
-- [ ] 50. `llm/catalog.py` model registry (free + cheapest-paid, cost labels, available flag) `(core)`
-- [ ] 51. `llm/client.py` OpenRouter call, temp 0, retry on 429/5xx, clear 402 on no-credit `(core)`
-- [ ] 52. `GET /api/models` list models + which are available given the keys `(core)`
-- [ ] 53. `rag/prompt.py` grounded prompt: answer only from context, always cite, else "not found" `(core)`
-- [ ] 54. `POST /api/ask` question → retrieve → AI → answer + citations (model selectable) `(core)`
-- [ ] 55. Citation parsing: `[file:start-end]` → structured citations, validated vs retrieved chunks `(core)`
+- [x] 50. `llm/catalog.py` model registry (free + cheapest-paid, note, available flag) `(core)`
+- [x] 51. `llm/client.py` OpenRouter call, temp 0, fallback model on 429/5xx, clear 402 `(core)`
+- [x] 52. `GET /api/models` list models + which are available given the keys `(core)`
+- [x] 53. `rag/prompt.py` grounded prompt: answer only from context, always cite, else "not found" `(core)`
+- [x] 54. `POST /api/ask` question → retrieve → AI → answer + citations (model selectable) `(core)`
+- [x] 55. Citation parsing: `[file:start-end]` → structured citations, validated vs retrieved chunks `(core)`
 - [ ] 56. Streaming `POST /api/ask/stream` (answer appears live, citations in final event) `(polish)`
-- [ ] 57. `obs/logging.py` one JSON log line per ask (question, chunk_ids, latency, tokens) `(core)`
-- [ ] 58. Token-usage fallback to 0 when a free provider omits usage `(core)`
-- [ ] 59. Tests: ask returns citations, empty index → "not found" + citations=[], citation/line consistency, 429→fallback, log fields `(core)`
-- [ ] 60. Commit: grounded answer endpoint with model picker and logging `(core)`
+- [x] 57. `obs/logging.py` one JSON log line per ask (question, chunk_ids, latency, tokens) `(core)`
+- [x] 58. Token-usage fallback to 0 when a free provider omits usage `(core)`
+- [x] 59. Tests: ask returns citations, empty index → citations=[], citation consistency, 429→fallback, log fields `(core)`
+- [ ] 60. Commit: grounded answer endpoint with model picker and logging `(core)`  ← you commit this
 
 ## Phase 7 - Conversation & extra endpoints
 - [ ] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
@@ -206,15 +206,15 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T33. Results are exactly top-5 and stable for fixed inputs
 
 **Answers / LLM**
-- [ ] T34. Prompt string contains the refusal rule + numbered file:line context blocks
-- [ ] T35. LLM client success → returns text (mocked, no network)
-- [ ] T36. Simulated 429 → retry then fallback model
-- [ ] T37. Simulated 402 (no credit) → clear error, not a 500
-- [ ] T38. `/api/models` lists models with correct `available` flags
-- [ ] T39. `/api/ask` (mock LLM) → answer + ≥1 citation + retrieved_chunk_ids
-- [ ] T40. `/api/ask` on empty index → "not found in the provided code" + citations == []
-- [ ] T41. Returned citations map to retrieved chunks and are 1-indexed
-- [ ] T42. Log record has all required keys; token_usage defaults to 0 when omitted
+- [x] T34. Prompt string contains the refusal rule + numbered file:line context blocks
+- [x] T35. LLM client success → returns text (mocked, no network)
+- [x] T36. Simulated 429 → fall back to the second model
+- [x] T37. Simulated 402 (no credit) → clear error, not a 500
+- [x] T38. `/api/models` lists models with correct `available` flags
+- [x] T39. `/api/ask` (mock LLM) → answer + citation + retrieved_chunk_ids
+- [x] T40. `/api/ask` on empty index → retrieved_chunk_ids == [] and citations == []
+- [x] T41. Returned citations map to retrieved chunks and are 1-indexed
+- [x] T42. Log record has all required keys; token_usage defaults to 0 when omitted
 
 **Conversation / extra endpoints**
 - [ ] T43. Follow-up question keeps the last turns in the prompt

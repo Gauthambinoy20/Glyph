@@ -198,4 +198,16 @@ VIBE CODER/
   retriever" pointed straight at the retriever class. Result: **32 tests passing**, full gate green.
   The only piece left before Glyph can answer questions is wiring these pieces to the AI.
 
+- **Part 5 — the Brain (done, in one stretch).** This is the actual question-answering. It takes
+  the best chunks the Search found, hands them to a free AI model with strict instructions (answer
+  only from this code, cite every claim as file:line, and if it is not here say so), and returns the
+  answer plus clean citations. Built it carefully: a list of pickable models (free ones always work,
+  paid ones shown with a note and only enabled if a paid key is set), a chat client that quietly
+  falls back to a second free model if the first is busy and gives a clear message if a paid model
+  has no credit, citation parsing that only keeps citations pointing at code that was actually shown
+  to the model (so it cannot make up references), and a one-line JSON log per question for
+  observability. Wrote 10 tests (T34 to T42) using a fake model, so none of this needs the internet
+  or a key. Result: **42 tests passing**, full gate green. To see a *real* answer, all that is left
+  is dropping a free OpenRouter key into `.env`.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
