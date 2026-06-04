@@ -56,6 +56,9 @@ testpaths = ["tests"]
 addopts = "-q --tb=short -p no:sugar"
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+markers = [
+    "integration: needs the network and the real embedding model; run locally, skipped in CI",
+]
 
 [tool.coverage.run]
 # Measure coverage of the application code, not the tests themselves.

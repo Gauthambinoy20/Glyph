@@ -43,4 +43,6 @@ jobs:
         run: pip-audit --ignore-vuln CVE-2026-45829
 
       - name: Tests + coverage
-        run: pytest --cov=app --cov-report=term-missing
+        # Skip integration tests that download the real model (HuggingFace rate-limits CI runners).
+        # They run locally; the offline suite still covers the embed/store/cache logic here.
+        run: pytest --cov=app --cov-report=term-missing -m "not integration"
