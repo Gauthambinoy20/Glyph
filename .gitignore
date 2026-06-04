@@ -30,3 +30,8 @@ chroma_db/
 # Coverage data
 .coverage
 htmlcov/
+
+# Frontend build artifacts (emitted by tsc -b)
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
