@@ -80,12 +80,12 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 43. Commit: ingest pipeline and endpoint `(core)`  ← you commit this
 
 ## Phase 5 - Retrieval
-- [ ] 44. `retrieve/tokenize.py` code-aware tokenizer (splits camelCase / snake_case) `(core)`
-- [ ] 45. BM25 index built from Chroma docs on startup (no stale pickle) `(core)`
-- [ ] 46. `retrieve/hybrid.py` semantic + BM25 fused via RRF; exact-symbol boost; top-5 `(core)`
-- [ ] 47. Debug `POST /api/search` returns chunks (no AI) for inspection `(core)`
-- [ ] 48. Tests: tokenizer splits, exact symbol in top-5, semantic hit, empty index → [], stable order `(core)`
-- [ ] 49. Commit: hybrid retrieval with RRF `(core)`
+- [x] 44. `retrieve/tokenize.py` code-aware tokenizer (splits camelCase / snake_case) `(core)`
+- [x] 45. BM25 index rebuilt from Chroma docs per retriever (no stale pickle) `(core)`
+- [x] 46. `retrieve/hybrid.py` semantic + BM25 fused via RRF; exact-symbol boost; top-5 `(core)`
+- [x] 47. Debug `POST /api/search` returns chunks (no AI) for inspection `(core)`
+- [x] 48. Tests: tokenizer splits, exact symbol found, semantic hit, empty index → [], stable order `(core)`
+- [ ] 49. Commit: hybrid retrieval with RRF `(core)`  ← you commit this
 
 ## Phase 6 - Answers (the AI)
 - [ ] 50. `llm/catalog.py` model registry (free + cheapest-paid, cost labels, available flag) `(core)`
@@ -199,11 +199,11 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T28b. Endpoint: local_path ingests; missing input → 400; bad repo URL → 400
 
 **Retrieval**
-- [ ] T29. Tokenizer splits camelCase and snake_case identifiers
-- [ ] T30. Exact symbol query returns that chunk in top-5
-- [ ] T31. Natural-language query returns the relevant chunk (fake deterministic embedder)
-- [ ] T32. Retrieval on an empty index → returns `[]`, no crash
-- [ ] T33. RRF output is exactly top-5 and stable for fixed inputs
+- [x] T29. Tokenizer splits camelCase and snake_case identifiers
+- [x] T30. Exact symbol query returns that chunk in the results
+- [x] T31. Natural-language query returns the relevant chunk (fake deterministic embedder)
+- [x] T32. Retrieval on an empty index → returns `[]`, no crash
+- [x] T33. Results are exactly top-5 and stable for fixed inputs
 
 **Answers / LLM**
 - [ ] T34. Prompt string contains the refusal rule + numbered file:line context blocks

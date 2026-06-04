@@ -187,4 +187,15 @@ VIBE CODER/
   (the link is validated first, arguments are passed as a list with no shell) and documented that.
   Result: **29 tests passing**, full gate green.
 
+- **Part 4 — the Search (done, in one stretch).** Given a question, this finds the best few code
+  pieces, two ways at once: by *meaning* (the vector search) and by *exact words* (a keyword search
+  that is code-aware, so it splits names like `getUserById` into get, user, by, id and matches them).
+  The two result lists are blended fairly with a standard technique (Reciprocal Rank Fusion), and a
+  piece gets an extra nudge if the question names it directly. Added a debug `POST /api/search`
+  endpoint that shows the chosen pieces with no AI involved, so I can see exactly what the model
+  will be given later. Wrote 5 tests (T29 to T33). Then I proved it on real code: asked Glyph
+  "how are embeddings cached" and the top hit was the actual caching function, and "the hybrid
+  retriever" pointed straight at the retriever class. Result: **32 tests passing**, full gate green.
+  The only piece left before Glyph can answer questions is wiring these pieces to the AI.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
