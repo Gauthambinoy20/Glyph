@@ -17,7 +17,9 @@ SYSTEM_PROMPT = (
 )
 
 # Matches a citation like [app/main.py:10-20].
-_CITATION = re.compile(r"\[([^\[\]:]+):(\d+)-(\d+)\]")
+# Matches a citation, allowing ASCII, full-width, or round brackets, since models vary:
+# [app/main.py:10-20], 【app/main.py:10-20】, (app/main.py:10-20).
+_CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):(\d+)-(\d+)\s*[\])】]")
 
 
 def build_messages(question: str, chunks: list[dict]) -> tuple[str, str]:
@@ -35,13 +37,22 @@ def build_messages(question: str, chunks: list[dict]) -> tuple[str, str]:
 
 
 def parse_citations(answer: str, chunks: list[dict]) -> list[dict]:
-    """Return the [file:start-end] citations in the answer that match a retrieved chunk."""
-    retrieved = {(c["file_path"], c["start_line"], c["end_line"]) for c in chunks}
+    """Return the [file:start-end] citations in the answer that point inside a retrieved chunk.
+
+    A citation is kept only if a retrieved chunk in the SAME file overlaps its line range, so
+    the model can cite specific lines within a shown chunk but cannot cite code it never saw.
+    """
     seen: set[tuple[str, int, int]] = set()
     citations: list[dict] = []
     for match in _CITATION.finditer(answer):
-        key = (match.group(1), int(match.group(2)), int(match.group(3)))
-        if key in retrieved and key not in seen:
-            seen.add(key)
-            citations.append({"file_path": key[0], "start_line": key[1], "end_line": key[2]})
+        file_path, start, end = match.group(1), int(match.group(2)), int(match.group(3))
+        key = (file_path, start, end)
+        if key in seen:
+            continue
+        for chunk in chunks:
+            overlaps = start <= chunk["end_line"] and end >= chunk["start_line"]
+            if chunk["file_path"] == file_path and overlaps:
+                seen.add(key)
+                citations.append({"file_path": file_path, "start_line": start, "end_line": end})
+                break
     return citations

@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""
-    llm_model: str = "qwen/qwen3-coder:free"
-    llm_fallback_model: str = "deepseek/deepseek-r1:free"
+    llm_model: str = "openai/gpt-oss-120b:free"
+    llm_fallback_model: str = "openai/gpt-oss-20b:free"
     app_url: str = "http://localhost:5173"
 
 

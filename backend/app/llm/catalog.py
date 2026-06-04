@@ -19,9 +19,10 @@ class ModelInfo:
 
 # Order matters: this is the order shown in the dropdown.
 _CATALOG: list[ModelInfo] = [
-    ModelInfo("qwen/qwen3-coder:free", "Qwen3 Coder", "free", "Coder-tuned, large context"),
-    ModelInfo("deepseek/deepseek-r1:free", "DeepSeek R1", "free", "Strong reasoning"),
-    ModelInfo("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B", "free", "General purpose"),
+    ModelInfo("openai/gpt-oss-120b:free", "GPT-OSS 120B", "free", "Large open model (default)"),
+    ModelInfo("openai/gpt-oss-20b:free", "GPT-OSS 20B", "free", "Smaller and fast"),
+    ModelInfo("qwen/qwen3-coder:free", "Qwen3 Coder", "free", "Coder-tuned (can be busy)"),
+    ModelInfo("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B", "free", "General"),
     ModelInfo("openai/gpt-4o-mini", "GPT-4o mini", "paid", "~a fraction of a cent per question"),
     ModelInfo("anthropic/claude-3.5-haiku", "Claude Haiku", "paid", "Fast and cheap, needs credit"),
 ]

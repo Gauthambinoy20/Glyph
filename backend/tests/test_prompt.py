@@ -23,14 +23,27 @@ def test_prompt_grounds_and_includes_context() -> None:  # T34
 
 def test_citations_keep_only_retrieved_chunks() -> None:  # T41
     chunks = [
-        {"file_path": "a.py", "start_line": 1, "end_line": 3, "symbol_name": "f", "code": "x"}
+        {"file_path": "a.py", "start_line": 10, "end_line": 40, "symbol_name": "f", "code": "x"}
     ]
-    answer = "It is defined in [a.py:1-3], definitely not [evil.py:9-9]."
+    # [a.py:12-15] points at lines inside the retrieved chunk -> kept.
+    # [evil.py:9-9] is a file we never retrieved -> dropped.
+    # [a.py:99-100] is the right file but outside the retrieved lines -> dropped.
+    answer = "See [a.py:12-15], not [evil.py:9-9] and not [a.py:99-100]."
 
     citations = parse_citations(answer, chunks)
 
-    # Only the citation matching a retrieved chunk survives, and it is 1-indexed.
-    assert citations == [{"file_path": "a.py", "start_line": 1, "end_line": 3}]
+    assert citations == [{"file_path": "a.py", "start_line": 12, "end_line": 15}]
+
+
+def test_citations_handle_bracket_styles() -> None:
+    # Models vary: some use full-width 【 】 or round ( ) brackets instead of [ ].
+    chunks = [
+        {"file_path": "main.py", "start_line": 80, "end_line": 95, "symbol_name": "s", "code": "x"}
+    ]
+    citations = parse_citations("see 【main.py:82-91】 and (main.py:85-85)", chunks)
+
+    assert {"file_path": "main.py", "start_line": 82, "end_line": 91} in citations
+    assert {"file_path": "main.py", "start_line": 85, "end_line": 85} in citations
 
 
 def test_log_query_writes_all_fields(capsys) -> None:  # T42
