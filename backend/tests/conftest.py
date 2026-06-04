@@ -17,6 +17,9 @@ _GROUP_TITLES = {
     "test_cache.py": "Cache  (never re-process unchanged code)",
     "test_ingest.py": "Loader  (clone/walk a repo, then chunk, embed and store it)",
     "test_retrieval.py": "Search  (find the best chunks by meaning + keywords)",
+    "test_llm.py": "AI client  (OpenRouter call, fallback, clear errors)",
+    "test_prompt.py": "Prompt  (grounded prompt, citations, query logs)",
+    "test_answer.py": "Answer  (the /api/ask and /api/models endpoints)",
 }
 
 # Terminal colour codes.

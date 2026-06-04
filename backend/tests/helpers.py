@@ -45,3 +45,14 @@ class FakeEmbedder:
 
     def embed_query(self, text):
         return self.embed_documents([text])[0]
+
+
+class FakeLLM:
+    """A stand-in chat client for endpoint tests: returns a preset answer and usage."""
+
+    def __init__(self, answer: str = "answer", usage: dict | None = None) -> None:
+        self.answer = answer
+        self.usage = usage or {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+
+    def complete(self, system_prompt, user_prompt, model=None):
+        return self.answer, self.usage

@@ -37,6 +37,7 @@ class HybridRetriever:
         metadatas: list[dict] = data.get("metadatas", []) or []
         documents: list[str] = data.get("documents", []) or []
         self._meta_by_id = dict(zip(self._ids, metadatas, strict=False))
+        self._code_by_id = dict(zip(self._ids, documents, strict=False))
         # Keyword index over each chunk's code plus its symbol name.
         corpus = [
             tokenize_code(f"{doc} {meta.get('symbol_name', '')}")
@@ -78,4 +79,5 @@ class HybridRetriever:
         row = dict(self._meta_by_id.get(chunk_id, {}))
         row["id"] = chunk_id
         row["score"] = round(score, 6)
+        row["code"] = self._code_by_id.get(chunk_id, "")
         return row
