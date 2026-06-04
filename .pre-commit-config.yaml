@@ -1,0 +1,19 @@
+# Fast checks that run automatically before each local commit.
+# These use the tools already pinned in backend/requirements-dev.txt and installed in
+# backend/.venv, so there is nothing extra to download and the versions never drift.
+# Set up once with:  cd backend && .venv/bin/pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-lint
+        name: ruff lint (auto-fix)
+        entry: backend/.venv/bin/ruff check --fix
+        language: system
+        types: [python]
+        files: ^backend/
+      - id: ruff-format
+        name: ruff format
+        entry: backend/.venv/bin/ruff format
+        language: system
+        types: [python]
+        files: ^backend/
