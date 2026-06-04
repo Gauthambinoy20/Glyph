@@ -1,0 +1,67 @@
+# Single home for our Python tool configuration: Ruff, mypy, pytest, coverage,
+# and bandit. Keeping it in one file means there is one obvious place to look.
+
+[tool.ruff]
+# Match the style the code is already written in.
+line-length = 100
+target-version = "py312"
+# Lint and format the app and its tests, nothing else.
+src = ["app", "tests"]
+# Test fixtures are deliberately messy sample code that the chunker parses
+# (unused imports, undefined decorators, missing docstrings on purpose). Linting
+# them would flag bugs that are intentional, so we leave them alone.
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+# A focused, non-overlapping rule set:
+#   E/W  pycodestyle errors and warnings
+#   F    pyflakes (unused imports, undefined names)
+#   I    import sorting (replaces isort)
+#   B    flake8-bugbear (likely bugs)
+#   UP   pyupgrade (modern Python syntax)
+#   N    pep8-naming
+#   D    pydocstyle (docstrings)
+select = ["E", "W", "F", "I", "B", "UP", "N", "D"]
+ignore = [
+    # D203/D213 conflict with D211/D212; we follow the simpler form.
+    "D203",
+    "D213",
+    # Empty package __init__.py files do not need a docstring.
+    "D104",
+    # __init__ methods are covered by their class docstring; repeating it is noise.
+    "D107",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests and their helpers do not need full docstrings to earn their keep.
+"tests/**" = ["D100", "D101", "D102", "D103", "D104"]
+
+[tool.mypy]
+python_version = "3.12"
+# Enforce the project rule: every function is fully type hinted.
+disallow_untyped_defs = true
+# Third-party libs (tree-sitter, fastembed, chromadb) ship no type stubs.
+# Ignore those rather than littering the code with type-ignore comments.
+ignore_missing_imports = true
+# Pydantic ships a mypy plugin that understands its models and settings.
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Keep pytest's own output quiet; our custom report in tests/conftest.py does the
+# talking, and `-p no:sugar` stops any other plugin fighting its formatting.
+addopts = "-q --tb=short -p no:sugar"
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+# Measure coverage of the application code, not the tests themselves.
+source = ["app"]
+
+[tool.bandit]
+# Bandit should scan the app, not the test fixtures (which contain sample code
+# on purpose and would trip false positives).
+exclude_dirs = ["tests", ".venv"]
