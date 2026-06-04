@@ -221,4 +221,14 @@ VIBE CODER/
   question it correctly says "Not found in the provided code" instead of guessing. The whole engine
   now works end to end, live.
 
+- **Part 6 — the Frontend (done, the website).** Built the actual app you use in the browser, aiming
+  for a premium, restrained look (near-black, one green accent, crisp type, smooth motion) rather than
+  a generic template. There is an elegant landing screen to point Glyph at a repo or a local folder,
+  then a workspace: a top bar with the repo and a model picker, a chat in the middle where answers
+  render as proper formatted text with clickable source chips, and a code panel that slides in to show
+  the exact code behind a citation. Free models are selectable; paid ones are shown but greyed out
+  until a key is added. Loading, empty, and error states are all handled. Also added the retrieved
+  code to the answer response so a citation can open its source instantly. Built with React + Vite +
+  TypeScript and hand-written CSS; it type-checks and builds clean.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

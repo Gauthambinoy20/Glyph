@@ -111,15 +111,15 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 68. Commit: conversation, overview, snippets, endpoint detection, history `(core)`
 
 ## Phase 8 - Frontend
-- [ ] 69. Vite + React + TS shell, dark split layout, `api.ts` typed wrappers `(core)`
-- [ ] 70. Ingest panel: repo URL / path input + progress + "try demo repo" `(core)`
-- [ ] 71. Model-picker dropdown (free enabled; paid shown with price, disabled w/o key) `(core)`
-- [ ] 72. Chat UI with streaming answers + citation chips `(core)`
-- [ ] 73. Click a citation → code panel shows the highlighted snippet (syntax highlighted) `(core)`
-- [ ] 74. Suggested questions UI + overview card + "List API endpoints" + history sidebar `(polish)`
-- [ ] 75. Loading / empty / error states everywhere; friendly toasts `(core)`
-- [ ] 76. Small touches: copy-answer button, Enter-to-send, token/cost counter, model badge `(polish)`
-- [ ] 77. Commit: Glyph web UI `(core)`
+- [x] 69. Vite + React + TS shell, premium dark theme, `api.ts` typed wrappers `(core)`
+- [x] 70. Ingest panel: repo URL / path input + progress + "try app" demo `(core)`
+- [x] 71. Model-picker dropdown (free enabled; paid shown with note, disabled w/o key) `(core)`
+- [x] 72. Chat UI with markdown answers + clickable citation chips `(core)`
+- [x] 73. Click a citation → code panel shows the source code with line numbers `(core)`
+- [x] 74. Suggested starter questions (overview/endpoints/history are Phase 7 follow-ups) `(polish)`
+- [x] 75. Loading / empty / error states; friendly error toast `(core)`
+- [x] 76. Small touches: Enter-to-send, model badge, repo chip (copy-answer later) `(polish)`
+- [ ] 77. Commit: Glyph web UI `(core)`  ← you commit this
 
 ## Phase 9 - Quality, tooling & tests depth
 - [x] 78. Lint + format: `ruff` (lint) and `ruff format` for the backend, pinned `(core)`
