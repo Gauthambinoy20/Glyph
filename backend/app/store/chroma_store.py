@@ -98,3 +98,7 @@ class ChromaStore:
     def count(self) -> int:
         """How many chunks are stored."""
         return self._collection.count()
+
+    def all_chunks(self) -> dict:
+        """Return all stored ids, documents and metadata (used to build the keyword index)."""
+        return cast(dict, self._collection.get(include=["documents", "metadatas"]))

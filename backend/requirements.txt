@@ -13,6 +13,8 @@ fastembed==0.8.0
 # chromadb 1.5.9 has an open advisory (CVE-2026-45829) with no fixed release yet.
 # The CI dependency audit skips this one ID on purpose; bump as soon as a fix ships.
 chromadb==1.5.9
+# Keyword search (BM25) for the keyword half of hybrid retrieval.
+rank-bm25==0.2.2
 
 # Testing
 pytest==9.0.3

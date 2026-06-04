@@ -16,6 +16,7 @@ _GROUP_TITLES = {
     "test_store.py": "Store  (save vectors and find the closest ones)",
     "test_cache.py": "Cache  (never re-process unchanged code)",
     "test_ingest.py": "Loader  (clone/walk a repo, then chunk, embed and store it)",
+    "test_retrieval.py": "Search  (find the best chunks by meaning + keywords)",
 }
 
 # Terminal colour codes.
