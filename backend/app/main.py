@@ -150,4 +150,11 @@ def ask(
     chunk_ids = [chunk["id"] for chunk in chunks]
     citations = parse_citations(answer, chunks)
     log_query(request.question, chunk_ids, latency_ms, token_usage)
-    return {"answer": answer, "citations": citations, "retrieved_chunk_ids": chunk_ids}
+    # `sources` carries each retrieved chunk (with its code) so the UI can show the code
+    # behind a citation without another round-trip.
+    return {
+        "answer": answer,
+        "citations": citations,
+        "retrieved_chunk_ids": chunk_ids,
+        "sources": chunks,
+    }
