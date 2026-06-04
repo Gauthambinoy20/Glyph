@@ -175,4 +175,16 @@ VIBE CODER/
   machines, so the two tests that load the real model now run on my machine only, while the rest run
   in the cloud. Added a green "CI" badge to the README so anyone can see the build is passing.
 
+- **Part 3 — the Loader (done, in one stretch).** This is the "paste a repo and load it" piece.
+  It can read a local folder OR clone a public GitHub repo, then run everything through the chunker
+  and the memory. Built it carefully and safely: the folder walker skips junk (node_modules, .git,
+  build output), only reads real source files, caps file size and count, and refuses to follow a
+  symlink that points outside the folder. The GitHub clone is shallow and non-interactive, so a bad
+  or private link fails fast with a clear message instead of hanging. It is all wired to a new
+  `POST /api/ingest` endpoint that returns simple counts (files, added, cached, languages) and gives
+  a clean error for a bad link or an empty folder. Wrote 10 tests (T22 to T28b) covering every path,
+  all offline. The security scanner flagged the git command (it always does); I confirmed it is safe
+  (the link is validated first, arguments are passed as a list with no shell) and documented that.
+  Result: **29 tests passing**, full gate green.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

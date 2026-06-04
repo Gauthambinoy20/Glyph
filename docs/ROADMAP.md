@@ -69,15 +69,15 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 34. Commit: local embedder, Chroma store, content-hash cache `(core)`  ← you commit this
 
 ## Phase 4 - Ingest pipeline
-- [ ] 35. `ingest/walker.py` walk local path, ext allowlist, skip junk, size + count caps `(core)`
-- [ ] 36. Local-path safety: confine reads to the given dir, reject traversal `(core)`
-- [ ] 37. `ingest/cloner.py` non-interactive GitHub clone (no hang, depth=1, timeout) `(core)`
-- [ ] 38. `ingest/pipeline.py` clone/walk → chunk → cache → embed → store → BM25 `(core)`
-- [ ] 39. `POST /api/ingest` accepts repo URL or local path; pydantic request model `(core)`
-- [ ] 40. Clear errors: bad URL, clone fail/timeout, 0 supported files, 0 chunks `(core)`
-- [ ] 41. Ingest status surfaced (counts: files, chunks_added, chunks_cached, languages) `(core)`
-- [ ] 42. Tests: ingest fixture, re-ingest adds 0, bad URL 4xx, 0-files 4xx, traversal blocked `(core)`
-- [ ] 43. Commit: ingest pipeline and endpoint `(core)`
+- [x] 35. `ingest/walker.py` walk local path, ext allowlist, skip junk, size + count caps `(core)`
+- [x] 36. Local-path safety: confine reads to the given dir, reject symlink escapes `(core)`
+- [x] 37. `ingest/cloner.py` non-interactive GitHub clone (no hang, depth=1, timeout) `(core)`
+- [x] 38. `ingest/pipeline.py` clone/walk → chunk → cache → embed → store (BM25 added in Phase 5) `(core)`
+- [x] 39. `POST /api/ingest` accepts repo URL or local path; pydantic request model `(core)`
+- [x] 40. Clear errors: bad URL, clone fail/timeout, 0 supported files, 0 chunks `(core)`
+- [x] 41. Ingest status surfaced (counts: files, added, cached, languages) `(core)`
+- [x] 42. Tests: ingest fixture, re-ingest adds 0, bad URL 4xx, 0-files 4xx, symlink blocked `(core)`
+- [ ] 43. Commit: ingest pipeline and endpoint `(core)`  ← you commit this
 
 ## Phase 5 - Retrieval
 - [ ] 44. `retrieve/tokenize.py` code-aware tokenizer (splits camelCase / snake_case) `(core)`
@@ -189,13 +189,14 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T21. Editing one chunk re-embeds only that chunk, siblings untouched
 
 **Ingest pipeline**
-- [ ] T22. Walker filters junk (node_modules/.git) and honors ext allowlist
-- [ ] T23. Local-path traversal attempt is rejected
-- [ ] T24. Cloner: malformed URL → 4xx (mocked clone)
-- [ ] T25. Cloner: clone failure/timeout handled → 4xx, no hang
-- [ ] T26. Ingest fixture repo → chunks_added > 0
-- [ ] T27. Re-ingest same repo → chunks_added == 0 (all cached)
-- [ ] T28. Ingest a folder with 0 supported files → clear error
+- [x] T22. Walker filters junk (node_modules/.git) and honors ext allowlist
+- [x] T23. Symlink escaping the root is rejected
+- [x] T24. Cloner: malformed URL → 4xx (validated before any clone)
+- [x] T25. Cloner: clone failure/timeout handled → 4xx, no hang
+- [x] T26. Ingest fixture repo → chunks added > 0
+- [x] T27. Re-ingest same repo → chunks added == 0 (all cached)
+- [x] T28. Ingest a folder with 0 supported files → clear error
+- [x] T28b. Endpoint: local_path ingests; missing input → 400; bad repo URL → 400
 
 **Retrieval**
 - [ ] T29. Tokenizer splits camelCase and snake_case identifiers
