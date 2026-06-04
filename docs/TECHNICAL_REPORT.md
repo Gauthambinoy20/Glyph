@@ -1,0 +1,303 @@
+# 🔬 Glyph — Technical Report
+
+Verified research (live sources, June 2026), the design, and an adversarial review of the plan.
+This is the reference behind the choices summarized in plain words in [JOURNAL.md](./JOURNAL.md).
+
+---
+
+## 1. Research findings
+
+### 1.1 Code chunking (tree-sitter)
+- **Libraries:** `tree-sitter==0.25.2` + `tree-sitter-language-pack==1.8.1`. The older
+  `tree-sitter-languages` (grantjenks) is unmaintained (frozen Jan 2024) and fails to build on
+  Python 3.13+ — **do not use it**. The language-pack exposes
+  `get_parser('python'|'javascript'|'typescript'|'tsx')` returning real `tree_sitter.Parser`
+  objects with no per-grammar build step.
+- **API churn (must-know):** `Parser(language)` is a constructor arg now — `parser.set_language()`
+  and the two-arg `Language(path, name)` are **removed**. The `.scm` Query API moved onto a separate
+  `QueryCursor` in 0.25. → Use plain recursive node-walking by `node.type` (version-robust).
+- **Line numbers:** `node.start_point/end_point` are **0-indexed `(row, col)` → +1** for citations.
+  Slice code text by `start_byte:end_byte` (rows can drift on trailing newlines).
+- **Gotchas:** `.tsx` needs the **separate `tsx` grammar**; Python `decorated_definition` wraps the
+  function (name from child, range from parent, one chunk); capture **module-level** code as
+  `<module>` chunks or it's silently un-retrievable; bge-small caps at **512 tokens** so oversized
+  functions must sub-split.
+
+### 1.2 Embeddings + retrieval
+- **Embedder:** `fastembed==0.8.0` running `BAAI/bge-small-en-v1.5` via ONNX — **no torch** (~30–130MB
+  vs ~2GB for sentence-transformers; faster cold start). 384-dim, cosine, normalized.
+- **Query/passage symmetry:** for bge-**v1.5** the query instruction prefix is *optional* ("only a
+  slight degradation" without it). The real rule is **consistency** — embed queries and passages the
+  same way. We use `embed()` for both (v1.5-blessed).
+- **Vector DB:** `chromadb==1.5.9`, `PersistentClient`, cosine via
+  `configuration={'hnsw':{'space':'cosine'}}` (the `metadata={'hnsw:space':...}` form is
+  deprecated/buggy). **Pass precomputed embeddings** so the content-hash cache is the only embedding
+  path. Chroma has **no native BM25** (`where_document` is boolean `$contains`/`$regex` only).
+- **Keyword:** `rank-bm25==0.2.2` with a code-aware tokenizer (splits camelCase/snake_case). It's
+  **in-memory & stateless** → rebuild from Chroma on startup (no stale pickle).
+- **Fusion:** Reciprocal Rank Fusion (k=60, rank-based, no score normalization) → robust across
+  cosine + BM25. Exact `symbol_name` match → small boost. Final **top_k=5**.
+- **Cache:** `chunk_id = sha256(chunk.code)` → unchanged symbols dedupe automatically; hashing *chunk*
+  (not file) means editing one function doesn't invalidate siblings.
+- **Dimension lock-in:** bge 384 vs OpenAI 1536; a collection fixes its dim at first write → encode
+  model+dim in the collection name; swap requires re-index. Fail fast with a clear error on mismatch.
+
+### 1.3 LLM (OpenRouter)
+- OpenAI-compatible chat at `https://openrouter.ai/api/v1`; use `openai==1.109.1` SDK with
+  `base_url`+`api_key`. Default **`qwen/qwen3-coder:free`** (coder-tuned, ~1M context). Good free
+  fallbacks: `deepseek/deepseek-r1:free`, `meta-llama/llama-3.3-70b-instruct:free`, `openai/gpt-oss-120b:free`.
+- **Free limits:** 20 req/min, **50 req/day** without credits (1000/day after buying $10 once).
+  Failed requests count. Negative balance → 402 even on `:free`.
+- **Model IDs are env-driven** (free IDs rotate). Token usage from `completion.usage`; **default to 0
+  if a free provider omits it**. `HTTP-Referer`/`X-Title` headers optional (leaderboard only).
+- **Note:** OpenRouter *now does* have an embeddings endpoint (2026) — but we keep local bge-small as
+  default to stay free/offline and avoid burning the small request quota on embeddings.
+
+---
+
+## 2. Design
+
+### 2.1 Architecture
+```mermaid
+graph TD
+    U[Browser] -->|REST + SSE| API[FastAPI]
+    subgraph Ingestion
+      API --> CL[Cloner/Walker] --> CH[Tree-sitter Chunker]
+      CH --> CACHE[(content-hash cache)]
+      CH --> EM[Local Embedder bge-small] --> VDB[(Chroma)]
+      CH --> BM[BM25 index]
+    end
+    subgraph Query
+      API --> RET[Hybrid Retriever RRF] --> VDB
+      RET --> BM
+      RET --> PB[Grounded Prompt] --> LLM[OpenRouter free model]
+      LLM --> API
+    end
+    API --> DB[(SQLite history)]
+    API --> LOG[JSON logs]
+```
+
+### 2.2 Data flow
+
+**Ingest (one breath):** repo URL/path → clone/walk → filter files → tree-sitter chunk
+(+`<module>`, +sub-split) → hash & cache (embed only new) → Chroma (cosine, precomputed vectors) →
+rebuild BM25 → `{files, chunks_added, chunks_cached, languages}`.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as React UI
+    participant API as FastAPI
+    participant W as Cloner / Walker
+    participant C as Chunker (tree-sitter)
+    participant Ca as Cache (sha256)
+    participant E as Embedder (bge-small)
+    participant V as Chroma
+    participant B as BM25 index
+    User->>UI: paste repo URL or local path
+    UI->>API: POST /api/ingest
+    API->>W: clone (depth=1, no prompt, timeout) OR walk
+    W-->>API: list of (path, code), junk + oversized filtered out
+    API->>C: parse and split by function / class
+    C-->>API: chunks + metadata (file, symbol, start/end line)
+    API->>Ca: hash each chunk (sha256 of code)
+    Ca-->>API: which chunks are new vs already cached
+    API->>E: embed ONLY the new chunks
+    E-->>API: vectors (384-dim)
+    API->>V: add(precomputed vectors + metadata)
+    API->>B: rebuild keyword index from all chunks
+    API-->>UI: {files, chunks_added, chunks_cached, languages}
+```
+
+**Ask (one breath):** question → embed → hybrid retrieve (semantic ∪ BM25 ∪ exact-symbol → RRF →
+top-5) → grounded prompt (numbered context with file:line) → OpenRouter (selected model, temp 0,
+retry) → `{answer, citations[], retrieved_chunk_ids}` → JSON log.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as React UI
+    participant API as FastAPI
+    participant R as Hybrid Retriever
+    participant V as Chroma
+    participant B as BM25 index
+    participant P as Prompt builder
+    participant L as OpenRouter (free model)
+    participant Lg as JSON logger
+    User->>UI: ask a question (+ chosen model)
+    UI->>API: POST /api/ask/stream
+    API->>R: retrieve(question)
+    R->>V: semantic search (top 20, cosine)
+    R->>B: keyword search (top 20, BM25)
+    R-->>API: top 5 chunks (RRF fused, exact-symbol boosted)
+    API->>P: build grounded prompt (numbered file:line blocks)
+    API->>L: chat completion (temp 0, retry on 429/5xx)
+    L-->>API: answer (streamed) + token usage
+    API-->>UI: answer + citations (file:line)
+    API->>Lg: one JSON line {question, chunk_ids, latency_ms, token_usage}
+```
+
+### 2.3 Build order
+Highest-risk-first: skeleton → chunker → embed/store/cache → ingest pipeline → hybrid retrieval →
+grounded answer + model picker + logging → extra endpoints → UI → docker/CI/docs. See
+[ROADMAP.md](./ROADMAP.md).
+
+### 2.4 Data model
+Chunk vectors + metadata live in **Chroma**. Repos, chat sessions and messages live in **SQLite**.
+
+```mermaid
+erDiagram
+    REPO ||--o{ CHUNK : contains
+    REPO ||--o{ CHATSESSION : has
+    CHATSESSION ||--o{ MESSAGE : contains
+    REPO {
+      string id PK
+      string url
+      string name
+      string status
+      int chunk_count
+    }
+    CHUNK {
+      string id PK
+      string repo_id FK
+      string file_path
+      string language
+      string symbol_name
+      string type
+      int start_line
+      int end_line
+      string code
+    }
+    CHATSESSION {
+      string id PK
+      string repo_id FK
+    }
+    MESSAGE {
+      string id PK
+      string session_id FK
+      string role
+      string content
+      string citations_json
+    }
+```
+
+### 2.5 Security and trust boundaries
+Everything from the user is treated as untrusted and passes a guard before it reaches the server.
+Ingested code is only ever read as text, never executed.
+
+```mermaid
+flowchart TD
+    subgraph Untrusted[Untrusted input]
+      Q[User question]
+      RU[Repo URL / local path]
+    end
+    subgraph Guards[Validation and guards]
+      V1[URL must be https://github.com/...]
+      V2[local path confined, no traversal]
+      V3[size + count caps, extension allowlist]
+      V4[question length limit]
+      V5[per-IP rate limit on /ask]
+      V6[CORS locked to the frontend origin]
+    end
+    subgraph Trusted[Server side]
+      ING[Ingest: read code as TEXT only, never execute]
+      TMP[(temp clone dir, deleted after ingest)]
+      SEC[Secrets in .env only, never logged]
+      ERR[Generic errors to client, details stay in logs]
+    end
+    Q --> V4 --> ING
+    RU --> V1 --> V2 --> V3 --> ING
+    ING --> TMP
+    V5 -. protects .-> ING
+    V6 -. protects .-> ING
+    SEC -. used by .-> ING
+    ING --> ERR
+```
+
+---
+
+## 3. Adversarial review (what we changed because of it)
+A skeptical pass on the plan found, and we fixed:
+- **Over-engineering:** dropped the pickled-BM25 + forced-include subsystem (a staleness footgun) →
+  rebuild BM25 from Chroma on startup; exact-symbol is just a boost.
+- **Stale facts corrected:** Chroma cosine config form; the bge query-prefix policy; OpenRouter limits.
+- **Added graded-critical tests:** empty-index `/ask` → "not found" + `citations=[]`; citation/line
+  consistency at the answer endpoint; the **GitHub-URL clone branch** (was uncovered).
+- **Hardening:** non-interactive clone (`GIT_TERMINAL_PROMPT=0`) + timeout; `local_path` traversal
+  guard; pull the embedder model-cache **forward** so the first real ingest doesn't hang offline.
+
+---
+
+## 4. Assignment alignment and decisions
+
+Mapped the build against the assignment brief (Option 2). Result: every graded item is covered.
+Two decisions worth stating explicitly for the README:
+
+### 4.1 Orchestration framework: we use none, on purpose
+The brief asks for the orchestration framework choice. We considered LangChain and LlamaIndex and
+**chose to use neither.** Reasons: the pipeline here is small and well understood (chunk, embed,
+store, retrieve, prompt, call), so a framework would add a large dependency, hidden control flow,
+and version churn for little gain. Hand-rolling keeps the stack minimal (a stated rule), keeps every
+step readable and testable, and makes the retrieval logic fully transparent for grading. If this
+grew into many sources, agents, or tool-calling, a framework would start to earn its place.
+
+### 4.2 Context management
+Retrieval is capped at top_k=5 numbered context blocks (each with file:line + symbol_name + code) to
+keep the prompt focused and within model limits. For multi-turn use, the last few Q&A turns are fed
+back into the prompt so follow-up questions stay coherent (the "conversational" requirement), while
+the grounding rule (answer only from retrieved code) still holds each turn.
+
+### 4.3 Added features (after the alignment check) and why
+| Feature | Grading criterion it strengthens |
+|---|---|
+| Conversational follow-ups | "conversational AI assistant", context management |
+| Suggested starter questions | UI/UX creativity, product polish |
+| Quality eval set + hit-rate script | quality controls (explicitly graded) |
+| Observability dashboard | observability (makes it visible, not buried in logs) |
+
+Guardrail on ourselves: the brief rewards a solid basic solution over an over-built one, so the core
+engine and a clean UI ship first; these layer on top only once the basics work.
+
+---
+
+## 5. Quality gate, security and CI
+
+A single automated gate runs locally (pre-commit) and on every push (GitHub Actions). All tools are
+pinned in `backend/requirements-dev.txt`; configuration lives in `backend/pyproject.toml`.
+
+```mermaid
+flowchart LR
+    DEV[commit / push] --> RUFF[ruff lint + format]
+    RUFF --> MYPY[mypy types]
+    MYPY --> BANDIT[bandit security]
+    BANDIT --> AUDIT[pip-audit deps]
+    AUDIT --> TESTS[pytest + coverage]
+    TESTS --> PASS{all green?}
+    PASS -- yes --> OK[merge ready]
+    PASS -- no --> FAIL[blocked, fix it]
+```
+
+| Tool | Role | Status |
+|---|---|---|
+| ruff `0.15.16` | lint + format (replaces flake8/black/isort) | clean |
+| mypy `2.1.0` | type checking (every function typed) | clean |
+| bandit `1.9.4` | code security scan | clean |
+| pip-audit `2.10.0` | dependency CVE scan | 5/6 fixed |
+| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 19 passed, 88% |
+
+**Security decisions:**
+- Bumped pytest → 9.0.3 and FastAPI → 0.136.3 (pulls patched Starlette 1.2.1), re-ran the full
+  suite to confirm no breakage.
+- chromadb `1.5.9` has an open advisory (`CVE-2026-45829`) with **no fixed release yet**. The audit
+  step skips that single ID on purpose (documented in `requirements.txt` and the workflow); revisit
+  when a fix ships.
+
+**Not yet:** the workflow is verified locally and as valid YAML, but its first real run happens on
+the first push to GitHub. The frontend CI job and a real deploy (CD) are intentionally out of scope
+for now (frontend not built yet; no deploy target for a take-home).
+
+---
+
+## 6. Out of scope (acknowledged, not built)
+Auth, multi-user, private repos, huge-monorepo scale, languages beyond Python/JS/TS/TSX, concurrency
+hardening (single-worker uvicorn; re-ingest mutates shared in-memory state).
