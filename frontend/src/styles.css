@@ -793,3 +793,172 @@ textarea {
   background: transparent !important;
   color: var(--text-2);
 }
+
+/* ============================================================================
+   Standout additions: metrics, sources, follow-ups, overview, graph, view toggle
+   ========================================================================== */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.view-toggle button {
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.14s var(--ease);
+}
+.view-toggle button.active {
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.metrics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+.metrics .mono {
+  color: var(--muted);
+}
+.metrics .sep {
+  opacity: 0.5;
+}
+
+.sources {
+  margin-top: 12px;
+}
+.sources summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  list-style: none;
+  padding: 6px 0;
+  transition: color 0.14s;
+}
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+.sources summary::before {
+  content: "▸ ";
+  color: var(--faint);
+}
+.sources[open] summary::before {
+  content: "▾ ";
+}
+.sources summary:hover {
+  color: var(--text);
+}
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.source-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  text-align: left;
+  transition: all 0.14s var(--ease);
+}
+.source-row:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-2);
+}
+.source-row .sym {
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.source-row .loc {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.followup {
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  transition: all 0.14s var(--ease);
+}
+.followup:hover {
+  border-color: var(--accent-line);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.overview-card {
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  margin-bottom: 26px;
+  animation: rise 0.4s var(--ease) both;
+}
+.overview-card .ov-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 9px;
+  font-weight: 600;
+}
+.ov-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.overview-card p {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.graph-view {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.graph-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}

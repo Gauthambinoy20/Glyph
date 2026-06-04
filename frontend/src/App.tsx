@@ -4,6 +4,7 @@ import { api } from "./api";
 import type { AskResponse, Citation, ModelInfo, Source } from "./api";
 import { Answer } from "./components/Answer";
 import { CodePanel } from "./components/CodePanel";
+import { GraphView } from "./components/GraphView";
 import { ModelPicker } from "./components/ModelPicker";
 
 interface Message {
@@ -37,6 +38,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [activeSource, setActiveSource] = useState<Source | null>(null);
   const [error, setError] = useState("");
+  const [view, setView] = useState<"chat" | "graph">("chat");
+  const [overview, setOverview] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +73,11 @@ export default function App() {
       await api.ingest(isUrl ? { repo_url: target } : { local_path: target });
       setRepoLabel(isUrl ? target.replace(/^https:\/\/github\.com\//, "") : target);
       setPhase("workspace");
+      setOverview("");
+      api
+        .overview()
+        .then((d) => setOverview(d.overview))
+        .catch(() => {});
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -184,14 +192,41 @@ export default function App() {
             <span className="ok" /> {repoLabel}
           </span>
         </div>
-        <ModelPicker models={models} selected={selectedModel} onSelect={setSelectedModel} />
+        <div className="topbar-right">
+          <div className="view-toggle">
+            <button className={view === "chat" ? "active" : ""} onClick={() => setView("chat")}>
+              Chat
+            </button>
+            <button className={view === "graph" ? "active" : ""} onClick={() => setView("graph")}>
+              Map
+            </button>
+          </div>
+          <ModelPicker models={models} selected={selectedModel} onSelect={setSelectedModel} />
+        </div>
       </div>
 
       <div className="workspace">
-        <div className="chat">
+        {view === "graph" ? (
+          <GraphView
+            onPickFile={(file) => {
+              setView("chat");
+              ask(`Explain \`${file}\` and what it does.`);
+            }}
+          />
+        ) : (
+          <>
+            <div className="chat">
           <div className="messages" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="suggest">
+                {overview && (
+                  <div className="overview-card">
+                    <div className="ov-title">
+                      <span className="ov-dot" /> Overview
+                    </div>
+                    <p>{overview}</p>
+                  </div>
+                )}
                 <div className="title">Ask anything about this code</div>
                 <div className="grid">
                   {SUGGESTIONS.map((s) => (
@@ -232,9 +267,9 @@ export default function App() {
                       </div>
                     ) : m.data ? (
                       <Answer
-                        text={m.data.answer}
-                        citations={m.data.citations}
+                        data={m.data}
                         onOpen={(c) => openCitation(c, m.data!.sources)}
+                        onFollowUp={ask}
                       />
                     ) : null}
                   </div>
@@ -269,7 +304,11 @@ export default function App() {
           </div>
         </div>
 
-        {activeSource && <CodePanel source={activeSource} onClose={() => setActiveSource(null)} />}
+            {activeSource && (
+              <CodePanel source={activeSource} onClose={() => setActiveSource(null)} />
+            )}
+          </>
+        )}
       </div>
 
       {error && <div className="error-toast">{error}</div>}

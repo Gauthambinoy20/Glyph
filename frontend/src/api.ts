@@ -25,11 +25,23 @@ export interface Citation {
   end_line: number;
 }
 
+export interface AnswerMeta {
+  model: string;
+  latency_ms: number;
+  token_usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+}
+
 export interface AskResponse {
   answer: string;
   citations: Citation[];
   retrieved_chunk_ids: string[];
   sources: Source[];
+  meta: AnswerMeta;
+}
+
+export interface GraphData {
+  nodes: { id: string; label: string; language: string }[];
+  edges: { source: string; target: string }[];
 }
 
 export interface IngestResponse {
@@ -66,6 +78,18 @@ export const api = {
   models: async (): Promise<{ models: ModelInfo[]; default: string }> => {
     const res = await fetch("/api/models");
     if (!res.ok) throw new Error("could not load models");
+    return res.json();
+  },
+
+  overview: async (): Promise<{ overview: string }> => {
+    const res = await fetch("/api/overview");
+    if (!res.ok) throw new Error("could not load overview");
+    return res.json();
+  },
+
+  graph: async (): Promise<GraphData> => {
+    const res = await fetch("/api/graph");
+    if (!res.ok) throw new Error("could not load graph");
     return res.json();
   },
 };
