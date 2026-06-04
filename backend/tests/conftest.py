@@ -15,6 +15,7 @@ _GROUP_TITLES = {
     "test_embedder.py": "Embedder  (turn code into searchable numbers)",
     "test_store.py": "Store  (save vectors and find the closest ones)",
     "test_cache.py": "Cache  (never re-process unchanged code)",
+    "test_ingest.py": "Loader  (clone/walk a repo, then chunk, embed and store it)",
 }
 
 # Terminal colour codes.
