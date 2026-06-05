@@ -296,4 +296,10 @@ export const api = {
     if (!res.ok) throw new Error("could not load file");
     return res.json();
   },
+
+  endpoints: async (): Promise<{ method: string; path: string }[]> => {
+    const res = await fetch("/api/endpoints");
+    if (!res.ok) throw new Error("could not load endpoints");
+    return (await res.json()).endpoints;
+  },
 };

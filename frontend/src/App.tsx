@@ -212,10 +212,11 @@ export default function App() {
           .catch(reject);
       });
       const parsed = parseRepo(value);
-      const [stats, overview, graph] = await Promise.all([
+      const [stats, overview, graph, endpoints] = await Promise.all([
         api.stats(),
         api.overview().then((o) => o.overview).catch(() => ""),
         api.graph().catch(() => ({ nodes: [], edges: [] })),
+        api.endpoints().catch(() => []),
       ]);
       const total = stats.chunks || 1;
       const languages = stats.languages.map((l) => ({
@@ -231,7 +232,7 @@ export default function App() {
         overview,
         stack: languages.map((l) => l.name),
         graph,
-        endpoints: [],
+        endpoints,
         recent: [],
         latencies: [],
       });
