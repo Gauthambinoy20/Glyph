@@ -1,4 +1,4 @@
-# Glyph — Intelligent Codebase Scanner & Chat
+# Glyph: Intelligent Codebase Scanner & Chat
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
 [![Security](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml)
@@ -14,9 +14,9 @@
 
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
 citations**. Ingest a public GitHub repo (or local files), then ask *"where are the API endpoints?"*,
-*"how does auth work?"* — Glyph answers using only the code it found and shows you exactly where.
+*"how does auth work?"*, Glyph answers using only the code it found and shows you exactly where.
 
-**Live demo: [http://52.215.125.206](http://52.215.125.206)** — running on AWS EC2 (provisioned with Terraform).
+**Live demo: [http://52.215.125.206](http://52.215.125.206)**, running on AWS EC2 (provisioned with Terraform).
 
 **Runs 100% free** (local embeddings + OpenRouter free LLM tier).
 
@@ -55,7 +55,7 @@ npm run dev
 ```
 
 Then open http://localhost:5173, paste a GitHub URL (or type `app` to index a local folder), watch it
-index, and ask a question — answers stream in with clickable `file:line` citations.
+index, and ask a question, answers stream in with clickable `file:line` citations.
 
 **Tests & quality gate:**
 
@@ -65,34 +65,35 @@ cd frontend && npm run lint && npm run format:check && npm test && npx tsc -b &&
 ```
 
 ## CI/CD pipeline
-Every push and PR runs four GitHub Actions workflows (least-privilege tokens, concurrency-cancel,
-pinned tool versions):
-- **CI** — backend gate (ruff lint + format · mypy · bandit · pip-audit · pytest+coverage) and
+Every push and pull request runs five GitHub Actions workflows (least-privilege tokens,
+concurrency-cancel, pinned tool versions), and a sixth deploys on push to `main`:
+- **CI**: backend gate (ruff lint + format · mypy · bandit · pip-audit · pytest+coverage) and
   frontend gate (npm audit · eslint · prettier · tsc · vitest · production build).
-- **Security** — gitleaks secret scan over full history + Trivy dependency/filesystem CVE scan
+- **Security**: gitleaks secret scan over full history + Trivy dependency/filesystem CVE scan
   (fails on fixable CRITICAL/HIGH).
-- **CodeQL** — SAST on the Python and TypeScript sources.
-- **Docker** — builds both images, Trivy-scans the backend image, then runs `docker compose up`
+- **CodeQL**: SAST on the Python and TypeScript sources.
+- **Docker**: builds both images, Trivy-scans the backend image, then runs `docker compose up`
   and smoke-tests `/api/health` and the served frontend end-to-end.
+- **Infra**: `terraform fmt -check`, `validate` and `tflint` over the Terraform that defines the box.
 
 **Dependabot** keeps pip, npm and the actions themselves up to date weekly. **Deployment** is
 continuous: a push to `main` builds and pushes images to GHCR, then rolls the stack on the
 production VM and smoke-tests the live URL (the deploy workflow stays inert until the host is
-configured — see [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
+configured, see [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
 
 ## Features
 - Ingest a **public GitHub repo** or a **local folder** (sandboxed), with **live progress** (clone → walk → chunk → embed).
 - **AST chunking** (tree-sitter) for Python / JS / TS / TSX, so citations land on exact line ranges.
-- **Hybrid retrieval** — semantic (local embeddings) + keyword (BM25), fused with Reciprocal Rank Fusion.
+- **Hybrid retrieval**: semantic (local embeddings) + keyword (BM25), fused with Reciprocal Rank Fusion.
 - **Grounded, streaming answers** with `file:line` citations, a sources panel, and follow-up suggestions.
-- **Project Intelligence panel** — language breakdown, index stats, repo overview, a live dependency graph, most-depended-on files, and session metrics.
+- **Project Intelligence panel**: language breakdown, index stats, repo overview, a live dependency graph, most-depended-on files, and session metrics.
 - **⌘K command palette**, click-to-open **code viewer**, and a selectable **model picker** (free + paid).
 - Runs **100% free**: local `bge-small` embeddings + OpenRouter free LLM tier.
 
 ## Architecture
 
-Two services — a **FastAPI** backend (ingest → chunk → embed → store → retrieve → answer) and a
-**React + Vite + TypeScript** frontend — talking over REST + Server-Sent Events.
+Two services, a **FastAPI** backend (ingest → chunk → embed → store → retrieve → answer) and a
+**React + Vite + TypeScript** frontend, talking over REST + Server-Sent Events.
 
 ```mermaid
 graph LR
@@ -101,13 +102,15 @@ graph LR
     subgraph Ingest
       API --> WALK[Clone / walk] --> CHUNK[tree-sitter chunker]
       CHUNK --> CACHE[(content-hash cache)]
-      CHUNK --> EMB[bge-small embedder] --> CH[(Chroma)]
+      CHUNK --> EMB[Embedder<br/>bge-small · or Model2Vec fast] --> CH[(Chroma<br/>per-backend collection)]
       CHUNK --> BM[BM25 index]
     end
     subgraph Ask
-      API --> RET[Hybrid retriever<br/>semantic + BM25, RRF] --> CH
+      API --> RET[Hybrid recall<br/>semantic + BM25, RRF]
+      RET --> CH
       RET --> BM
-      RET --> PR[Grounded prompt] --> LLM[OpenRouter free model]
+      RET --> RR[Cross-encoder reranker<br/>top candidates]
+      RR --> PR[Grounded prompt] --> LLM[OpenRouter free model]
     end
     API --> LOG[(JSON query log)]
 ```
@@ -119,7 +122,7 @@ architecture, data-flow, sequence and ER diagrams live in
 
 ## Screenshots
 
-**Grounded answer with `file:line` citations** — the core: ask in natural language, get an answer built only from the retrieved code, with clickable citations and the model/latency/tokens it used.
+**Grounded answer with `file:line` citations**, the core: ask in natural language, get an answer built only from the retrieved code, with clickable citations and the model/latency/tokens it used.
 
 ![Grounded answer with citations](docs/screenshots/answer-citations.png)
 
@@ -129,41 +132,41 @@ architecture, data-flow, sequence and ER diagrams live in
 
 | | |
 |---|---|
-| **Landing** — pick Fast/Careful indexing, or one-click a demo repo | **Live ingest** — clone → scan → chunk → embed, counting up |
+| **Landing**: pick Fast/Careful indexing, or one-click a demo repo | **Live ingest**: clone → scan → chunk → embed, counting up |
 | ![Landing](docs/screenshots/landing.png) | ![Ingest progress](docs/screenshots/ingest-progress.png) |
-| **Workspace** — panel + chat with repo-aware starter questions | **Code intelligence** — real functions / classes / endpoints / frameworks |
+| **Workspace**: panel + chat with repo-aware starter questions | **Code intelligence**: real functions / classes / endpoints / frameworks |
 | ![Workspace](docs/screenshots/workspace.png) | ![Code intelligence](docs/screenshots/code-intelligence.png) |
-| **Architecture graph** — file dependency graph from real imports | **Expanded architecture** — full-screen, click a node to ask about it |
+| **Architecture graph**: file dependency graph from real imports | **Expanded architecture**: full-screen, click a node to ask about it |
 | ![Architecture graph](docs/screenshots/architecture-graph.png) | ![Architecture modal](docs/screenshots/architecture-modal.png) |
-| **Most depended-on files** — ranked by import in-degree | **Language breakdown** — share of the codebase per language |
+| **Most depended-on files**: ranked by import in-degree | **Language breakdown**: share of the codebase per language |
 | ![Most depended-on](docs/screenshots/top-files.png) | ![Languages](docs/screenshots/languages.png) |
-| **⌘K command palette** — jump to any symbol or endpoint | **Model picker** — free + cheapest-paid models, selectable per question |
+| **⌘K command palette**: jump to any symbol or endpoint | **Model picker**: free + cheapest-paid models, selectable per question |
 | ![Command palette](docs/screenshots/command-palette.png) | ![Model picker](docs/screenshots/model-picker.png) |
 
-**Observability** — per-query log with retrieve/LLM latency split, tokens and cache hits.
+**Observability**: per-query log with retrieve/LLM latency split, tokens and cache hits.
 
 ![Query log](docs/screenshots/query-log.png)
 
 ## RAG / LLM approach & decisions
-- **Chunking:** AST-aware via tree-sitter (by function/class) — see TECHNICAL_REPORT §1.1.
+- **Chunking:** AST-aware via tree-sitter (by function/class), see TECHNICAL_REPORT §1.1.
 - **Embeddings:** local `bge-small` (fastembed) by default; pluggable to OpenAI, or to a
-  **Model2Vec static** model for a ~100× faster *fast mode* (`EMBED_BACKEND=static`) — §1.2.
+  **Model2Vec static** model for a ~100× faster *fast mode* (`EMBED_BACKEND=static`), §1.2.
 - **Vector DB:** Chroma (cosine, persistent); the collection is keyed by model + dim so
-  backends never collide — §1.2.
+  backends never collide, §1.2.
 - **Retrieval (two-stage):** wide hybrid recall (semantic + BM25 fused with RRF) → a local
   **cross-encoder reranker** reorders the candidate pool down to top_k. Recall is cheap and
   broad; the reranker scores (question, code) pairs *together* for precision, runs on ~20
-  candidates per question (tens of ms, hidden behind the LLM), and never touches ingest — §1.2.
-- **LLM:** OpenRouter free tier (default `openai/gpt-oss-120b:free`), user-selectable — §1.3.
+  candidates per question (tens of ms, hidden behind the LLM), and never touches ingest, §1.2.
+- **LLM:** OpenRouter free tier (default `openai/gpt-oss-120b:free`), user-selectable, §1.3.
 - **Prompt & guardrails:** answer only from context; cite file:line; say "not found" otherwise.
 - **Quality:** golden-set hit-rate (`python -m app.quality.compare`). The reranker lifts top-1
   accuracy **80% → 90%**; static embeddings match `bge-small` on hit-rate while embedding
-  ~100× faster — so *fast mode + rerank* is both fast and accurate.
+  ~100× faster, so *fast mode + rerank* is both fast and accurate.
 - **Observability:** one JSON log line per query (ids, per-stage latency, tokens).
 
 ## Orchestration: no framework, on purpose
 The pipeline (chunk → embed → store → retrieve → prompt → call) is small and well understood, so Glyph
-uses **no orchestration framework** — no LangChain, no LlamaIndex. Hand-rolling keeps the dependency
+uses **no orchestration framework**: no LangChain, no LlamaIndex. Hand-rolling keeps the dependency
 surface small, the control flow explicit, and every retrieval step readable and testable; a framework
 would only start to earn its place with many sources, agents, or tool-calling. Full reasoning in
 [TECHNICAL_REPORT §4.1](docs/TECHNICAL_REPORT.md).
@@ -257,8 +260,9 @@ draft of code, because it is fast and good at that. I read every change before i
 tests after each slice. I made it show its plan before it touched anything.
 
 My don'ts. I did not let it add dependencies or change the architecture without asking first. I did not
-accept code I had not read. And I did not let it write the parts that are meant to be my own judgment,
-like these decision sections, because the point of them is my thinking, not generated text.
+accept code I had not read. For the parts that are my own judgment, like these decision write-ups, I use
+it only for a first draft and then rewrite in my own words, so what you read here is my thinking rather
+than whatever it generated.
 
 Where I trusted it less I checked harder, mainly anything touching security, retrieval quality, and the
 deploy. Where the task was clear and well covered by tests, I trusted it more and moved faster.
