@@ -16,6 +16,8 @@ Ask questions about any codebase and get answers grounded in the actual code, wi
 citations**. Ingest a public GitHub repo (or local files), then ask *"where are the API endpoints?"*,
 *"how does auth work?"* — Glyph answers using only the code it found and shows you exactly where.
 
+**Live demo: [http://52.215.125.206](http://52.215.125.206)** — running on AWS EC2 (provisioned with Terraform).
+
 **Runs 100% free** (local embeddings + OpenRouter free LLM tier).
 
 > 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
