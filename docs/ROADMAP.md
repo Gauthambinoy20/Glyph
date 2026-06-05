@@ -133,7 +133,8 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 80. `pre-commit` hooks: ruff lint + format, so commits stay clean `(polish)`
 - [x] 81. Coverage: `pytest --cov`, report printed, 88% (≥ 80% target met) `(core)`
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
-- [ ] 82. Frontend unit test (vitest): `api.ts` request shape with a mocked fetch `(polish)`
+- [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser in `api.ts` `(polish)`
+      *(mocked-fetch URL-shape test, T48, still open)*
 - [ ] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`
 - [ ] 84. `Makefile` (or `tasks.sh`): `make install / test / run / lint / fmt / up` one-liners `(polish)`
 - [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
