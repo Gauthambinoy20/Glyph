@@ -22,6 +22,7 @@ from app.analyze.endpoints import detect_endpoints
 from app.analyze.files import read_indexed_file
 from app.analyze.graph import build_import_graph
 from app.analyze.stats import build_stats
+from app.analyze.symbols import list_symbols
 from app.config import get_settings
 from app.embed.base import Embedder
 from app.embed.factory import make_embedder
@@ -460,6 +461,16 @@ def endpoints(
     """Return HTTP API routes detected in the indexed code (FastAPI/Flask/Express styles)."""
     _ = embedder
     return {"endpoints": detect_endpoints(store)}
+
+
+@app.get("/api/symbols")
+def symbols(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return a flat file + symbol index of the indexed code (for the command palette)."""
+    _ = embedder
+    return {"symbols": list_symbols(store)}
 
 
 @app.get("/api/file")

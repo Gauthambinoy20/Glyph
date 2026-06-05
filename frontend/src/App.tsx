@@ -158,6 +158,7 @@ export default function App() {
   const [modelIdx, setModelIdx] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [recent, setRecent] = useState<Recent[]>([]);
+  const [symbols, setSymbols] = useState<Source[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pushToast = useCallback((msg: string) => {
@@ -195,6 +196,15 @@ export default function App() {
     return [...seen.values()];
   }, [messages]);
 
+  // Palette browse list: every indexed symbol, with code-bearing answer sources layered on top
+  // (keyed by file:line so a symbol and its retrieved source dedupe, preferring the one with code).
+  const paletteSources = useMemo(() => {
+    const byLoc = new Map<string, Source>();
+    for (const s of symbols) byLoc.set(`${s.file_path}:${s.start_line}`, s);
+    for (const s of allSources) byLoc.set(`${s.file_path}:${s.start_line}`, s);
+    return [...byLoc.values()];
+  }, [symbols, allSources]);
+
   async function ingest(value: string) {
     if (busyIngest) return;
     const isUrl = value.startsWith("http");
@@ -218,6 +228,19 @@ export default function App() {
         api.graph().catch(() => ({ nodes: [], edges: [] })),
         api.endpoints().catch(() => []),
       ]);
+      const symbolRows = await api.symbols().catch(() => []);
+      setSymbols(
+        symbolRows.map((s) => ({
+          id: `${s.file_path}:${s.start_line}`,
+          file_path: s.file_path,
+          symbol_name: s.symbol_name,
+          type: s.type,
+          start_line: s.start_line,
+          end_line: s.end_line,
+          code: "",
+          language: "",
+        })),
+      );
       const total = stats.chunks || 1;
       const languages = stats.languages.map((l) => ({
         name: prettyLang(l.language),
@@ -324,6 +347,7 @@ export default function App() {
     setCode(null);
     setPending(false);
     setStreamText(null);
+    setSymbols([]);
   }
 
   // Session metrics from the answers so far.
@@ -416,7 +440,7 @@ export default function App() {
       {paletteOpen && (
         <CommandPalette
           endpoints={panel?.endpoints ?? []}
-          sources={allSources}
+          sources={paletteSources}
           onClose={() => setPaletteOpen(false)}
           onOpenCode={openCode}
           onAsk={ask}

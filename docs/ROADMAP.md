@@ -209,7 +209,7 @@ Each item is one tested slice = one commit.
       *(reads from the index, not disk, so an unknown path is a clean 404)*
 - [x] 122. `GET /api/endpoints` auto-detect API routes (FastAPI/Flask/Express) from indexed code `(polish)` (#64)
       *(feeds the "API endpoints detected" widget)*
-- [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
+- [x] 123. `GET /api/symbols` flat file+symbol index for the command palette `(polish)`
       *(feeds ⌘K search and a future file browser)*
 - [x] 124. Per-file import in-degree for "most depended-on files" `(polish)`  (done client-side in computeTopFiles; no backend change needed)
 - [x] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
@@ -311,7 +311,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up (+ empty index → zeros)
 - [x] T62. `/api/file` returns a file's code; a line range slices it; unknown path → 404
 - [x] T63. `/api/endpoints` finds routes in sample FastAPI, Flask and Express code
-- [ ] T64. `/api/symbols` lists files with their symbols; empty index → []
+- [x] T64. `/api/symbols` lists files with their symbols, sorted; empty index → []
 - [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)
 - [ ] T66. `/api/ready` is not-ready until model + store are loaded, then ready
 - [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)

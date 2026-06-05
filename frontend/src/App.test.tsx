@@ -17,6 +17,7 @@ vi.mock("./api", () => ({
     askStream: vi.fn(),
     file: vi.fn(),
     endpoints: vi.fn(),
+    symbols: vi.fn(),
   },
 }));
 
@@ -36,6 +37,9 @@ beforeEach(() => {
   vi.mocked(api.overview).mockResolvedValue({ overview: "An assistant." });
   vi.mocked(api.graph).mockResolvedValue({ nodes: [{ id: "a", label: "a.py", language: "python" }], edges: [] });
   vi.mocked(api.endpoints).mockResolvedValue([{ method: "POST", path: "/api/ask" }]);
+  vi.mocked(api.symbols).mockResolvedValue([
+    { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
+  ]);
   // Default: the stream walks a few stages, then resolves with the final summary.
   vi.mocked(api.ingestStream).mockImplementation(async (_body, handlers) => {
     handlers.onEvent({ stage: "walk", files: 3 });

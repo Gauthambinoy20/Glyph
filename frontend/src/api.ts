@@ -302,4 +302,12 @@ export const api = {
     if (!res.ok) throw new Error("could not load endpoints");
     return (await res.json()).endpoints;
   },
+
+  symbols: async (): Promise<
+    { file_path: string; symbol_name: string; type: string; start_line: number; end_line: number }[]
+  > => {
+    const res = await fetch("/api/symbols");
+    if (!res.ok) throw new Error("could not load symbols");
+    return (await res.json()).symbols;
+  },
 };
