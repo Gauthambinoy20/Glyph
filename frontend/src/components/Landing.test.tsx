@@ -29,4 +29,15 @@ describe("Landing", () => {
     const button = screen.getByRole("button", { name: /ingesting/i });
     expect(button).toHaveProperty("disabled", true);
   });
+
+  it("renders demo-repo chips and ingests the repo URL on click", async () => {
+    const onIngest = vi.fn();
+    const user = userEvent.setup();
+    render(<Landing onIngest={onIngest} busy={false} />);
+
+    const chip = screen.getByRole("button", { name: /pallets\/click/i });
+    await user.click(chip);
+
+    expect(onIngest).toHaveBeenCalledWith("https://github.com/pallets/click");
+  });
 });

@@ -76,6 +76,23 @@ export function Landing({ onIngest, busy, recent, progress }: Props) {
           </p>
         )}
 
+        {!progress && (
+          <div className="land-demos">
+            <span className="ld-label">Try a public repo</span>
+            {DEMO_REPOS.map((r) => (
+              <button
+                key={r}
+                className="rr"
+                onClick={() => !busy && onIngest(`https://github.com/${r}`)}
+                title={`Ingest github.com/${r}`}
+              >
+                <Icon name="github" size={12} />
+                <span className="mono">{r}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {recent && recent.length > 0 && !progress && (
           <div className="land-recent">
             {recent.slice(0, 4).map((r) => (
@@ -92,3 +109,6 @@ export function Landing({ onIngest, busy, recent, progress }: Props) {
     </div>
   );
 }
+
+// Small, popular, fast-to-ingest repos for one-click demos.
+const DEMO_REPOS = ["pallets/click", "expressjs/express", "honojs/hono", "sindresorhus/ky", "psf/requests"];
