@@ -233,6 +233,15 @@ A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo
 - [x] T68. embedStats derives pct, throughput and ETA from progress
 - [x] T69. Landing renders demo-repo chips and ingests the repo URL on click
 
+## Phase 18 - Landing polish & screenshots (added 2026-06-05)
+A visual polish pass plus the missing product screenshots, done as small tested slices.
+- [x] 133. Fix demo-repo chips: labels were invisible (`.land-demos .rr` unstyled) — restyle as pills, caption on its own row `(polish)`  (commit 493bb0d)
+- [x] 134. Brand lockup polish: glassier dimensional G mark, more nav padding, tighter logo gap `(polish)`  (commit 67403f2)
+- [x] 135. Add the four product screenshots the README references (landing, workspace, code-viewer, command-palette) `(docs)`  (commit a7c0805)
+
+**Phase 18 test boxes**
+- [x] T70. Existing Landing chip test (T69) still pins the chip labels + click-to-ingest after the restyle (CSS-only change)
+
 ---
 
 ## ✅ Test Inventory (track every test case, one box each)
