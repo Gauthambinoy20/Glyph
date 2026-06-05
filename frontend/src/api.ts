@@ -39,9 +39,37 @@ export interface AskResponse {
   meta: AnswerMeta;
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  language: string;
+  path?: string;
+}
+
 export interface GraphData {
-  nodes: { id: string; label: string; language: string }[];
+  nodes: GraphNode[];
   edges: { source: string; target: string }[];
+}
+
+export interface LanguageStat {
+  language: string;
+  files: number;
+  chunks: number;
+}
+
+export interface StatsResponse {
+  files: number;
+  chunks: number;
+  languages: LanguageStat[];
+}
+
+export interface IndexedFile {
+  file_path: string;
+  language: string;
+  code: string;
+  start_line: number;
+  end_line: number;
+  chunks: { symbol_name: string; type: string; start_line: number; end_line: number; code: string }[];
 }
 
 export interface IngestResponse {
@@ -184,6 +212,21 @@ export const api = {
   graph: async (): Promise<GraphData> => {
     const res = await fetch("/api/graph");
     if (!res.ok) throw new Error("could not load graph");
+    return res.json();
+  },
+
+  stats: async (): Promise<StatsResponse> => {
+    const res = await fetch("/api/stats");
+    if (!res.ok) throw new Error("could not load stats");
+    return res.json();
+  },
+
+  file: async (path: string, start?: number, end?: number): Promise<IndexedFile> => {
+    const params = new URLSearchParams({ path });
+    if (start != null) params.set("start", String(start));
+    if (end != null) params.set("end", String(end));
+    const res = await fetch(`/api/file?${params.toString()}`);
+    if (!res.ok) throw new Error("could not load file");
     return res.json();
   },
 };
