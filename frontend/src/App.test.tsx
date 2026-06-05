@@ -18,6 +18,8 @@ vi.mock("./api", () => ({
     file: vi.fn(),
     endpoints: vi.fn(),
     symbols: vi.fn(),
+    saveHistory: vi.fn(),
+    loadHistory: vi.fn(),
   },
 }));
 
@@ -40,6 +42,8 @@ beforeEach(() => {
   vi.mocked(api.symbols).mockResolvedValue([
     { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
   ]);
+  vi.mocked(api.saveHistory).mockResolvedValue({ session_id: "s1" });
+  localStorage.clear();
   // Default: the stream walks a few stages, then resolves with the final summary.
   vi.mocked(api.ingestStream).mockImplementation(async (_body, handlers) => {
     handlers.onEvent({ stage: "walk", files: 3 });

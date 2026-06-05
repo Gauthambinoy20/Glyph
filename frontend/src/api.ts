@@ -312,4 +312,18 @@ export const api = {
     if (!res.ok) throw new Error("could not load symbols");
     return (await res.json()).symbols;
   },
+
+  saveHistory: (body: {
+    repo: string;
+    messages: { role: string; content: string; data: unknown }[];
+    session_id?: string | null;
+  }): Promise<{ session_id: string }> => post("/api/history", body),
+
+  loadHistory: async (
+    sessionId: string,
+  ): Promise<{ session_id: string; repo: string; messages: { role: string; content: string; data: unknown }[] }> => {
+    const res = await fetch(`/api/history/${sessionId}`);
+    if (!res.ok) throw new Error("could not load session");
+    return res.json();
+  },
 };

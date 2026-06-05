@@ -111,7 +111,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
 - [x] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`  (done; see #121)
 - [x] 64. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`  (done; see #122)
-- [ ] 65. SQLite chat history (sessions + messages) + endpoints `(polish)`
+- [x] 65. SQLite chat history (sessions + messages) + endpoints; auto-save and restore per repo `(polish)`
 - [x] 66. Suggested starter questions after ingest (in the web UI) `(polish)`
 - [ ] 67. Tests: follow-up keeps context, snippet returns right lines, endpoints found, history roundtrip `(core)`
 - [ ] 68. Commit: conversation, overview, snippets, endpoint detection, history `(core)`
@@ -281,7 +281,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T43. Follow-up question carries prior turns into the prompt
 - [x] T44. `/api/file` returns the exact requested line range  (test_files.py)
 - [ ] T45. Endpoint detector finds routes in a sample file
-- [ ] T46. Chat history save → load roundtrip
+- [x] T46. Chat history save → load roundtrip (store + endpoints)
 
 **Quality / e2e**
 - [x] T47. Eval scorer computes hit-rate from a fake retriever (offline); golden set ≥10, well-formed

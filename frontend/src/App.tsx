@@ -43,6 +43,26 @@ function deriveFollowups(sources: Source[]): string[] {
   return qs.slice(0, 4);
 }
 
+const repoKey = (r: Repo) => `${r.owner}/${r.name}`;
+
+/** Flatten chat messages for the history store. */
+function serializeMessages(messages: Message[]) {
+  return messages.map((m) =>
+    m.role === "user"
+      ? { role: "user", content: m.text, data: null }
+      : { role: "glyph", content: m.answer, data: m },
+  );
+}
+
+/** Rebuild chat messages loaded back from the history store. */
+function deserializeMessages(rows: { role: string; content: string; data: unknown }[]): Message[] {
+  return rows.map((r) =>
+    r.role === "user"
+      ? ({ role: "user", text: r.content } as Message)
+      : ({ role: "glyph", ...(r.data as object) } as Message),
+  );
+}
+
 function ModelPicker({ models, idx, onPick }: { models: ModelInfo[]; idx: number; onPick: (i: number) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -162,6 +182,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [recent, setRecent] = useState<Recent[]>([]);
   const [symbols, setSymbols] = useState<Source[]>([]);
+  const sessionIdRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pushToast = useCallback((msg: string) => {
@@ -191,6 +212,22 @@ export default function App() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, pending, streamText]);
+
+  // Persist the chat to history after each answer, remembering the session per repo (best-effort).
+  useEffect(() => {
+    if (!repo || !messages.some((m) => m.role === "glyph")) return;
+    api
+      .saveHistory({ repo: repoKey(repo), messages: serializeMessages(messages), session_id: sessionIdRef.current })
+      .then((r) => {
+        sessionIdRef.current = r.session_id;
+        try {
+          localStorage.setItem(`glyph:session:${repoKey(repo)}`, r.session_id);
+        } catch {
+          /* localStorage unavailable — fine, just no persistence */
+        }
+      })
+      .catch(() => {});
+  }, [messages, repo]);
 
   // All sources seen so far, for the code viewer + command palette.
   const allSources = useMemo(() => {
@@ -284,7 +321,21 @@ export default function App() {
         latencies: [],
       });
       setRecent((r) => [{ owner: parsed.owner, name: parsed.name, when: "now" }, ...r.filter((x) => x.name !== parsed.name)].slice(0, 4));
-      setMessages([]);
+
+      // Restore a saved chat for this repo if there is one; otherwise start fresh.
+      const savedSid = localStorage.getItem(`glyph:session:${repoKey(parsed)}`);
+      sessionIdRef.current = null;
+      if (savedSid) {
+        try {
+          const session = await api.loadHistory(savedSid);
+          setMessages(deserializeMessages(session.messages));
+          sessionIdRef.current = savedSid;
+        } catch {
+          setMessages([]);
+        }
+      } else {
+        setMessages([]);
+      }
       setCode(null);
       setScreen("workspace");
     } catch (e) {
@@ -372,6 +423,7 @@ export default function App() {
     setPending(false);
     setStreamText(null);
     setSymbols([]);
+    sessionIdRef.current = null;
   }
 
   // Session metrics from the answers so far.
