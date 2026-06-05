@@ -133,8 +133,8 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 80. `pre-commit` hooks: ruff lint + format, so commits stay clean `(polish)`
 - [x] 81. Coverage: `pytest --cov`, report printed, 88% (≥ 80% target met) `(core)`
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
-- [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser in `api.ts` `(polish)`
-      *(mocked-fetch URL-shape test, T48, still open)*
+- [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
+      *(full mocked-fetch URL-shape test, T48, and component tests still open)*
 - [ ] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`
 - [ ] 84. `Makefile` (or `tasks.sh`): `make install / test / run / lint / fmt / up` one-liners `(polish)`
 - [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
@@ -189,6 +189,8 @@ tracked as stretch item 101.
 - [ ] 116. Recent repos list so you can re-open one without re-pasting the URL `(polish)`
 - [ ] 117. Mobile-responsive chat column (graph hides on small screens) `(stretch)`
 - [ ] 118. Frontend graceful states: graph-load failure and slow-graph fallbacks `(polish)`
+- [x] 118b. Ingest/ask client-side timeout + clear error so a hung request never spins forever `(core)`
+      *(found while testing: a slow GitHub clone left the Ingest button spinning with no feedback)*
 - [ ] 119. Commit: UI/UX polish batch `(polish)`
 
 ---
@@ -266,6 +268,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Performance / robustness (Phase 13-14)**
 - [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
+- [x] T58. fetchWithTimeout: resolves in time; abort → clear "timed out" message; other errors pass through
 - [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)
 - [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
 - [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)

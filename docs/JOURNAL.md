@@ -312,4 +312,14 @@ VIBE CODER/
   checks, all passing, and the normal build still passes too. This is the start of frontend test coverage
   (more cases like checking the request shape can follow).
 
+- **Fixed the forever-spinning Ingest button (done, 2026-06-05).** While running the app I pointed it at
+  a huge GitHub repo over a very slow connection, and the Ingest button just span forever with no message.
+  The cause: the website waited on the server with no time limit, so a stuck clone never came back. Now
+  every request has a time budget (a generous few minutes for ingesting, since cloning a real repo takes
+  time), and if it runs over, the user gets a clear message instead of an endless spinner. Wrote three
+  tests for the timeout helper that match its exact behaviour: it returns normally when the server answers
+  in time, it turns a timed-out request into a clear "try a smaller repo or a local path" message, and it
+  passes a normal network error through untouched. Seven frontend tests now, build still clean. Next, the
+  bigger gap: there are still no tests that click the actual buttons, which needs a UI testing tool added.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

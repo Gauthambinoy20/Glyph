@@ -51,13 +51,46 @@ export interface IngestResponse {
   languages: string[];
 }
 
-/** POST helper that throws the backend's error detail on failure. */
-async function post<T>(url: string, body: unknown): Promise<T> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+// Time budgets. Most calls are quick; ingesting a repo (clone + embed) can take minutes,
+// but it must still end eventually so a hung clone never leaves the UI spinning forever.
+const DEFAULT_TIMEOUT_MS = 30_000;
+const INGEST_TIMEOUT_MS = 180_000;
+
+/**
+ * fetch that aborts with a clear error if it runs past timeoutMs.
+ * This is what stops a slow or stuck request (e.g. a clone over a bad network) from
+ * hanging the UI with no feedback. Exported so the timeout behaviour can be unit tested.
+ */
+export async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("the request timed out — try a smaller repo or a local folder path");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** POST helper that times out and throws the backend's error detail on failure. */
+async function post<T>(url: string, body: unknown, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
+  const res = await fetchWithTimeout(
+    url,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    timeoutMs,
+  );
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.detail ?? `request failed (${res.status})`);
@@ -130,7 +163,7 @@ async function askStream(body: AskBody, handlers: StreamHandlers): Promise<void>
 
 export const api = {
   ingest: (body: { repo_url?: string; local_path?: string }) =>
-    post<IngestResponse>("/api/ingest", body),
+    post<IngestResponse>("/api/ingest", body, INGEST_TIMEOUT_MS),
 
   ask: (body: AskBody) => post<AskResponse>("/api/ask", body),
 
