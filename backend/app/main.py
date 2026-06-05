@@ -6,6 +6,7 @@ built once (cached) and injected as dependencies, so tests can swap in fakes.
 
 import json
 import logging
+import threading
 import time
 import uuid
 from collections import defaultdict, deque
@@ -160,11 +161,15 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
     )
 
 
-# The embedding backend currently in use. None means "use the configured default". Ingest sets
-# it (via /api/mode) so a repo loaded in fast mode (static) is also *queried* with the static
-# index, and careful mode (the transformer) with its own — each backend keeps its own embedder
-# and its own Chroma collection, so the two never mix.
+# The embedding backend currently in use. Each backend keeps its OWN embedder and its OWN Chroma
+# collection (keyed by model + dim), so their indexes never mix. The *active* backend, however, is
+# a single process-wide value: Glyph holds one active repo at a time, so /api/mode switches it for
+# the whole process — it is NOT isolated per client. Concurrent multi-user mode switching is out of
+# scope (single-worker deployment; see TECHNICAL_REPORT §6). The lock below only guards the lazy
+# build of each backend's embedder/store so concurrent requests can't double-build or race the
+# dict/Chroma collection.
 _active_backend: str | None = None
+_backend_lock = threading.RLock()
 
 # Friendly names the UI uses, mapped to the internal embed_backend values.
 _MODE_TO_BACKEND = {"fast": "static", "careful": "local"}
@@ -173,7 +178,8 @@ _MODE_TO_BACKEND = {"fast": "static", "careful": "local"}
 def set_active_backend(mode_or_backend: str) -> None:
     """Switch the embedding backend used by ingest and every read that follows it."""
     global _active_backend
-    _active_backend = _MODE_TO_BACKEND.get(mode_or_backend, mode_or_backend)
+    with _backend_lock:
+        _active_backend = _MODE_TO_BACKEND.get(mode_or_backend, mode_or_backend)
 
 
 def _active_settings() -> Settings:
@@ -189,23 +195,25 @@ _stores: dict[str, ChromaStore] = {}
 
 
 def get_embedder() -> Embedder:
-    """Return the embedder for the active backend, building it once per backend."""
+    """Return the embedder for the active backend, building it once per backend (thread-safe)."""
     settings = _active_settings()
-    if settings.embed_backend not in _embedders:
-        _embedders[settings.embed_backend] = make_embedder(settings)
-    return _embedders[settings.embed_backend]
+    with _backend_lock:
+        if settings.embed_backend not in _embedders:
+            _embedders[settings.embed_backend] = make_embedder(settings)
+        return _embedders[settings.embed_backend]
 
 
 def get_store() -> ChromaStore:
-    """Return the vector store for the active backend, sized to its vectors and built once."""
+    """Return the vector store for the active backend, built once per backend (thread-safe)."""
     settings = _active_settings()
-    if settings.embed_backend not in _stores:
-        _stores[settings.embed_backend] = ChromaStore(
-            path=settings.chroma_dir,
-            embed_model=effective_embed_model(settings),
-            dim=get_embedder().dim,
-        )
-    return _stores[settings.embed_backend]
+    with _backend_lock:
+        if settings.embed_backend not in _stores:
+            _stores[settings.embed_backend] = ChromaStore(
+                path=settings.chroma_dir,
+                embed_model=effective_embed_model(settings),
+                dim=get_embedder().dim,
+            )
+        return _stores[settings.embed_backend]
 
 
 @lru_cache
