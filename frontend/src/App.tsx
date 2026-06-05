@@ -7,6 +7,7 @@ import type { Citation, IngestDone, ModelInfo, Source } from "./api";
 import { applyIngestEvent, initialIngestState, type IngestState } from "./components/IngestProgress";
 import type { Message, Recent, Repo, Suggestion } from "./types";
 import { ChatEmpty, Composer, GlyphAnswer, Thinking } from "./components/Chat";
+import { buildSuggestions } from "./suggestions";
 import type { CodeRef } from "./components/Chat";
 import { CodeViewer } from "./components/CodeViewer";
 import { CommandPalette } from "./components/CommandPalette";
@@ -17,13 +18,6 @@ import { ProjectPanel } from "./components/ProjectPanel";
 import { QueryLog } from "./components/QueryLog";
 import type { QueryLogEntry } from "./components/QueryLog";
 import type { PanelData } from "./components/ProjectPanel";
-
-const SUGGESTIONS: Suggestion[] = [
-  { q: "What does this codebase do?", hint: "High-level overview", icon: "compass" },
-  { q: "Where are the API endpoints defined?", hint: "Routing & handlers", icon: "route" },
-  { q: "How does retrieval work?", hint: "Embeddings + ranking", icon: "search" },
-  { q: "Walk me through the main data flow.", hint: "Ingest → ask → answer", icon: "flow" },
-];
 
 /** Parse a GitHub URL or local path into a Repo header. */
 function parseRepo(input: string): Repo {
@@ -212,6 +206,8 @@ export default function App() {
   // reranker reorders results for each question. Both are user-facing controls.
   const [embedMode, setEmbedMode] = useState<"fast" | "careful">("careful");
   const [rerank, setRerank] = useState(true);
+  // Starter questions, tailored to the repo once it is indexed (a generic four until then).
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => buildSuggestions({}));
   const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
@@ -339,6 +335,15 @@ export default function App() {
         api.endpoints().catch(() => []),
       ]);
       const symbolRows = await api.symbols().catch(() => []);
+      // Tailor the starter questions to this repo: a real endpoint, a real symbol, and whether
+      // there is a dependency graph to ask about.
+      setSuggestions(
+        buildSuggestions({
+          endpoints,
+          symbols: symbolRows,
+          hasDeps: graph.edges.length > 0,
+        }),
+      );
       setSymbols(
         symbolRows.map((s) => ({
           id: `${s.file_path}:${s.start_line}`,
@@ -583,7 +588,7 @@ export default function App() {
           <div className="chat-col">
             <div className="chat-scroll scroll" ref={scrollRef}>
               {messages.length === 0 && !pending ? (
-                <ChatEmpty overview={panel.overview} suggestions={SUGGESTIONS} onAsk={ask} />
+                <ChatEmpty overview={panel.overview} suggestions={suggestions} onAsk={ask} />
               ) : (
                 <div className="chat-inner">
                   {messages.map((m, i) =>

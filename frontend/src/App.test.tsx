@@ -94,7 +94,8 @@ describe("App", () => {
     await ingest(user, "app");
     await screen.findByText(/ask anything about this code/i);
 
-    await user.click(screen.getByText("What does this codebase do?"));
+    // The first starter question is always the repo-aligned overview prompt.
+    await user.click(screen.getByText("What does this project do and how is it structured?"));
     expect(await screen.findByText("Login lives in auth.py.")).toBeTruthy();
   });
 
