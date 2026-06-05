@@ -3,9 +3,13 @@
 For a question we run two searches over the same chunks: a semantic one (vector
 similarity) and a keyword one (BM25 over code-aware tokens). We fuse them with Reciprocal
 Rank Fusion, give an extra boost to any chunk whose symbol name is named in the question,
-and return the best few. The keyword index is rebuilt from the stored chunks on each
-retriever, so it is never stale (no pickle to go out of date).
+and return the best few. The keyword index is built once per store and cached, then reused
+until the stored chunk set changes, so repeated questions do not rebuild it every time
+(and there is still no pickle on disk to go stale).
 """
+
+from dataclasses import dataclass
+from weakref import WeakKeyDictionary
 
 from rank_bm25 import BM25Okapi
 
@@ -15,6 +19,56 @@ from app.store.chroma_store import ChromaStore
 
 # Standard RRF constant: higher flattens the fusion, lower over-weights the top of each list.
 _RRF_K = 60
+
+
+@dataclass
+class _KeywordIndex:
+    """The prebuilt lookup tables and BM25 index for one store's chunks."""
+
+    ids: list[str]
+    meta_by_id: dict[str, dict]
+    code_by_id: dict[str, str]
+    bm25: BM25Okapi | None
+    count: int  # how many chunks this index was built from (the freshness signal)
+
+
+# Cache one keyword index per store object. Keyed weakly so a store that is dropped takes
+# its cached index with it (no leak), and so different stores never collide.
+_INDEX_CACHE: "WeakKeyDictionary[ChromaStore, _KeywordIndex]" = WeakKeyDictionary()
+
+
+def _build_index(store: ChromaStore) -> _KeywordIndex:
+    """Pull every chunk out of the store and build its lookup tables and BM25 index."""
+    data = store.all_chunks()
+    ids: list[str] = data.get("ids", []) or []
+    metadatas: list[dict] = data.get("metadatas", []) or []
+    documents: list[str] = data.get("documents", []) or []
+    # Keyword corpus: each chunk's code plus its symbol name, tokenized code-aware.
+    corpus = [
+        tokenize_code(f"{doc} {meta.get('symbol_name', '')}")
+        for doc, meta in zip(documents, metadatas, strict=False)
+    ]
+    return _KeywordIndex(
+        ids=ids,
+        meta_by_id=dict(zip(ids, metadatas, strict=False)),
+        code_by_id=dict(zip(ids, documents, strict=False)),
+        bm25=BM25Okapi(corpus) if corpus else None,
+        count=len(ids),
+    )
+
+
+def _index_for(store: ChromaStore) -> _KeywordIndex:
+    """Return the cached keyword index for this store, rebuilding only if it changed.
+
+    The cheap chunk count is the freshness check: ingest only ever adds chunks, so a
+    changed count means the index is stale and must be rebuilt.
+    """
+    cached = _INDEX_CACHE.get(store)
+    if cached is not None and cached.count == store.count():
+        return cached
+    index = _build_index(store)
+    _INDEX_CACHE[store] = index
+    return index
 
 
 def _reciprocal_rank_fusion(rankings: list[list[str]], k: int = _RRF_K) -> dict[str, float]:
@@ -32,18 +86,11 @@ class HybridRetriever:
     def __init__(self, store: ChromaStore, embedder: Embedder) -> None:
         self._store = store
         self._embedder = embedder
-        data = store.all_chunks()
-        self._ids: list[str] = data.get("ids", []) or []
-        metadatas: list[dict] = data.get("metadatas", []) or []
-        documents: list[str] = data.get("documents", []) or []
-        self._meta_by_id = dict(zip(self._ids, metadatas, strict=False))
-        self._code_by_id = dict(zip(self._ids, documents, strict=False))
-        # Keyword index over each chunk's code plus its symbol name.
-        corpus = [
-            tokenize_code(f"{doc} {meta.get('symbol_name', '')}")
-            for doc, meta in zip(documents, metadatas, strict=False)
-        ]
-        self._bm25 = BM25Okapi(corpus) if corpus else None
+        index = _index_for(store)
+        self._ids = index.ids
+        self._meta_by_id = index.meta_by_id
+        self._code_by_id = index.code_by_id
+        self._bm25 = index.bm25
 
     def search(self, question: str, top_k: int = 5, pool: int = 20) -> list[dict]:
         """Return up to top_k chunks most relevant to the question (metadata + score)."""

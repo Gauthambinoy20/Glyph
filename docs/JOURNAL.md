@@ -296,4 +296,20 @@ VIBE CODER/
   four cases, all passing. Note for later: a proper frontend unit test needs a test tool (vitest) added,
   which I have flagged rather than slipped in.
 
+- **Faster keyword search: build the index once, not every time (done, 2026-06-05).** Until now, every
+  single question rebuilt the keyword search index from scratch, reading back every chunk and re-tokenizing
+  all of it. Fine on a tiny repo, wasteful on a big one. Now the index is built once and kept in memory
+  tied to the repo, and reused for every later question. The only time it rebuilds is when the repo
+  actually changes, which we spot with a cheap chunk count. The memory is held in a way that lets it be
+  thrown away automatically if the repo is dropped, so nothing leaks. The important promise still holds:
+  the search never goes stale. I proved both halves with tests, that a second question reuses the index
+  instead of rebuilding it, and that adding new code rebuilds it so the new code is found. Whole gate
+  green: 53 tests, lint, format, types, and security all clean.
+
+- **Added a frontend test tool (done, 2026-06-05).** The website had no automatic tests before. I added
+  a small, standard test runner (vitest) and wrote the first unit test for the part that splits the live
+  answer stream into messages, including the tricky case where a message arrives in two pieces. Four
+  checks, all passing, and the normal build still passes too. This is the start of frontend test coverage
+  (more cases like checking the request shape can follow).
+
 *(Next entries get added here, newest at the bottom, one per step.)*

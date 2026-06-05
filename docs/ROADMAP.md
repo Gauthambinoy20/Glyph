@@ -168,8 +168,8 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 The free LLM call dominates the wait (2-10s). These make Glyph *feel* fast and stop wasted work.
 See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind each item.
 - [x] 103. Stream the answer over SSE `POST /api/ask/stream` (words appear live; biggest felt-speed win) `(core)`  (backend done; UI typing is #110)
-- [ ] 104. Cache the BM25 index per repo: build once at ingest, rebuild only when the repo changes `(core)`
-      *(today it is rebuilt from Chroma on EVERY request — fine for small repos, slow for big ones)*
+- [x] 104. Cache the BM25 index per repo: build once, reuse until the chunk count changes `(core)`
+      *(was rebuilt from Chroma on EVERY request; now cached per store via a WeakKeyDictionary)*
 - [ ] 105. Warm the embedder at startup so the first question is not a cold-model hit `(polish)`
 - [ ] 106. Answer cache keyed on (repo + question + model); identical repeat questions return instantly `(polish)`
 - [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
@@ -266,7 +266,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Performance / robustness (Phase 13-14)**
 - [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
-- [ ] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index
+- [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)
 - [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
 - [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
 - [ ] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)

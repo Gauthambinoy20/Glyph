@@ -63,3 +63,37 @@ def test_results_are_stable(tmp_path) -> None:  # T33
 
     assert first == second
     assert len(first) == 5
+
+
+def test_keyword_index_is_cached_per_repo(tmp_path, monkeypatch) -> None:  # T51
+    store = _store_with(tmp_path, [make_chunk("def alpha(): pass", name="alpha")])
+
+    # Count how often the expensive "read every chunk" step runs. The cache should make
+    # the second retriever reuse the first one's index instead of rebuilding it.
+    calls = {"n": 0}
+    original = store.all_chunks
+
+    def counting_all_chunks() -> dict:
+        calls["n"] += 1
+        return original()
+
+    monkeypatch.setattr(store, "all_chunks", counting_all_chunks)
+
+    HybridRetriever(store, FakeEmbedder(dim=8))
+    HybridRetriever(store, FakeEmbedder(dim=8))
+
+    assert calls["n"] == 1  # built once, reused on the second retriever
+
+
+def test_keyword_index_rebuilds_when_repo_changes(tmp_path) -> None:  # T51 (freshness)
+    store = _store_with(tmp_path, [make_chunk("def alpha(): pass", name="alpha")])
+    HybridRetriever(store, FakeEmbedder(dim=8))  # warms the cache for this store
+
+    # Add a new chunk, which changes the chunk count and must invalidate the cache.
+    embed_new_chunks(
+        [make_chunk("def betafunction(): pass", name="betafunction")], store, FakeEmbedder(dim=8)
+    )
+
+    results = HybridRetriever(store, FakeEmbedder(dim=8)).search("betafunction", top_k=5)
+
+    assert any(row["symbol_name"] == "betafunction" for row in results)
