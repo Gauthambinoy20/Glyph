@@ -1,0 +1,50 @@
+name: Security
+
+# Secret scanning and dependency/filesystem CVE scanning. Runs on every push and
+# pull request, plus a weekly sweep so newly-disclosed CVEs in unchanged code are
+# still caught.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so gitleaks inspects every commit, not just the tip.
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cve-scan:
+    name: Dependency & filesystem CVEs (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          # Fail the build only on CRITICAL/HIGH that actually have a fix
+          # available — bumping the dep is the fix, not an allowlist entry.
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
