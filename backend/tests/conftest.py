@@ -23,6 +23,7 @@ _GROUP_TITLES = {
     "test_graph.py": "Graph  (dependency graph from internal imports)",
     "test_stats.py": "Stats  (file/chunk/language breakdown for the project panel)",
     "test_files.py": "File  (read an indexed file back out for the code viewer)",
+    "test_endpoints.py": "Endpoints  (detect API routes in the indexed code)",
     "test_app.py": "App  (CORS, request ids, and the global error handler)",
     "test_e2e.py": "End-to-end  (the whole real pipeline through the endpoints)",
 }

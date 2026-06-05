@@ -110,7 +110,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
 - [x] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
 - [x] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`  (done; see #121)
-- [ ] 64. `GET /repos/{id}/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`
+- [x] 64. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`  (done; see #122)
 - [ ] 65. SQLite chat history (sessions + messages) + endpoints `(polish)`
 - [x] 66. Suggested starter questions after ingest (in the web UI) `(polish)`
 - [ ] 67. Tests: follow-up keeps context, snippet returns right lines, endpoints found, history roundtrip `(core)`
@@ -207,7 +207,7 @@ Each item is one tested slice = one commit.
       *(feeds the language chart + the files/chunks/cached stat tiles)*
 - [x] 121. `GET /api/file?path=&start=&end=` return a file's code (optionally a line range) `(core)` (#63)
       *(reads from the index, not disk, so an unknown path is a clean 404)*
-- [ ] 122. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) from the indexed code `(polish)` (#64)
+- [x] 122. `GET /api/endpoints` auto-detect API routes (FastAPI/Flask/Express) from indexed code `(polish)` (#64)
       *(feeds the "API endpoints detected" widget)*
 - [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
       *(feeds ⌘K search and a future file browser)*
@@ -310,7 +310,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Backend for the redesigned UI (Phase 16)**
 - [x] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up (+ empty index → zeros)
 - [x] T62. `/api/file` returns a file's code; a line range slices it; unknown path → 404
-- [ ] T63. `/api/endpoints` finds routes in sample FastAPI and Express code
+- [x] T63. `/api/endpoints` finds routes in sample FastAPI, Flask and Express code
 - [ ] T64. `/api/symbols` lists files with their symbols; empty index → []
 - [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)
 - [ ] T66. `/api/ready` is not-ready until model + store are loaded, then ready

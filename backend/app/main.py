@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
+from app.analyze.endpoints import detect_endpoints
 from app.analyze.files import read_indexed_file
 from app.analyze.graph import build_import_graph
 from app.analyze.stats import build_stats
@@ -380,6 +381,16 @@ def stats(
     """Return repo stats: file count, chunk count, and a per-language breakdown."""
     _ = embedder
     return build_stats(store)
+
+
+@app.get("/api/endpoints")
+def endpoints(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return HTTP API routes detected in the indexed code (FastAPI/Flask/Express styles)."""
+    _ = embedder
+    return {"endpoints": detect_endpoints(store)}
 
 
 @app.get("/api/file")
