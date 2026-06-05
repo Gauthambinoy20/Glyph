@@ -202,8 +202,8 @@ Each item is one tested slice = one commit.
 
 - [x] 120. `GET /api/stats` repo intelligence: file count, chunk count, per-language counts `(core)`
       *(feeds the language chart + the files/chunks/cached stat tiles)*
-- [ ] 121. `GET /api/file?path=&start=&end=` return a file's code (optionally a line range) `(core)` (#63)
-      *(lets the code viewer open any file/line, not only cited ones)*
+- [x] 121. `GET /api/file?path=&start=&end=` return a file's code (optionally a line range) `(core)` (#63)
+      *(reads from the index, not disk, so an unknown path is a clean 404)*
 - [ ] 122. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) from the indexed code `(polish)` (#64)
       *(feeds the "API endpoints detected" widget)*
 - [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
@@ -294,7 +294,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Backend for the redesigned UI (Phase 16)**
 - [x] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up (+ empty index → zeros)
-- [ ] T62. `/api/file` returns a file's code; a line range slices it; a bad/escaping path → 4xx
+- [x] T62. `/api/file` returns a file's code; a line range slices it; unknown path → 404
 - [ ] T63. `/api/endpoints` finds routes in sample FastAPI and Express code
 - [ ] T64. `/api/symbols` lists files with their symbols; empty index → []
 - [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)

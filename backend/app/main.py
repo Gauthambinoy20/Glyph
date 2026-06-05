@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
+from app.analyze.files import read_indexed_file
 from app.analyze.graph import build_import_graph
 from app.analyze.stats import build_stats
 from app.config import get_settings
@@ -339,3 +340,22 @@ def stats(
     """Return repo stats: file count, chunk count, and a per-language breakdown."""
     _ = embedder
     return build_stats(store)
+
+
+@app.get("/api/file")
+def file(
+    path: str,
+    start: int | None = None,
+    end: int | None = None,
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return an indexed file's code (optionally a line range) for the code viewer.
+
+    The path is a key into the index, not a disk path, so an unknown path is just a 404.
+    """
+    _ = embedder
+    result = read_indexed_file(store, path, start, end)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"file not found in the index: {path}")
+    return result
