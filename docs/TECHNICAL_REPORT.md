@@ -301,3 +301,40 @@ for now (frontend not built yet; no deploy target for a take-home).
 ## 6. Out of scope (acknowledged, not built)
 Auth, multi-user, private repos, huge-monorepo scale, languages beyond Python/JS/TS/TSX, concurrency
 hardening (single-worker uvicorn; re-ingest mutates shared in-memory state).
+
+---
+
+## 7. Performance & latency (audit 2026-06-05)
+
+### 7.1 Where the time goes (one "ask")
+Measured/estimated on a small repo, local backend, free OpenRouter model:
+
+| Stage | Typical time | Notes |
+|---|---|---|
+| **LLM completion (OpenRouter free)** | **2-10+ s** | Dominant cost. Free tier queues and is slow; this is ~90% of the wait. |
+| **BM25 rebuild** | 50 ms - 2 s | ⚠️ Rebuilt from Chroma on **every request** (`retrieve/hybrid.py`). Scales with repo size. |
+| Query embedding (bge-small ONNX, CPU) | 10-50 ms | First call after boot is a cold-model hit (slower). |
+| Chroma vector search (HNSW, cosine) | 5-30 ms | Fast. |
+| RRF fusion + exact-symbol boost | < 5 ms | Negligible. |
+
+Takeaway: the model call dominates, so the highest-leverage work is **perceived** latency (stream it)
+plus removing the one piece of genuinely wasted work (the per-request BM25 rebuild).
+
+### 7.2 Optimizations (planned — ROADMAP Phase 13)
+1. **Stream answers over SSE** (`/api/ask/stream`). Same total time, but words appear in ~1 s instead
+   of a multi-second spinner. Biggest felt-speed win; the citations ride in the final SSE event.
+2. **Per-repo BM25 cache.** Build the keyword index once at ingest and keep it in memory keyed by repo;
+   rebuild only when the repo's chunk set changes. Removes the per-request rebuild without bringing back
+   the stale-pickle footgun (the index is still derived from the stored chunks, just not re-derived every
+   call).
+3. **Warm the embedder at startup.** Load bge-small on app boot so the first question pays no cold-load.
+4. **Answer cache** keyed on `(repo_id, question, model)` — identical repeats return instantly, no LLM call.
+5. **Concurrent retrieval** — run semantic and BM25 lookups in parallel (minor; they are already fast).
+6. **Per-stage timings** in the JSON log (`embed_ms`, `retrieve_ms`, `llm_ms`) so latency is observable,
+   not guessed — this also feeds the planned observability dashboard.
+
+### 7.3 What we deliberately do NOT do
+- No premature micro-optimization of the embedder (ONNX bge-small is already light and fast on CPU).
+- No swapping Chroma for a heavier vector DB at take-home scale — HNSW search is not the bottleneck.
+- The free LLM's own latency is outside our control; the answer is to *stream* and to let users pick a
+  faster paid model via the existing picker, not to fight the provider.

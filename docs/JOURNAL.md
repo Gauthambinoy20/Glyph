@@ -246,4 +246,42 @@ VIBE CODER/
   files and which file imports which, where clicking a file asks Glyph to explain it. The import
   graph is built straight from the indexed code. Backend (46 tests) and frontend both green.
 
+- **Full audit + roadmap refresh (done, 2026-06-05).** Stopped to take stock and check the real code
+  against the plan, not just the ticked boxes. Good news: the engine is genuinely built and saved.
+  Seven working endpoints (health, ingest, search, models, ask, overview, graph), 48 tests, the quality
+  robot green, and a clean save history with no assistant fingerprints. What is honestly still open:
+  there is no one-command Docker run yet, answers do not stream in live, a few safety bits on the server
+  are missing (the browser-origin lock, a single tidy error handler, a request id on each reply), and the
+  README plus screenshots and a short demo video are not done. None of that is broken work, it is the
+  "package it for submission" part.
+
+  I also thought about speed. Right now the slow part of asking a question is almost entirely the free AI
+  itself (a few seconds), and a smaller thing: the keyword index is rebuilt from scratch on every single
+  question, which is fine on a small repo but wasteful on a big one. So I wrote down a short performance
+  plan: stream the answer so words appear as they are written (the biggest "feels fast" win), build the
+  keyword index once per repo instead of every time, keep the search model warm so the first question is
+  not slow, and remember answers to repeated questions. I added all of this to the roadmap as three new
+  groups: performance, the missing server safety bits, and a batch of UI niceties (hover-to-peek a
+  citation, copy buttons, nicer loading, a few keyboard shortcuts, a recent-repos list). I did not change
+  any app code in this step, only the plan and these reports, so nothing can break.
+
+  Where I will start next: the engine is done, so the highest-value work is shipping. First the Docker
+  one-command run (graders run this), then fill the README with the diagram and the setup steps, then add
+  streaming because it is the single biggest jump in how fast and finished the app feels. Stretch and the
+  extra features come after those.
+
+- **Streaming answers, the backend half (done, 2026-06-05).** The free AI takes a few seconds to
+  write an answer, and until now you stared at a spinner the whole time. Now the server can send the
+  answer out piece by piece as it is written, the same way ChatGPT types. I added a new way to ask
+  (`/api/ask/stream`) that streams each bit of text as it arrives and then sends one final wrap-up
+  message with the citations, the source code, and the speed/token info, exactly the shape the normal
+  ask already returns. Under the hood the AI client got a matching "stream" mode that still quietly
+  falls back to the second free model if the first is busy, just like before. I pulled the shared
+  "find the code and build the prompt" step into one small helper so the streaming and non-streaming
+  paths cannot drift apart. No new library was needed. Wrote 3 tests with a fake model: the client
+  streams the pieces then reports tokens, it falls back on a rate limit, and the endpoint emits the
+  live pieces followed by the final message with correct citations. Whole quality gate green: 51 tests,
+  lint, format, types, and security all clean. Next: wire the web UI to show the words appearing live
+  (roadmap 110).
+
 *(Next entries get added here, newest at the bottom, one per step.)*

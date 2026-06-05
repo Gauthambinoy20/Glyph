@@ -4,10 +4,13 @@ Exposes the health check and the ingest endpoint. The embedder and vector store 
 built once (cached) and injected as dependencies, so tests can swap in fakes.
 """
 
+import json
 import time
+from collections.abc import Iterator
 from functools import lru_cache
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.analyze.graph import build_import_graph
@@ -135,6 +138,28 @@ def models() -> dict:
     return {"models": list_models(has_paid_key), "default": settings.llm_model}
 
 
+def _sse(payload: dict) -> str:
+    """Format one Server-Sent Events message as a single JSON data line."""
+    return f"data: {json.dumps(payload)}\n\n"
+
+
+def _prepare_answer(
+    request: AskRequest, embedder: Embedder, store: ChromaStore
+) -> tuple[list[dict], str, str]:
+    """Retrieve the grounding chunks and build the prompt shared by /ask and /ask/stream.
+
+    For a follow-up, the previous question is prepended to the retrieval query so vague
+    questions like "where is that called?" still retrieve the right subject. The last few
+    conversation turns are folded into the prompt so follow-ups stay coherent.
+    """
+    recent = " ".join(turn.question for turn in request.history[-1:])
+    retrieval_query = f"{recent} {request.question}".strip()
+    chunks = HybridRetriever(store, embedder).search(retrieval_query, top_k=request.top_k)
+    recent_history = [{"question": t.question, "answer": t.answer} for t in request.history[-4:]]
+    system_prompt, user_prompt = build_messages(request.question, chunks, recent_history)
+    return chunks, system_prompt, user_prompt
+
+
 @app.post("/api/ask")
 def ask(
     request: AskRequest,
@@ -146,16 +171,7 @@ def ask(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
-    # For a follow-up, prepend the previous question so retrieval has the subject context
-    # (e.g. "where is that called?" alone would not retrieve much).
-    recent = " ".join(turn.question for turn in request.history[-1:])
-    retrieval_query = f"{recent} {request.question}".strip()
-
-    # Retrieve the most relevant chunks, then ground the model in exactly those, plus the
-    # last few conversation turns so follow-ups make sense.
-    chunks = HybridRetriever(store, embedder).search(retrieval_query, top_k=request.top_k)
-    recent_history = [{"question": t.question, "answer": t.answer} for t in request.history[-4:]]
-    system_prompt, user_prompt = build_messages(request.question, chunks, recent_history)
+    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
 
     started = time.perf_counter()
     try:
@@ -180,6 +196,64 @@ def ask(
             "token_usage": token_usage,
         },
     }
+
+
+@app.post("/api/ask/stream")
+def ask_stream(
+    request: AskRequest,
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+    llm: LLMClient = Depends(get_llm),
+) -> StreamingResponse:
+    """Stream the grounded answer token by token over Server-Sent Events.
+
+    Emits `{"type":"token","text":...}` messages as the answer is written, then one final
+    `{"type":"final",...}` message carrying the citations, sources, and observability meta
+    (the same shape /api/ask returns). On model failure it emits `{"type":"error",...}`.
+    """
+    if request.model is not None and not is_known_model(request.model):
+        raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
+
+    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+    chunk_ids = [chunk["id"] for chunk in chunks]
+
+    def events() -> Iterator[str]:
+        """Drive the model stream and translate each step into an SSE message."""
+        parts: list[str] = []
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        started = time.perf_counter()
+        try:
+            for event in llm.stream(system_prompt, user_prompt, model=request.model):
+                if event["type"] == "delta":
+                    parts.append(event["text"])
+                    yield _sse({"type": "token", "text": event["text"]})
+                elif event["type"] == "done":
+                    usage = event["usage"]
+        except LLMError as exc:
+            # Headers are already sent (200), so surface the failure as a stream message.
+            yield _sse({"type": "error", "detail": str(exc)})
+            return
+
+        answer = "".join(parts)
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        citations = parse_citations(answer, chunks)
+        log_query(request.question, chunk_ids, latency_ms, usage)
+        yield _sse(
+            {
+                "type": "final",
+                "answer": answer,
+                "citations": citations,
+                "retrieved_chunk_ids": chunk_ids,
+                "sources": chunks,
+                "meta": {
+                    "model": request.model or get_settings().llm_model,
+                    "latency_ms": latency_ms,
+                    "token_usage": usage,
+                },
+            }
+        )
+
+    return StreamingResponse(events(), media_type="text/event-stream")
 
 
 @app.get("/api/overview")

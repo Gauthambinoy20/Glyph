@@ -21,6 +21,12 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 
 **Definition of done for the whole project:** see the final section.
 
+> **🔎 Verification audit (2026-06-05).** Walked the real code against this list. The engine is solid
+> and committed (7 endpoints live, 48 tests, CI green, clean git history). Confirmed still-open core
+> gaps: **no Docker/compose, no streaming, CORS + global error handler + request-id missing, README +
+> screenshots not done.** Added three new phases below — **13 (performance & latency)**, **14 (UI/UX
+> polish)** — and ticked the commit boxes git confirms. Where to start is called out at the very end.
+
 ---
 
 ## Phase 0 - Setup & docs
@@ -55,7 +61,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 22. Sub-split oversized functions (fit the embedder's 512-token limit) `(core)`
 - [x] 23. utf-8 decode with errors='replace' so odd files never crash ingest `(core)`
 - [x] 24. Tests: exact line ranges, decorator, module capture, tsx, oversize, bad-encoding `(core)`
-- [ ] 25. Commit: tree-sitter chunker for py/js/ts/tsx `(core)`  ← you commit this
+- [x] 25. Commit: tree-sitter chunker for py/js/ts/tsx `(core)`  (committed)
 
 ## Phase 3 - Embeddings, storage, cache
 - [x] 26. `embed/base.py` Embedder protocol (embed_documents / embed_query / dim) `(core)`
@@ -66,7 +72,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 31. Dimension-mismatch guard: clear error, not a raw Chroma 500 `(core)`
 - [x] 32. `ingest/cache.py` content-hash ids; never re-embed unchanged code `(core)`
 - [x] 33. Tests: dim, add+query roundtrip, similarity, mismatch error, cache skip `(core)`
-- [ ] 34. Commit: local embedder, Chroma store, content-hash cache `(core)`  ← you commit this
+- [x] 34. Commit: local embedder, Chroma store, content-hash cache `(core)`  (committed)
 
 ## Phase 4 - Ingest pipeline
 - [x] 35. `ingest/walker.py` walk local path, ext allowlist, skip junk, size + count caps `(core)`
@@ -77,7 +83,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 40. Clear errors: bad URL, clone fail/timeout, 0 supported files, 0 chunks `(core)`
 - [x] 41. Ingest status surfaced (counts: files, added, cached, languages) `(core)`
 - [x] 42. Tests: ingest fixture, re-ingest adds 0, bad URL 4xx, 0-files 4xx, symlink blocked `(core)`
-- [ ] 43. Commit: ingest pipeline and endpoint `(core)`  ← you commit this
+- [x] 43. Commit: ingest pipeline and endpoint `(core)`  (committed)
 
 ## Phase 5 - Retrieval
 - [x] 44. `retrieve/tokenize.py` code-aware tokenizer (splits camelCase / snake_case) `(core)`
@@ -85,7 +91,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 46. `retrieve/hybrid.py` semantic + BM25 fused via RRF; exact-symbol boost; top-5 `(core)`
 - [x] 47. Debug `POST /api/search` returns chunks (no AI) for inspection `(core)`
 - [x] 48. Tests: tokenizer splits, exact symbol found, semantic hit, empty index → [], stable order `(core)`
-- [ ] 49. Commit: hybrid retrieval with RRF `(core)`  ← you commit this
+- [x] 49. Commit: hybrid retrieval with RRF `(core)`  (committed)
 
 ## Phase 6 - Answers (the AI)
 - [x] 50. `llm/catalog.py` model registry (free + cheapest-paid, note, available flag) `(core)`
@@ -98,7 +104,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 57. `obs/logging.py` one JSON log line per ask (question, chunk_ids, latency, tokens) `(core)`
 - [x] 58. Token-usage fallback to 0 when a free provider omits usage `(core)`
 - [x] 59. Tests: ask returns citations, empty index → citations=[], citation consistency, 429→fallback, log fields `(core)`
-- [ ] 60. Commit: grounded answer endpoint with model picker and logging `(core)`  ← you commit this
+- [x] 60. Commit: grounded answer endpoint with model picker and logging `(core)`  (committed)
 
 ## Phase 7 - Conversation & extra endpoints
 - [x] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
@@ -119,7 +125,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 74. Suggested starter questions (overview/endpoints/history are Phase 7 follow-ups) `(polish)`
 - [x] 75. Loading / empty / error states; friendly error toast `(core)`
 - [x] 76. Small touches: Enter-to-send, model badge, repo chip (copy-answer later) `(polish)`
-- [ ] 77. Commit: Glyph web UI `(core)`  ← you commit this
+- [x] 77. Commit: Glyph web UI `(core)`  (committed)
 
 ## Phase 9 - Quality, tooling & tests depth
 - [x] 78. Lint + format: `ruff` (lint) and `ruff format` for the backend, pinned `(core)`
@@ -154,6 +160,35 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 100. Dependency / architecture graph view of the repo `(stretch)`
 - [ ] 101. Light/dark theme toggle + polished empty-state illustration `(stretch)`
 - [ ] 102. Export chat / shareable answer link `(stretch)`
+
+---
+
+## Phase 13 - Performance & latency (added after the 2026-06-05 audit)
+The free LLM call dominates the wait (2-10s). These make Glyph *feel* fast and stop wasted work.
+See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind each item.
+- [x] 103. Stream the answer over SSE `POST /api/ask/stream` (words appear live; biggest felt-speed win) `(core)`  (backend done; UI typing is #110)
+- [ ] 104. Cache the BM25 index per repo: build once at ingest, rebuild only when the repo changes `(core)`
+      *(today it is rebuilt from Chroma on EVERY request — fine for small repos, slow for big ones)*
+- [ ] 105. Warm the embedder at startup so the first question is not a cold-model hit `(polish)`
+- [ ] 106. Answer cache keyed on (repo + question + model); identical repeat questions return instantly `(polish)`
+- [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
+- [ ] 108. Per-stage timing in the JSON log (embed / retrieve / llm ms) so latency is measurable `(polish)`
+- [ ] 109. Commit: streaming, per-repo BM25 cache, embedder warmup, answer cache, stage timings `(core)`
+
+## Phase 14 - UI/UX polish (added after the 2026-06-05 audit)
+The shell is already premium (dark, one accent, graph view). These are the high-value touches on top.
+Note: streaming the text live (115) depends on the streaming endpoint (103); light/dark toggle is also
+tracked as stretch item 101.
+- [ ] 110. Stream the answer text into the bubble live (typing effect) once 103 lands `(core)`
+- [ ] 111. Skeleton / shimmer loading for ingest and for an in-flight answer (replace bare dots) `(polish)`
+- [ ] 112. Citation hover preview: peek the cited code in a small popover before clicking `(polish)`
+- [ ] 113. Copy-answer and copy-code buttons `(polish)`
+- [ ] 114. Live ingest progress: files and chunks counting up, not just one final number `(polish)`
+- [ ] 115. Keyboard: Cmd/Ctrl+K focuses the question box, Esc closes the code panel `(polish)`
+- [ ] 116. Recent repos list so you can re-open one without re-pasting the URL `(polish)`
+- [ ] 117. Mobile-responsive chat column (graph hides on small screens) `(stretch)`
+- [ ] 118. Frontend graceful states: graph-load failure and slow-graph fallbacks `(polish)`
+- [ ] 119. Commit: UI/UX polish batch `(polish)`
 
 ---
 
@@ -228,33 +263,43 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [ ] T48. Frontend `api.ts` calls the right URL/shape (mocked fetch)
 - [ ] T49. End-to-end: ingest demo repo → ask a known question → correct file cited
 
+**Performance / robustness (Phase 13-14)**
+- [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
+- [ ] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index
+- [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
+- [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
+- [ ] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)
+- [ ] T55. CORS preflight from the frontend origin is allowed; others rejected
+- [ ] T56. Global error handler returns a clean generic body, full detail only in logs
+- [ ] T57. `/api/ready` reports not-ready until model + store are loaded
+
 ---
 
 ## 🧩 Feature catalogue (what the finished app does)
 
 | Feature | Priority | Status |
 |---|---|---|
-| Ingest public GitHub repo | core | ☐ |
-| Ingest local folder (sandboxed) | core | ☐ |
-| AST chunking (py/js/ts/tsx) with line metadata | core | ☐ |
-| Local free embeddings (bge-small) | core | ☐ |
-| Hybrid retrieval (semantic + keyword, RRF) | core | ☐ |
-| Grounded answers with file:line citations | core | ☐ |
-| Click citation → view highlighted code | core | ☐ |
-| Pick the AI model (free + cheapest paid) | core | ☐ |
-| Conversational follow-ups | core | ☐ |
-| Streaming answers | polish | ☐ |
-| Repo overview on ingest | polish | ☐ |
-| Suggested starter questions | polish | ☐ |
-| List API endpoints | polish | ☐ |
-| Chat history | polish | ☐ |
-| Quality eval (hit-rate) | polish | ☐ |
-| Observability dashboard | polish | ☐ |
-| JSON query logs | core | ☐ |
-| One-command Docker run | core | ☐ |
-| CI on push | core | ☐ |
-| File-tree browser | stretch | ☐ |
-| Dependency graph | stretch | ☐ |
+| Ingest public GitHub repo | core | ✅ |
+| Ingest local folder (sandboxed) | core | ✅ |
+| AST chunking (py/js/ts/tsx) with line metadata | core | ✅ |
+| Local free embeddings (bge-small) | core | ✅ |
+| Hybrid retrieval (semantic + keyword, RRF) | core | ✅ |
+| Grounded answers with file:line citations | core | ✅ |
+| Click citation → view highlighted code | core | ✅ |
+| Pick the AI model (free + cheapest paid) | core | ✅ |
+| Conversational follow-ups | core | ✅ |
+| Repo overview on ingest | polish | ✅ |
+| Suggested starter questions | polish | ✅ |
+| JSON query logs | core | ✅ |
+| CI on push | core | ✅ |
+| Dependency graph | stretch | ✅ |
+| Streaming answers | polish | ☐ (Phase 13) |
+| List API endpoints | polish | ☐ (Phase 7 #64) |
+| Chat history | polish | ☐ (Phase 7 #65) |
+| Quality eval (hit-rate) | polish | ☐ (Phase 11 #96) |
+| Observability dashboard | polish | ☐ (Phase 11 #97) |
+| One-command Docker run | core | ☐ (Phase 10) |
+| File-tree browser | stretch | ☐ (Phase 12 #99) |
 
 ---
 

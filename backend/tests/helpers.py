@@ -56,3 +56,11 @@ class FakeLLM:
 
     def complete(self, system_prompt, user_prompt, model=None):
         return self.answer, self.usage
+
+    def stream(self, system_prompt, user_prompt, model=None):
+        """Yield the preset answer in two deltas, then a done event, like the real client."""
+        mid = len(self.answer) // 2
+        for piece in (self.answer[:mid], self.answer[mid:]):
+            if piece:
+                yield {"type": "delta", "text": piece}
+        yield {"type": "done", "usage": self.usage}

@@ -1,5 +1,7 @@
 """Unit tests for the answer endpoints (/api/models and /api/ask), with a mocked LLM."""
 
+import json
+
 from app.ingest.cache import embed_new_chunks
 from app.main import app, get_embedder, get_llm, get_store
 from app.store.chroma_store import ChromaStore
@@ -49,6 +51,38 @@ def test_overview_endpoint_summarises_repo(tmp_path) -> None:
         app.dependency_overrides.clear()
 
     assert body["overview"] == "This project handles authentication."
+
+
+def _parse_sse(body: str) -> list[dict]:
+    """Pull the JSON payloads out of an SSE response body (one per `data:` line)."""
+    return [
+        json.loads(block[len("data: ") :])
+        for block in body.strip().split("\n\n")
+        if block.startswith("data: ")
+    ]
+
+
+def test_ask_stream_emits_tokens_then_final_with_citations(tmp_path) -> None:  # T50
+    chunk = make_chunk("def login(): ...", name="login", path="auth.py", start=1, end=2)
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
+    app.dependency_overrides[get_llm] = lambda: FakeLLM("Login lives in [auth.py:1-2].")
+    try:
+        resp = TestClient(app).post("/api/ask/stream", json={"question": "where is login"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+    messages = _parse_sse(resp.text)
+    types = [message["type"] for message in messages]
+    assert "token" in types  # the answer streamed in pieces
+    assert types[-1] == "final"  # the last message wraps it up
+
+    final = messages[-1]
+    assert final["answer"] == "Login lives in [auth.py:1-2]."
+    assert final["citations"] == [{"file_path": "auth.py", "start_line": 1, "end_line": 2}]
+    assert final["retrieved_chunk_ids"]  # a chunk was retrieved and grounded the answer
 
 
 def test_ask_on_empty_index_has_no_citations(tmp_path) -> None:  # T40

@@ -40,6 +40,16 @@ def _client_with(behavior) -> LLMClient:
     return client
 
 
+def _stream_chunks(texts, usage=None) -> list[SimpleNamespace]:
+    """Build fake streaming chunks: one per text delta, then a final usage-only chunk."""
+    chunks = [
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=text))], usage=None)
+        for text in texts
+    ]
+    chunks.append(SimpleNamespace(choices=[], usage=usage))  # usage-only final chunk
+    return chunks
+
+
 def test_llm_returns_text_and_usage() -> None:  # T35
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, total_tokens=15)
     client = _client_with(lambda model: _completion("hello", usage))
@@ -73,3 +83,26 @@ def test_usage_defaults_to_zero_when_missing() -> None:  # T42 (token fallback)
         "completion_tokens": 0,
         "total_tokens": 0,
     }
+
+
+def test_llm_stream_yields_deltas_then_usage() -> None:  # T50 (streaming client)
+    usage = SimpleNamespace(prompt_tokens=3, completion_tokens=4, total_tokens=7)
+    client = _client_with(lambda model: _stream_chunks(["Hel", "lo"], usage))
+
+    events = list(client.stream("system", "user"))
+
+    deltas = [event["text"] for event in events if event["type"] == "delta"]
+    done = [event for event in events if event["type"] == "done"]
+    assert "".join(deltas) == "Hello"
+    assert done[0]["usage"] == {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
+
+
+def test_llm_stream_falls_back_on_rate_limit() -> None:  # T36 for streaming
+    def behavior(model: str):
+        if model == "primary":
+            return _http_error(RateLimitError, 429)
+        return _stream_chunks(["from backup"], None)
+
+    events = list(_client_with(behavior).stream("system", "user"))
+
+    assert "".join(event["text"] for event in events if event["type"] == "delta") == "from backup"
