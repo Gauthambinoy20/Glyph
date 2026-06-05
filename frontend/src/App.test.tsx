@@ -9,7 +9,7 @@ import { api } from "./api";
 
 vi.mock("./api", () => ({
   api: {
-    ingest: vi.fn(),
+    ingestStream: vi.fn(),
     stats: vi.fn(),
     overview: vi.fn(),
     graph: vi.fn(),
@@ -34,7 +34,12 @@ beforeEach(() => {
   });
   vi.mocked(api.overview).mockResolvedValue({ overview: "An assistant." });
   vi.mocked(api.graph).mockResolvedValue({ nodes: [{ id: "a", label: "a.py", language: "python" }], edges: [] });
-  vi.mocked(api.ingest).mockResolvedValue({ files: 3, added: 3, cached: 0, languages: ["python"] });
+  // Default: the stream walks a few stages, then resolves with the final summary.
+  vi.mocked(api.ingestStream).mockImplementation(async (_body, handlers) => {
+    handlers.onEvent({ stage: "walk", files: 3 });
+    handlers.onEvent({ stage: "embed", done: 3, total: 3 });
+    handlers.onDone({ stage: "done", files: 3, languages: ["python"], added: 3, cached: 0 });
+  });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -51,7 +56,7 @@ describe("App", () => {
     await ingest(user, "app");
 
     expect(await screen.findByText(/ask anything about this code/i)).toBeTruthy();
-    expect(api.ingest).toHaveBeenCalledWith({ local_path: "app" });
+    expect(api.ingestStream).toHaveBeenCalledWith({ local_path: "app" }, expect.anything());
   });
 
   it("renders a streamed answer after asking", async () => {
@@ -75,7 +80,9 @@ describe("App", () => {
   });
 
   it("shows an error toast when ingest fails", async () => {
-    vi.mocked(api.ingest).mockRejectedValue(new Error("clone failed"));
+    vi.mocked(api.ingestStream).mockImplementation(async (_body, handlers) => {
+      handlers.onError("clone failed");
+    });
     const user = userEvent.setup();
     render(<App />);
     await ingest(user, "app");

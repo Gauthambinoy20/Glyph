@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "./api";
-import type { Citation, ModelInfo, Source } from "./api";
+import type { Citation, IngestDone, ModelInfo, Source } from "./api";
+import { applyIngestEvent, initialIngestState, type IngestState } from "./components/IngestProgress";
 import type { Message, Recent, Repo, Suggestion } from "./types";
 import { ChatEmpty, Composer, GlyphAnswer, Thinking } from "./components/Chat";
 import type { CodeRef } from "./components/Chat";
@@ -149,6 +150,7 @@ export default function App() {
   const [pending, setPending] = useState(false);
   const [streamText, setStreamText] = useState<string | null>(null);
   const [busyIngest, setBusyIngest] = useState(false);
+  const [ingestState, setIngestState] = useState<IngestState | null>(null);
   const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
@@ -195,10 +197,20 @@ export default function App() {
 
   async function ingest(value: string) {
     if (busyIngest) return;
+    const isUrl = value.startsWith("http");
     setBusyIngest(true);
+    setIngestState(initialIngestState(isUrl));
     try {
-      const isUrl = value.startsWith("http");
-      const ingestResp = await api.ingest(isUrl ? { repo_url: value } : { local_path: value });
+      // Stream ingest so the checklist fills in stage by stage; resolve on the done summary.
+      const summary = await new Promise<IngestDone>((resolve, reject) => {
+        api
+          .ingestStream(isUrl ? { repo_url: value } : { local_path: value }, {
+            onEvent: (ev) => setIngestState((s) => (s ? applyIngestEvent(s, ev) : s)),
+            onDone: resolve,
+            onError: (msg) => reject(new Error(msg)),
+          })
+          .catch(reject);
+      });
       const parsed = parseRepo(value);
       const [stats, overview, graph] = await Promise.all([
         api.stats(),
@@ -215,7 +227,7 @@ export default function App() {
       setPanel({
         repo: parsed,
         languages,
-        stats: { files: stats.files, chunks: stats.chunks, cached: ingestResp.cached },
+        stats: { files: stats.files, chunks: stats.chunks, cached: summary.cached },
         overview,
         stack: languages.map((l) => l.name),
         graph,
@@ -231,6 +243,7 @@ export default function App() {
       pushToast((e as Error).message);
     } finally {
       setBusyIngest(false);
+      setIngestState(null);
     }
   }
 
@@ -355,7 +368,7 @@ export default function App() {
       </nav>
 
       {screen === "landing" || !panel ? (
-        <Landing onIngest={ingest} busy={busyIngest} recent={recent} />
+        <Landing onIngest={ingest} busy={busyIngest} recent={recent} progress={ingestState} />
       ) : (
         <div className="workspace">
           <ProjectPanel

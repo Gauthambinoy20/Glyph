@@ -797,3 +797,25 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   .mobile-tabs { display: flex; }
   .kbar .kbd, .modelpick-btn .mi-note { display: none; }
 }
+
+/* live ingest progress checklist (Landing) */
+.ingest-progress {
+  margin: 26px auto 0; max-width: 380px; text-align: left;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ip-row { display: flex; align-items: center; gap: 11px; font-size: 13.5px;
+  color: var(--muted); transition: color .2s var(--ease); }
+.ip-row[data-state="running"] { color: var(--text); }
+.ip-row[data-state="done"] { color: var(--text-2); }
+.ip-icon { width: 18px; height: 18px; display: inline-flex; align-items: center;
+  justify-content: center; color: var(--accent); flex: none; }
+.ip-icon .spinner { width: 14px; height: 14px; border: 2px solid var(--accent-soft);
+  border-top-color: var(--accent); }
+.ip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--panel-3);
+  box-shadow: inset 0 0 0 1px var(--border); }
+.ip-label { flex: 1; }
+.ip-detail { font-size: 12px; color: var(--text-2); }
+.ip-bar { width: 64px; height: 4px; border-radius: 3px; background: var(--panel-3);
+  overflow: hidden; flex: none; }
+.ip-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width .25s var(--ease); }

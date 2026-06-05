@@ -5,14 +5,16 @@ import { useRef, useState } from "react";
 
 import type { Recent } from "../types";
 import { Icon, LogoMark } from "./Icon";
+import { IngestProgress, type IngestState } from "./IngestProgress";
 
 interface Props {
   onIngest: (value: string) => void;
   busy: boolean;
   recent?: Recent[];
+  progress?: IngestState | null;
 }
 
-export function Landing({ onIngest, busy, recent }: Props) {
+export function Landing({ onIngest, busy, recent, progress }: Props) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -66,11 +68,15 @@ export function Landing({ onIngest, busy, recent }: Props) {
           </button>
         </form>
 
-        <p className="hint">
-          Try <span className="mono">app</span> to index Glyph&apos;s own code.
-        </p>
+        {progress ? (
+          <IngestProgress state={progress} />
+        ) : (
+          <p className="hint">
+            Try <span className="mono">app</span> to index Glyph&apos;s own code.
+          </p>
+        )}
 
-        {recent && recent.length > 0 && (
+        {recent && recent.length > 0 && !progress && (
           <div className="land-recent">
             {recent.slice(0, 4).map((r) => (
               <button key={r.owner + r.name} className="rr" onClick={() => !busy && onIngest(`${r.owner}/${r.name}`)}>
