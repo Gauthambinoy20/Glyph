@@ -14,6 +14,8 @@ import { ForceGraph, langColor } from "./components/ForceGraph";
 import { Icon, Logo } from "./components/Icon";
 import { Landing } from "./components/Landing";
 import { ProjectPanel } from "./components/ProjectPanel";
+import { QueryLog } from "./components/QueryLog";
+import type { QueryLogEntry } from "./components/QueryLog";
 import type { PanelData } from "./components/ProjectPanel";
 
 const SUGGESTIONS: Suggestion[] = [
@@ -154,6 +156,7 @@ export default function App() {
   const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelIdx, setModelIdx] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -204,6 +207,27 @@ export default function App() {
     for (const s of allSources) byLoc.set(`${s.file_path}:${s.start_line}`, s);
     return [...byLoc.values()];
   }, [symbols, allSources]);
+
+  // One row per answered question, for the observability log.
+  const logEntries = useMemo<QueryLogEntry[]>(() => {
+    const out: QueryLogEntry[] = [];
+    for (let i = 0; i < messages.length - 1; i++) {
+      const u = messages[i];
+      const a = messages[i + 1];
+      if (u.role === "user" && a.role === "glyph") {
+        out.push({
+          question: u.text,
+          model: a.meta.model,
+          latency_ms: a.meta.latency_ms,
+          retrieve_ms: a.meta.stage_ms?.retrieve_ms ?? 0,
+          llm_ms: a.meta.stage_ms?.llm_ms ?? 0,
+          tokens: a.meta.token_usage.total_tokens,
+          cached: a.meta.cached ?? false,
+        });
+      }
+    }
+    return out;
+  }, [messages]);
 
   async function ingest(value: string) {
     if (busyIngest) return;
@@ -382,6 +406,11 @@ export default function App() {
               <Icon name="search" /> Search <span className="kbd">⌘K</span>
             </button>
           )}
+          {screen === "workspace" && (
+            <button className="iconbtn" aria-label="Observability" onClick={() => setLogOpen(true)}>
+              <Icon name="activity" size={17} />
+            </button>
+          )}
           <button
             className="iconbtn"
             aria-label="Toggle theme"
@@ -448,6 +477,7 @@ export default function App() {
         />
       )}
       {graphModal && panel && <GraphModal data={panel} onClose={() => setGraphModal(false)} onPick={(label) => { setGraphModal(false); ask(`Explain ${label}.`); }} />}
+      {logOpen && <QueryLog entries={logEntries} onClose={() => setLogOpen(false)} />}
 
       <div className="toast-zone">
         {toasts.map((t) => (

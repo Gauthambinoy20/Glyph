@@ -24,6 +24,7 @@ const ICON_PATHS: Record<string, string> = {
   route: "M6 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 8v3a4 4 0 0 1-4 4H9",
   flow: "M4 5h6v5H4zM14 14h6v5h-6zM10 7h4a2 2 0 0 1 2 2v5",
   file: "M14 3v5h5M14 3H5v18h14V8l-5-5z",
+  activity: "M3 12h4l3 8 4-16 3 8h4",
   zap: "M13 2L4 14h6l-1 8 9-12h-6l1-8z",
   bookOpen: "M12 6.5C10.5 5 7.5 4.5 4 5v13c3.5-.5 6.5 0 8 1.5 1.5-1.5 4.5-2 8-1.5V5c-3.5-.5-6.5 0-8 1.5zM12 6.5v13",
 };

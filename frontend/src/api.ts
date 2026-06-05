@@ -29,6 +29,8 @@ export interface AnswerMeta {
   model: string;
   latency_ms: number;
   token_usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  stage_ms?: { retrieve_ms: number; llm_ms: number };
+  cached?: boolean;
 }
 
 export interface AskResponse {

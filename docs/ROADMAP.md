@@ -153,7 +153,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 
 ## Phase 11 - Standout features (graded extras)
 - [x] 96. Quality eval set: 10 golden questions + `python -m app.quality.evaluate` hit-rate (100%) `(polish)`
-- [ ] 97. Observability dashboard: page showing query logs, latency, token usage `(polish)`
+- [x] 97. Observability dashboard: session query log (retrieve/llm split, tokens, cache hits) `(polish)`
 - [ ] 98. Commit: quality eval set + observability dashboard `(polish)`
 
 ## Phase 12 - Stretch (only if everything above is green)
