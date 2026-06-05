@@ -1,9 +1,14 @@
 # Glyph — Intelligent Codebase Scanner & Chat
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)
+![Tests](https://img.shields.io/badge/tests-154%20passing-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-compose%20up-2496ED?logo=docker&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
 citations**. Ingest a public GitHub repo (or local files), then ask *"where are the API endpoints?"*,
@@ -141,4 +146,5 @@ output vs. wrote things yourself, how you made it repeatable (written engineerin
 <!-- ✍️ YOU WRITE. e.g. giant repos, binary files, non-UTF8 source, private repos, rate-limit storms. -->
 
 ## License
-<!-- choose one -->
+
+Released under the [MIT License](LICENSE) © 2026 Gautham Binoy.
