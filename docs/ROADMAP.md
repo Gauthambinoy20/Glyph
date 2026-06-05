@@ -171,7 +171,7 @@ See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind eac
 - [x] 104. Cache the BM25 index per repo: build once, reuse until the chunk count changes `(core)`
       *(was rebuilt from Chroma on EVERY request; now cached per store via a WeakKeyDictionary)*
 - [x] 105. Warm the embedder at startup (lifespan) so the first question is not a cold-model hit `(polish)`
-- [ ] 106. Answer cache keyed on (repo + question + model); identical repeat questions return instantly `(polish)`
+- [x] 106. Answer cache keyed on (chunk-count + question + model); repeat questions return instantly `(polish)`
 - [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
 - [x] 108. Per-stage timing (retrieve_ms / llm_ms) in the JSON log and answer meta `(polish)`
 - [ ] 109. Commit: streaming, per-repo BM25 cache, embedder warmup, answer cache, stage timings `(core)`
@@ -315,7 +315,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)
 - [ ] T66. `/api/ready` is not-ready until model + store are loaded, then ready
 - [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)
-- [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
+- [x] T52. Answer cache: identical (chunk-count, question, model) returns the cached answer, no LLM call
 - [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
 - [ ] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)
 - [x] T55. CORS allows the frontend origin; an unknown origin gets no allow header

@@ -34,6 +34,7 @@ from app.ingest.pipeline import (
 from app.llm.catalog import is_known_model, list_models
 from app.llm.client import LLMClient, LLMError
 from app.obs.logging import log_query
+from app.rag.cache import answer_cache
 from app.rag.overview import build_overview
 from app.rag.prompt import build_messages, parse_citations
 from app.retrieve.hybrid import HybridRetriever
@@ -301,6 +302,15 @@ def ask(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
+    # Cache only standalone questions (follow-ups depend on conversation context). A repeat of
+    # the same question on the same index returns instantly without calling the model.
+    cacheable = not request.history
+    chunk_count = store.count()
+    if cacheable:
+        hit = answer_cache.get(chunk_count, request.question, request.model)
+        if hit is not None:
+            return {**hit, "meta": {**hit["meta"], "cached": True}}
+
     retrieve_started = time.perf_counter()
     chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
     retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
@@ -319,7 +329,7 @@ def ask(
     log_query(request.question, chunk_ids, latency_ms, token_usage, stages=stages)
     # `sources` carries each retrieved chunk (with its code) so the UI can show the code behind
     # a citation; `meta` surfaces observability (model, latency, tokens, stage_ms) in the UI.
-    return {
+    result = {
         "answer": answer,
         "citations": citations,
         "retrieved_chunk_ids": chunk_ids,
@@ -329,8 +339,12 @@ def ask(
             "latency_ms": latency_ms,
             "token_usage": token_usage,
             "stage_ms": stages,
+            "cached": False,
         },
     }
+    if cacheable:
+        answer_cache.put(chunk_count, request.question, request.model, result)
+    return result
 
 
 @app.post("/api/ask/stream")
@@ -349,13 +363,23 @@ def ask_stream(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
-    retrieve_started = time.perf_counter()
-    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
-    retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
-    chunk_ids = [chunk["id"] for chunk in chunks]
+    cacheable = not request.history
+    chunk_count = store.count()
+    cached = answer_cache.get(chunk_count, request.question, request.model) if cacheable else None
 
     def events() -> Iterator[str]:
         """Drive the model stream and translate each step into an SSE message."""
+        # Cache hit: replay the stored answer instantly (one token, then the final payload).
+        if cached is not None:
+            yield _sse({"type": "token", "text": cached["answer"]})
+            yield _sse({"type": "final", **cached, "meta": {**cached["meta"], "cached": True}})
+            return
+
+        retrieve_started = time.perf_counter()
+        chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+        retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
+        chunk_ids = [chunk["id"] for chunk in chunks]
+
         parts: list[str] = []
         usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         started = time.perf_counter()
@@ -377,21 +401,22 @@ def ask_stream(
         latency_ms = retrieve_ms + llm_ms
         citations = parse_citations(answer, chunks)
         log_query(request.question, chunk_ids, latency_ms, usage, stages=stages)
-        yield _sse(
-            {
-                "type": "final",
-                "answer": answer,
-                "citations": citations,
-                "retrieved_chunk_ids": chunk_ids,
-                "sources": chunks,
-                "meta": {
-                    "model": request.model or get_settings().llm_model,
-                    "latency_ms": latency_ms,
-                    "token_usage": usage,
-                    "stage_ms": stages,
-                },
-            }
-        )
+        result = {
+            "answer": answer,
+            "citations": citations,
+            "retrieved_chunk_ids": chunk_ids,
+            "sources": chunks,
+            "meta": {
+                "model": request.model or get_settings().llm_model,
+                "latency_ms": latency_ms,
+                "token_usage": usage,
+                "stage_ms": stages,
+                "cached": False,
+            },
+        }
+        if cacheable:
+            answer_cache.put(chunk_count, request.question, request.model, result)
+        yield _sse({"type": "final", **result})
 
     return StreamingResponse(events(), media_type="text/event-stream")
 

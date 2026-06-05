@@ -7,6 +7,17 @@ at the end. It makes the whole suite understandable at a glance.
 
 import collections
 
+import pytest
+from app.rag.cache import answer_cache
+
+
+@pytest.fixture(autouse=True)
+def _isolate_answer_cache():
+    """Clear the process-wide answer cache before each test so tests stay independent."""
+    answer_cache.clear()
+    yield
+
+
 # A friendly title for each test file, shown as a group heading. Files not listed here
 # still appear, under their own filename.
 _GROUP_TITLES = {
@@ -25,6 +36,7 @@ _GROUP_TITLES = {
     "test_files.py": "File  (read an indexed file back out for the code viewer)",
     "test_endpoints.py": "Endpoints  (detect API routes in the indexed code)",
     "test_eval.py": "Quality  (golden-set retrieval hit-rate scorer)",
+    "test_answer_cache.py": "Answer cache  (repeat questions skip the model)",
     "test_app.py": "App  (CORS, request ids, and the global error handler)",
     "test_e2e.py": "End-to-end  (the whole real pipeline through the endpoints)",
 }
