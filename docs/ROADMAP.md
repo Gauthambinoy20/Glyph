@@ -223,7 +223,7 @@ A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo
 - [x] 129. Logo redesign: refined gradient G mark (white-lifted gradient, bevel, sheen, glow) `(polish)`
 - [x] 130. Title + tagline: "Glyph — intelligent codebase scanner & chat" (tab title, README) `(polish)`
 - [x] 131. Quick-add demo repos on landing (pallets/click, expressjs/express, honojs/hono, sindresorhus/ky, psf/requests) `(polish)`
-- [ ] 132. Wow touches: done-state flourish, language hint during scan, smoother motion `(polish)`
+- [x] 132. Wow touches: shimmering accent underline + smooth hero entrance (reduced-motion safe) `(polish)`
 
 **Phase 17 test boxes**
 - [x] T67. Embedder honours configured threads + batch size (CI-safe unit tests; output unchanged)
