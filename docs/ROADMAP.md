@@ -200,7 +200,7 @@ wire data / adjust variables to align the design to the backend. These endpoints
 "Project Intelligence" panel and the standout features, so they are ready before the redesign lands.
 Each item is one tested slice = one commit.
 
-- [ ] 120. `GET /api/stats` repo intelligence: file count, chunk count, per-language counts `(core)`
+- [x] 120. `GET /api/stats` repo intelligence: file count, chunk count, per-language counts `(core)`
       *(feeds the language chart + the files/chunks/cached stat tiles)*
 - [ ] 121. `GET /api/file?path=&start=&end=` return a file's code (optionally a line range) `(core)` (#63)
       *(lets the code viewer open any file/line, not only cited ones)*
@@ -293,7 +293,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T58. fetchWithTimeout: resolves in time; abort → clear "timed out" message; other errors pass through
 
 **Backend for the redesigned UI (Phase 16)**
-- [ ] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up
+- [x] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up (+ empty index → zeros)
 - [ ] T62. `/api/file` returns a file's code; a line range slices it; a bad/escaping path → 4xx
 - [ ] T63. `/api/endpoints` finds routes in sample FastAPI and Express code
 - [ ] T64. `/api/symbols` lists files with their symbols; empty index → []

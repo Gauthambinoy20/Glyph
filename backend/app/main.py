@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from app.analyze.graph import build_import_graph
+from app.analyze.stats import build_stats
 from app.config import get_settings
 from app.embed.base import Embedder
 from app.embed.factory import make_embedder
@@ -328,3 +329,13 @@ def graph(
     """Return the dependency graph (files as nodes, internal imports as edges)."""
     _ = embedder
     return build_import_graph(store)
+
+
+@app.get("/api/stats")
+def stats(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return repo stats: file count, chunk count, and a per-language breakdown."""
+    _ = embedder
+    return build_stats(store)
