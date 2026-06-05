@@ -22,7 +22,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 **Definition of done for the whole project:** see the final section.
 
 > **🔎 Verification audit (2026-06-05).** Walked the real code against this list. The engine is solid
-> and committed (7 endpoints live, 48 tests, CI green, clean git history). Confirmed still-open core
+> and committed (11 endpoints live, 78 backend + 41 frontend tests, CI green, clean git history). Confirmed still-open core
 > gaps: **no Docker/compose, no streaming, CORS + global error handler + request-id missing, README +
 > screenshots not done.** Added three new phases below — **13 (performance & latency)**, **14 (UI/UX
 > polish)** — and ticked the commit boxes git confirms. Where to start is called out at the very end.
@@ -131,7 +131,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 78. Lint + format: `ruff` (lint) and `ruff format` for the backend, pinned `(core)`
 - [x] 79. Type-check: `mypy` on `app/`, pinned, passes clean `(polish)`
 - [x] 80. `pre-commit` hooks: ruff lint + format, so commits stay clean `(polish)`
-- [x] 81. Coverage: `pytest --cov`, report printed, 88% (≥ 80% target met) `(core)`
+- [x] 81. Coverage: `pytest --cov`, report printed, 91% (≥ 80% target met) `(core)`
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
 - [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
       *(full mocked-fetch URL-shape test, T48, and component tests still open)*
@@ -342,12 +342,12 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 | JSON query logs | core | ✅ |
 | CI on push | core | ✅ |
 | Dependency graph | stretch | ✅ |
-| Streaming answers | polish | ☐ (Phase 13) |
+| Streaming answers | polish | ✅ |
 | List API endpoints | polish | ☐ (Phase 7 #64) |
 | Chat history | polish | ☐ (Phase 7 #65) |
 | Quality eval (hit-rate) | polish | ☐ (Phase 11 #96) |
 | Observability dashboard | polish | ☐ (Phase 11 #97) |
-| One-command Docker run | core | ☐ (Phase 10) |
+| One-command Docker run | core | ✅ |
 | File-tree browser | stretch | ☐ (Phase 12 #99) |
 
 ---

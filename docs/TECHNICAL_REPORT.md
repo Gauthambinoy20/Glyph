@@ -76,7 +76,7 @@ graph TD
       RET --> PB[Grounded Prompt] --> LLM[OpenRouter free model]
       LLM --> API
     end
-    API --> DB[(SQLite history)]
+    API --> DB[(SQLite history · planned)]
     API --> LOG[JSON logs]
 ```
 
@@ -146,7 +146,9 @@ grounded answer + model picker + logging → extra endpoints → UI → docker/C
 [ROADMAP.md](./ROADMAP.md).
 
 ### 2.4 Data model
-Chunk vectors + metadata live in **Chroma**. Repos, chat sessions and messages live in **SQLite**.
+Chunk vectors + metadata live in **Chroma** (built). The repo / chat-session / message tables below are
+the **planned** SQLite persistence layer (ROADMAP Phase 7 #65) — designed here but **not yet built**;
+conversation history is currently in-memory in the client only.
 
 ```mermaid
 erDiagram
@@ -188,6 +190,10 @@ erDiagram
 Everything from the user is treated as untrusted and passes a guard before it reaches the server.
 Ingested code is only ever read as text, never executed.
 
+**Built today:** V1, V2, V3 (ingest guards), V6 (CORS), the temp-clone cleanup, secrets-in-`.env`,
+a request-id on every response, and the generic-error handler. **Planned, not yet built:** V4 (question
+length cap) and V5 (per-IP rate limit on `/ask`) — both are marked `· planned` in the diagram below.
+
 ```mermaid
 flowchart TD
     subgraph Untrusted[Untrusted input]
@@ -198,8 +204,8 @@ flowchart TD
       V1[URL must be https://github.com/...]
       V2[local path confined, no traversal]
       V3[size + count caps, extension allowlist]
-      V4[question length limit]
-      V5[per-IP rate limit on /ask]
+      V4[question length limit · planned]
+      V5[per-IP rate limit on /ask · planned]
       V6[CORS locked to the frontend origin]
     end
     subgraph Trusted[Server side]
@@ -286,7 +292,7 @@ flowchart LR
 | mypy `2.1.0` | type checking (every function typed) | clean |
 | bandit `1.9.4` | code security scan | clean |
 | pip-audit `2.10.0` | dependency CVE scan | 5/6 fixed |
-| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 19 passed, 88% |
+| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 78 passed (+2 integration, local-only), 91% |
 
 **Security decisions:**
 - Bumped pytest → 9.0.3 and FastAPI → 0.136.3 (pulls patched Starlette 1.2.1), re-ran the full
