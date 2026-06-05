@@ -173,7 +173,7 @@ See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind eac
 - [ ] 105. Warm the embedder at startup so the first question is not a cold-model hit `(polish)`
 - [ ] 106. Answer cache keyed on (repo + question + model); identical repeat questions return instantly `(polish)`
 - [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
-- [ ] 108. Per-stage timing in the JSON log (embed / retrieve / llm ms) so latency is measurable `(polish)`
+- [x] 108. Per-stage timing (retrieve_ms / llm_ms) in the JSON log and answer meta `(polish)`
 - [ ] 109. Commit: streaming, per-repo BM25 cache, embedder warmup, answer cache, stage timings `(core)`
 
 ## Phase 14 - UI/UX polish (added after the 2026-06-05 audit)

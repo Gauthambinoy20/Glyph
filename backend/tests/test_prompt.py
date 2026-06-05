@@ -66,3 +66,15 @@ def test_log_query_writes_all_fields(capsys) -> None:  # T42
 
     assert set(record) == {"question", "retrieved_chunk_ids", "latency_ms", "token_usage"}
     assert '"question"' in capsys.readouterr().out  # a JSON line was printed
+
+
+def test_log_query_includes_per_stage_timings() -> None:  # T-stage (#108)
+    record = log_query(
+        "q?",
+        [],
+        30,
+        {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        stages={"retrieve_ms": 10, "llm_ms": 20},
+    )
+
+    assert record["stage_ms"] == {"retrieve_ms": 10, "llm_ms": 20}

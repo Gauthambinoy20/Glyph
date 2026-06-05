@@ -285,20 +285,24 @@ def ask(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
+    retrieve_started = time.perf_counter()
     chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+    retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
 
-    started = time.perf_counter()
+    llm_started = time.perf_counter()
     try:
         answer, token_usage = llm.complete(system_prompt, user_prompt, model=request.model)
     except LLMError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    latency_ms = int((time.perf_counter() - started) * 1000)
+    llm_ms = int((time.perf_counter() - llm_started) * 1000)
 
+    stages = {"retrieve_ms": retrieve_ms, "llm_ms": llm_ms}
+    latency_ms = retrieve_ms + llm_ms
     chunk_ids = [chunk["id"] for chunk in chunks]
     citations = parse_citations(answer, chunks)
-    log_query(request.question, chunk_ids, latency_ms, token_usage)
+    log_query(request.question, chunk_ids, latency_ms, token_usage, stages=stages)
     # `sources` carries each retrieved chunk (with its code) so the UI can show the code
-    # behind a citation; `meta` surfaces observability (model, latency, tokens) in the UI.
+    # behind a citation; `meta` surfaces observability (model, latency, tokens, per-stage) in the UI.
     return {
         "answer": answer,
         "citations": citations,
@@ -308,6 +312,7 @@ def ask(
             "model": request.model or get_settings().llm_model,
             "latency_ms": latency_ms,
             "token_usage": token_usage,
+            "stage_ms": stages,
         },
     }
 
@@ -328,7 +333,9 @@ def ask_stream(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
+    retrieve_started = time.perf_counter()
     chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+    retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
     chunk_ids = [chunk["id"] for chunk in chunks]
 
     def events() -> Iterator[str]:
@@ -349,9 +356,11 @@ def ask_stream(
             return
 
         answer = "".join(parts)
-        latency_ms = int((time.perf_counter() - started) * 1000)
+        llm_ms = int((time.perf_counter() - started) * 1000)
+        stages = {"retrieve_ms": retrieve_ms, "llm_ms": llm_ms}
+        latency_ms = retrieve_ms + llm_ms
         citations = parse_citations(answer, chunks)
-        log_query(request.question, chunk_ids, latency_ms, usage)
+        log_query(request.question, chunk_ids, latency_ms, usage, stages=stages)
         yield _sse(
             {
                 "type": "final",
@@ -363,6 +372,7 @@ def ask_stream(
                     "model": request.model or get_settings().llm_model,
                     "latency_ms": latency_ms,
                     "token_usage": usage,
+                    "stage_ms": stages,
                 },
             }
         )

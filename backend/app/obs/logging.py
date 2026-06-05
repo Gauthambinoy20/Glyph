@@ -14,13 +14,20 @@ def log_query(
     retrieved_chunk_ids: list[str],
     latency_ms: int,
     token_usage: dict[str, int],
+    stages: dict[str, int] | None = None,
 ) -> dict:
-    """Write one JSON log line for a query and return the record (handy for tests)."""
-    record = {
+    """Write one JSON log line for a query and return the record (handy for tests).
+
+    `stages` (optional) carries per-stage timings like {"retrieve_ms":.., "llm_ms":..} so the
+    total latency can be broken down and the slow part identified.
+    """
+    record: dict = {
         "question": question,
         "retrieved_chunk_ids": retrieved_chunk_ids,
         "latency_ms": latency_ms,
         "token_usage": token_usage,
     }
+    if stages:
+        record["stage_ms"] = stages
     print(json.dumps(record), file=sys.stdout, flush=True)
     return record
