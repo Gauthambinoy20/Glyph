@@ -63,8 +63,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         # instead of on the user's first ingest batch — that cold first batch is exactly what
         # made "Embedding & indexing" sit at 0 for several seconds before moving.
         get_embedder().embed_documents(["def warmup() -> int: return 0"])
+        # Build the reranker now too (best-effort), so the first answer isn't a cold model load.
+        get_reranker()
     except Exception:  # noqa: BLE001 - warmup must never stop the server from starting
-        logger.exception("embedder warmup failed; it will load on first use")
+        logger.exception("warmup failed; models will load on first use")
     yield
 
 
@@ -153,8 +155,16 @@ def get_history() -> History:
 
 @lru_cache
 def get_reranker() -> Reranker | None:
-    """Build the reranker once, or None when reranking is disabled in settings."""
-    return make_reranker(get_settings())
+    """Build the reranker once, or None when reranking is disabled in settings.
+
+    Best-effort: if the cross-encoder model cannot load (for example, an offline first run),
+    fall back to single-stage retrieval rather than failing every question.
+    """
+    try:
+        return make_reranker(get_settings())
+    except Exception:  # noqa: BLE001 - reranker setup must never break answering
+        logger.exception("reranker setup failed; falling back to single-stage retrieval")
+        return None
 
 
 class IngestRequest(BaseModel):

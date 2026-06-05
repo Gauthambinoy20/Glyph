@@ -25,7 +25,11 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
 
 ### 1.2 Embeddings + retrieval
 - **Embedder:** `fastembed==0.8.0` running `BAAI/bge-small-en-v1.5` via ONNX — **no torch** (~30–130MB
-  vs ~2GB for sentence-transformers; faster cold start). 384-dim, cosine, normalized.
+  vs ~2GB for sentence-transformers; faster cold start). 384-dim, cosine, normalized. **Fast mode:**
+  `EMBED_BACKEND=static` swaps in a Model2Vec static model (`potion-base-8M`, 256-dim) — embedding is a
+  token lookup + mean-pool with **no neural inference**, measured ~22k chunks/s (≈100× bge-small on CPU),
+  so a large repo ingests near-instantly. The store keys its collection on model+dim, so the two indexes
+  never collide.
 - **Query/passage symmetry:** for bge-**v1.5** the query instruction prefix is *optional* ("only a
   slight degradation" without it). The real rule is **consistency** — embed queries and passages the
   same way. We use `embed()` for both (v1.5-blessed).
@@ -36,7 +40,15 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
 - **Keyword:** `rank-bm25==0.2.2` with a code-aware tokenizer (splits camelCase/snake_case). It's
   **in-memory & stateless** → rebuild from Chroma on startup (no stale pickle).
 - **Fusion:** Reciprocal Rank Fusion (k=60, rank-based, no score normalization) → robust across
-  cosine + BM25. Exact `symbol_name` match → small boost. Final **top_k=5**.
+  cosine + BM25. Exact `symbol_name` match → small boost. This is the wide first-stage **recall**.
+- **Rerank (precise second stage):** with `RERANKER_ENABLED` (on by default), the fused top-N (≈20) is
+  reordered by a local cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`, fastembed `TextCrossEncoder`) that
+  scores (question, code) pairs *together* — far better than comparing two independent embeddings — then
+  cut to **top_k=5**. It runs on only those candidates per question (tens of ms, hidden behind the LLM)
+  and never touches ingest. Golden set (`python -m app.quality.compare`): top-1 hit-rate **80%→90%**;
+  recall@5 is already saturated so the gain shows in ranking precision. Best-effort: falls back to
+  single-stage if the model can't load. This decouples speed from accuracy — cheap broad recall (static
+  or bge) plus a precise rerank is both fast and accurate.
 - **Cache:** `chunk_id = sha256(chunk.code)` → unchanged symbols dedupe automatically; hashing *chunk*
   (not file) means editing one function doesn't invalidate siblings.
 - **Dimension lock-in:** bge 384 vs OpenAI 1536; a collection fixes its dim at first write → encode

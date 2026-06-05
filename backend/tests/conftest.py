@@ -18,6 +18,21 @@ def _isolate_answer_cache():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _default_no_reranker():
+    """Default every test to no reranker, so the suite never loads the real cross-encoder.
+
+    Reranking is on by default in production; the tests that exercise it (test_rerank.py)
+    override get_reranker themselves. This just keeps all the other endpoint tests offline and
+    single-stage, matching the behaviour they were written against.
+    """
+    from app.main import app, get_reranker
+
+    app.dependency_overrides[get_reranker] = lambda: None
+    yield
+    app.dependency_overrides.pop(get_reranker, None)
+
+
 # A friendly title for each test file, shown as a group heading. Files not listed here
 # still appear, under their own filename.
 _GROUP_TITLES = {

@@ -126,12 +126,20 @@ _Landing · Workspace (chat + project panel) · Code viewer · ⌘K command pale
 
 ## RAG / LLM approach & decisions
 - **Chunking:** AST-aware via tree-sitter (by function/class) — see TECHNICAL_REPORT §1.1.
-- **Embeddings:** local `bge-small` (fastembed), pluggable to OpenAI — §1.2.
-- **Vector DB:** Chroma (cosine, persistent) — §1.2.
-- **Retrieval:** hybrid semantic + BM25 fused with RRF, top_k=5 — §1.2.
+- **Embeddings:** local `bge-small` (fastembed) by default; pluggable to OpenAI, or to a
+  **Model2Vec static** model for a ~100× faster *fast mode* (`EMBED_BACKEND=static`) — §1.2.
+- **Vector DB:** Chroma (cosine, persistent); the collection is keyed by model + dim so
+  backends never collide — §1.2.
+- **Retrieval (two-stage):** wide hybrid recall (semantic + BM25 fused with RRF) → a local
+  **cross-encoder reranker** reorders the candidate pool down to top_k. Recall is cheap and
+  broad; the reranker scores (question, code) pairs *together* for precision, runs on ~20
+  candidates per question (tens of ms, hidden behind the LLM), and never touches ingest — §1.2.
 - **LLM:** OpenRouter free tier (default `openai/gpt-oss-120b:free`), user-selectable — §1.3.
 - **Prompt & guardrails:** answer only from context; cite file:line; say "not found" otherwise.
-- **Observability:** one JSON log line per query (ids, latency, tokens).
+- **Quality:** golden-set hit-rate (`python -m app.quality.compare`). The reranker lifts top-1
+  accuracy **80% → 90%**; static embeddings match `bge-small` on hit-rate while embedding
+  ~100× faster — so *fast mode + rerank* is both fast and accurate.
+- **Observability:** one JSON log line per query (ids, per-stage latency, tokens).
 
 ## Orchestration: no framework, on purpose
 The pipeline (chunk → embed → store → retrieve → prompt → call) is small and well understood, so Glyph
