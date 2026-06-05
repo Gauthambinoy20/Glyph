@@ -170,7 +170,7 @@ See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind eac
 - [x] 103. Stream the answer over SSE `POST /api/ask/stream` (words appear live; biggest felt-speed win) `(core)`  (backend done; UI typing is #110)
 - [x] 104. Cache the BM25 index per repo: build once, reuse until the chunk count changes `(core)`
       *(was rebuilt from Chroma on EVERY request; now cached per store via a WeakKeyDictionary)*
-- [ ] 105. Warm the embedder at startup so the first question is not a cold-model hit `(polish)`
+- [x] 105. Warm the embedder at startup (lifespan) so the first question is not a cold-model hit `(polish)`
 - [ ] 106. Answer cache keyed on (repo + question + model); identical repeat questions return instantly `(polish)`
 - [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
 - [x] 108. Per-stage timing (retrieve_ms / llm_ms) in the JSON log and answer meta `(polish)`

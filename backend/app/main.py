@@ -8,7 +8,8 @@ import json
 import logging
 import time
 import uuid
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from functools import lru_cache
 
@@ -44,8 +45,23 @@ logger = logging.getLogger("glyph")
 # object is not handy. Set per request by the middleware below.
 _request_id: ContextVar[str] = ContextVar("request_id", default="")
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Warm the embedding model at startup so the first question is not a cold-load hit.
+
+    Best-effort: if warmup fails the model still loads lazily on first use. (Tests drive the
+    app without entering the lifespan, so this never forces a real model download in CI.)
+    """
+    try:
+        get_embedder()
+    except Exception:  # noqa: BLE001 - warmup must never stop the server from starting
+        logger.exception("embedder warmup failed; it will load on first use")
+    yield
+
+
 # The single FastAPI application instance that the server runs.
-app = FastAPI(title="Glyph API")
+app = FastAPI(title="Glyph API", lifespan=lifespan)
 
 # Lock cross-origin access to the known frontend origins (a browser will block others).
 app.add_middleware(

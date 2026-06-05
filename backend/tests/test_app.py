@@ -43,3 +43,12 @@ def test_unexpected_error_becomes_a_clean_500(tmp_path) -> None:  # T56
     assert body["request_id"]
     assert "secret internal detail" not in response.text  # the real error never leaks
     assert response.headers.get("x-request-id")
+
+
+def test_embedder_is_warmed_on_startup(monkeypatch) -> None:  # #105
+    # Entering the lifespan (via the context manager) should warm the embedder once.
+    calls: list[int] = []
+    monkeypatch.setattr("app.main.get_embedder", lambda: calls.append(1))
+    with TestClient(app):
+        pass
+    assert calls  # warmup ran at startup
