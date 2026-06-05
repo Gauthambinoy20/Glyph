@@ -11,6 +11,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-openai/gpt-oss-120b:free}
       - LLM_FALLBACK_MODEL=${LLM_FALLBACK_MODEL:-openai/gpt-oss-20b:free}
       - CHROMA_DIR=/data/chroma
+      # Public box hardening: confine local ingestion + cap requests per client IP.
+      - INGEST_BASE_DIR=/app
+      - RATE_LIMIT_PER_MINUTE=120
     volumes:
       - glyph-data:/data
     expose:

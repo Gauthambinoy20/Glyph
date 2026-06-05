@@ -2,6 +2,12 @@
 # so the public URL needs no port suffix. Used together with the root docker-compose.yml:
 #   docker compose -f docker-compose.yml -f infra/docker-compose.ec2.yml up -d --build
 services:
+  backend:
+    environment:
+      # Public box hardening: confine local-folder ingestion to the app dir (blocks
+      # /etc and friends) and cap requests per client IP.
+      - INGEST_BASE_DIR=/app
+      - RATE_LIMIT_PER_MINUTE=120
   frontend:
     ports:
       - "80:80"
