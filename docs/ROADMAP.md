@@ -184,7 +184,10 @@ tracked as stretch item 101.
 - [ ] 111. Skeleton / shimmer loading for ingest and for an in-flight answer (replace bare dots) `(polish)`
 - [ ] 112. Citation hover preview: peek the cited code in a small popover before clicking `(polish)`
 - [ ] 113. Copy-answer and copy-code buttons `(polish)`
-- [ ] 114. Live ingest progress: files and chunks counting up, not just one final number `(polish)`
+- [x] 114. Live ingest progress: files and chunks counting up, not just one final number `(polish)`
+      *(SSE `POST /api/ingest/stream` streams clone→walk→chunk→embed(X/Y)→done; the landing
+      screen shows a stage checklist with a live embed count + bar. Commits 7bb9565, 0242260,
+      44169ee, 895141a)*
 - [ ] 115. Keyboard: Cmd/Ctrl+K focuses the question box, Esc closes the code panel `(polish)`
 - [ ] 116. Recent repos list so you can re-open one without re-pasting the URL `(polish)`
 - [ ] 117. Mobile-responsive chat column (graph hides on small screens) `(stretch)`
@@ -291,6 +294,18 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Performance / robustness (Phase 13-14)**
 - [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
 - [x] T58. fetchWithTimeout: resolves in time; abort → clear "timed out" message; other errors pass through
+
+**Live ingest progress (Phase 14 #114)**
+- [x] T67. `ingest_path_events` yields walk → chunk → embed → done in order, with correct counts
+- [x] T68. Embed progress starts at 0, never goes backwards, and ends exactly at the total
+- [x] T69. The streamed `done` event matches what the blocking `ingest_path` returns
+- [x] T70. `ingest_repo_events` clones first, then ingests, and always deletes the temp clone
+- [x] T71. `/api/ingest/stream` emits stage events then a `done` event with a real added count
+- [x] T72. `/api/ingest/stream` missing input → 400 before any streaming
+- [x] T73. `/api/ingest/stream` bad repo URL → trailing `error` event (not a 400)
+- [x] T74. Frontend `parseIngestSSE` parses stage/done events, holds a half-event back, surfaces errors
+- [x] T75. `deriveSteps`/`applyIngestEvent`: fold events, mark running/pending/done, embed %, all-cached case
+- [x] T76. App drives `ingestStream` (success → workspace; error → toast, stays on landing)
 
 **Backend for the redesigned UI (Phase 16)**
 - [x] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up (+ empty index → zeros)

@@ -387,4 +387,19 @@ VIBE CODER/
   uses a tiny in-house markdown/highlighter instead of three heavy libraries. I also added a frontend CI
   job (types, tests, build) so the pipeline now guards the UI too. Frontend tests went from 10 to 31.
 
+- **Live ingest progress, end to end (done, 2026-06-05).** Until now, pressing Ingest showed a single
+  spinner that only resolved when *everything* was finished — on a big repo that is a long, silent wait
+  where you cannot tell if it is working or stuck. I made it show, live, exactly which step is running.
+  I reshaped the ingest pipeline so the work is a generator that emits a small event at each stage —
+  cloning the repo, scanning the files, chunking the code, then embedding in batches so it can report
+  "230 of 410" as it goes — and added a streaming endpoint that forwards those events to the browser the
+  same way the answers already stream. The old one-shot ingest still exists for anything that just wants
+  the final numbers; both now run the exact same code, so they cannot drift apart. On the screen, the
+  spinner became a checklist that fills in stage by stage, with the file and chunk counts and a little
+  progress bar for the embedding. I kept all the logic in small pure functions so they are easy to test
+  on their own. I also found and explained the earlier "the button does nothing" confusion: an old
+  Docker build was still running on the same port, so I was clicking a stale copy of the app, not the
+  current code. Backend went to 75 tests, frontend to 41, types and build clean, and I smoke-tested the
+  real stream against the running backend (walk → chunk → embed 0/4 → 4/4 → done).
+
 *(Next entries get added here, newest at the bottom, one per step.)*
