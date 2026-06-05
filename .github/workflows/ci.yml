@@ -52,6 +52,10 @@ jobs:
         # chromadb CVE-2026-45829 has no fixed release yet; remove this ignore once it does.
         run: pip-audit --ignore-vuln CVE-2026-45829
 
+      - name: Dead code (vulture)
+        # Whole-package unused-code check; settings live in [tool.vulture] in pyproject.toml.
+        run: vulture
+
       - name: Tests + coverage
         # Skip integration tests that download the real model (HuggingFace rate-limits CI runners).
         # They run locally; the offline suite still covers the embed/store/cache logic here.

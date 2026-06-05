@@ -17,3 +17,10 @@ repos:
         language: system
         types: [python]
         files: ^backend/
+      - id: vulture
+        name: vulture (dead code)
+        entry: bash -c 'cd backend && .venv/bin/vulture'
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false

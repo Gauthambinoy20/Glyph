@@ -10,6 +10,10 @@ mypy==2.1.0
 # Security static analysis (flags risky patterns, hardcoded secrets, etc).
 bandit==1.9.4
 
+# Dead-code finder: flags unused functions/classes/variables across the whole package, which
+# the per-file linters cannot see. Keeps the codebase free of quietly-orphaned code.
+vulture==2.14
+
 # Scans pinned dependencies for known CVEs.
 pip-audit==2.10.0
 

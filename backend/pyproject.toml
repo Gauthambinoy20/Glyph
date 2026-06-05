@@ -77,3 +77,11 @@ exclude_dirs = ["tests", ".venv"]
 # validated by a strict regex first, arguments passed as a list (no shell, so no shell
 # injection), and a non-interactive environment. That is the safe, intended use.
 skips = ["B404", "B603", "B607"]
+
+[tool.vulture]
+# Find unused code in the app package only. Tests drive everything through the public API,
+# and the fixtures are deliberately messy sample code, so neither should be scanned.
+paths = ["app"]
+exclude = ["tests/fixtures"]
+# 80 keeps it high-signal: report only confident finds, not maybe-dynamic guesses.
+min_confidence = 80
