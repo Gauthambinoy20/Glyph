@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # Where the vector store keeps its data on disk.
     chroma_dir: str = "chroma_db"
 
+    # SQLite file for chat history (sessions + messages); created on first use.
+    db_path: str = "glyph_history.db"
+
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""

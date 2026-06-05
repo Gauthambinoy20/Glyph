@@ -37,6 +37,8 @@ _GROUP_TITLES = {
     "test_endpoints.py": "Endpoints  (detect API routes in the indexed code)",
     "test_eval.py": "Quality  (golden-set retrieval hit-rate scorer)",
     "test_answer_cache.py": "Answer cache  (repeat questions skip the model)",
+    "test_symbols.py": "Symbols  (flat file+symbol index for the palette)",
+    "test_history.py": "History  (SQLite chat sessions + messages)",
     "test_app.py": "App  (CORS, request ids, and the global error handler)",
     "test_e2e.py": "End-to-end  (the whole real pipeline through the endpoints)",
 }

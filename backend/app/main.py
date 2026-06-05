@@ -24,6 +24,7 @@ from app.analyze.graph import build_import_graph
 from app.analyze.stats import build_stats
 from app.analyze.symbols import list_symbols
 from app.config import get_settings
+from app.db.history import History
 from app.embed.base import Embedder
 from app.embed.factory import make_embedder
 from app.ingest.pipeline import (
@@ -139,6 +140,12 @@ def get_llm() -> LLMClient:
     )
 
 
+@lru_cache
+def get_history() -> History:
+    """Build the chat-history store once (SQLite file from settings)."""
+    return History(get_settings().db_path)
+
+
 class IngestRequest(BaseModel):
     """Body for /api/ingest: provide exactly one of repo_url or local_path."""
 
@@ -151,6 +158,14 @@ class SearchRequest(BaseModel):
 
     question: str
     top_k: int = 5
+
+
+class HistorySaveRequest(BaseModel):
+    """Body for POST /api/history: save a session's whole conversation."""
+
+    repo: str = ""
+    messages: list[dict] = []
+    session_id: str | None = None
 
 
 class Turn(BaseModel):
@@ -471,6 +486,28 @@ def symbols(
     """Return a flat file + symbol index of the indexed code (for the command palette)."""
     _ = embedder
     return {"symbols": list_symbols(store)}
+
+
+@app.post("/api/history")
+def save_history(request: HistorySaveRequest, history: History = Depends(get_history)) -> dict:
+    """Save (create or replace) a chat session and return its id."""
+    session_id = history.save(request.repo, request.messages, request.session_id)
+    return {"session_id": session_id}
+
+
+@app.get("/api/history")
+def list_history(history: History = Depends(get_history)) -> dict:
+    """List recent saved chat sessions (newest first)."""
+    return {"sessions": history.list_sessions()}
+
+
+@app.get("/api/history/{session_id}")
+def load_history(session_id: str, history: History = Depends(get_history)) -> dict:
+    """Return a saved session's messages, or 404 if the session does not exist."""
+    session = history.load(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail=f"session not found: {session_id}")
+    return session
 
 
 @app.get("/api/file")
