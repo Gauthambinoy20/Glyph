@@ -8,8 +8,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
-![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)
-![Docker](https://img.shields.io/badge/Docker-compose%20up-2496ED?logo=docker&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
@@ -84,7 +83,8 @@ configured, see [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
 ## Features
 - Ingest a **public GitHub repo** or a **local folder** (sandboxed), with **live progress** (clone → walk → chunk → embed).
 - **AST chunking** (tree-sitter) for Python / JS / TS / TSX, so citations land on exact line ranges.
-- **Hybrid retrieval**: semantic (local embeddings) + keyword (BM25), fused with Reciprocal Rank Fusion.
+- **Two-stage retrieval**: hybrid recall (semantic + BM25, fused with RRF) → a cross-encoder **reranker** that reorders the candidates so the best code is cited first.
+- **Fast or Careful indexing**: pick Model2Vec static embeddings (~100× faster ingest) or the bge-small transformer (more precise) when you load a repo.
 - **Grounded, streaming answers** with `file:line` citations, a sources panel, and follow-up suggestions.
 - **Project Intelligence panel**: language breakdown, index stats, repo overview, a live dependency graph, most-depended-on files, and session metrics.
 - **⌘K command palette**, click-to-open **code viewer**, and a selectable **model picker** (free + paid).
@@ -115,9 +115,10 @@ graph LR
     API --> LOG[(JSON query log)]
 ```
 
-**Endpoints (11):** `/api/health`, `/api/ingest`, `/api/ingest/stream`, `/api/search`, `/api/models`,
-`/api/ask`, `/api/ask/stream`, `/api/overview`, `/api/graph`, `/api/stats`, `/api/file`. The detailed
-architecture, data-flow, sequence and ER diagrams live in
+**Endpoints (18):** `/api/health`, `/api/ready`, `/api/ingest`, `/api/ingest/stream`, `/api/mode`,
+`/api/search`, `/api/ask`, `/api/ask/stream`, `/api/models`, `/api/overview`, `/api/graph`,
+`/api/stats`, `/api/stack`, `/api/endpoints`, `/api/symbols`, `/api/file`, `/api/history`,
+`/api/history/{session_id}`. The detailed architecture, data-flow, sequence and ER diagrams live in
 [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md).
 
 ## Screenshots

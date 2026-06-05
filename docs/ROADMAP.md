@@ -22,10 +22,11 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 **Definition of done for the whole project:** see the final section.
 
 > **🔎 Verification audit (2026-06-05).** Walked the real code against this list. The engine is solid
-> and committed (11 endpoints live, 78 backend + 41 frontend tests, CI green, clean git history). Confirmed still-open core
-> gaps: **no Docker/compose, no streaming, CORS + global error handler + request-id missing, README +
-> screenshots not done.** Added three new phases below — **13 (performance & latency)**, **14 (UI/UX
-> polish)** — and ticked the commit boxes git confirms. Where to start is called out at the very end.
+> and committed (**18 endpoints live, 139 backend + 53 frontend tests at 92% coverage**, full CI/CD
+> green with auto-deploy to AWS, clean git history). The earlier still-open gaps (Docker/compose,
+> streaming, CORS + global error handler + request-id, README + screenshots) are **all now closed**.
+> Added phases below — **13 (performance & latency)**, **14 (UI/UX polish)** — and ticked the commit
+> boxes git confirms. Where to start is called out at the very end.
 
 ---
 
