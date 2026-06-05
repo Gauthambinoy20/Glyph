@@ -12,6 +12,7 @@ vi.mock("./api", () => ({
     ingestStream: vi.fn(),
     setMode: vi.fn(),
     stats: vi.fn(),
+    stack: vi.fn(),
     overview: vi.fn(),
     graph: vi.fn(),
     models: vi.fn(),
@@ -43,6 +44,7 @@ beforeEach(() => {
     edges: [],
   });
   vi.mocked(api.endpoints).mockResolvedValue([{ method: "POST", path: "/api/ask" }]);
+  vi.mocked(api.stack).mockResolvedValue([{ name: "FastAPI", package: "fastapi", files: 2 }]);
   vi.mocked(api.symbols).mockResolvedValue([
     { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
   ]);

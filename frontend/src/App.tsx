@@ -22,16 +22,11 @@ import type { PanelData } from "./components/ProjectPanel";
 /** Parse a GitHub URL or local path into a Repo header. */
 function parseRepo(input: string): Repo {
   const m = input.match(/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/);
-  if (m)
-    return {
-      owner: m[1],
-      name: m[2],
-      branch: "main",
-      url: `https://github.com/${m[1]}/${m[2]}`,
-      visibility: "Public",
-    };
+  // No invented branch/visibility here — the real branch is filled in after ingest, and
+  // visibility is left unknown rather than guessed "Public".
+  if (m) return { owner: m[1], name: m[2], url: `https://github.com/${m[1]}/${m[2]}` };
   const name = input.split("/").filter(Boolean).pop() || input;
-  return { owner: "local", name, branch: "main", url: input };
+  return { owner: "local", name, url: input };
 }
 
 const prettyLang = (l: string) => (l ? l.charAt(0).toUpperCase() + l.slice(1) : "Other");
@@ -325,7 +320,7 @@ export default function App() {
           .catch(reject);
       });
       const parsed = parseRepo(value);
-      const [stats, overview, graph, endpoints] = await Promise.all([
+      const [stats, overview, graph, endpoints, stack] = await Promise.all([
         api.stats(),
         api
           .overview()
@@ -333,7 +328,15 @@ export default function App() {
           .catch(() => ""),
         api.graph().catch(() => ({ nodes: [], edges: [] })),
         api.endpoints().catch(() => []),
+        api.stack().catch(() => []),
       ]);
+      // Fill the repo header with real data only: the actual branch from the clone and a
+      // one-line description taken from the generated overview (no placeholders, no guesses).
+      const repoMeta: Repo = {
+        ...parsed,
+        branch: summary.branch,
+        description: overview ? overview.split(/(?<=[.!?])\s/)[0].slice(0, 140) : undefined,
+      };
       const symbolRows = await api.symbols().catch(() => []);
       // Tailor the starter questions to this repo: a real endpoint, a real symbol, and whether
       // there is a dependency graph to ask about.
@@ -362,13 +365,13 @@ export default function App() {
         pct: Math.round((l.chunks / total) * 100),
         color: langColor(prettyLang(l.language)),
       }));
-      setRepo(parsed);
+      setRepo(repoMeta);
       setPanel({
-        repo: parsed,
+        repo: repoMeta,
         languages,
         stats: { files: stats.files, chunks: stats.chunks, cached: summary.cached },
         overview,
-        stack: languages.map((l) => l.name),
+        stack: stack.map((s) => s.name),
         graph,
         endpoints,
         recent: [],

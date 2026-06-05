@@ -22,7 +22,7 @@ export interface Endpoint {
 export interface Repo {
   owner: string;
   name: string;
-  branch: string;
+  branch?: string; // the real default branch, filled after ingest; absent for local folders
   url: string;
   visibility?: string;
   description?: string;

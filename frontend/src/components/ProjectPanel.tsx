@@ -235,12 +235,14 @@ function RepoHeader({ repo, onChangeRepo }: { repo: Repo; onChangeRepo: () => vo
         </a>
       )}
 
-      <div className="repo-meta">
-        <span className="rm">
-          <Icon name="branch" size={12} />
-          <span className="mono">{repo.branch}</span>
-        </span>
-      </div>
+      {repo.branch && (
+        <div className="repo-meta">
+          <span className="rm">
+            <Icon name="branch" size={12} />
+            <span className="mono">{repo.branch}</span>
+          </span>
+        </div>
+      )}
 
       <div className="repo-foot">
         <span className="repo-indexed">

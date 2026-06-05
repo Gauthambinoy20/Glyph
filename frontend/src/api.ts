@@ -176,7 +176,14 @@ export type IngestEvent =
   | { stage: "walk"; files: number }
   | { stage: "chunk"; chunks: number }
   | { stage: "embed"; done: number; total: number }
-  | { stage: "done"; files: number; languages: string[]; added: number; cached: number }
+  | {
+      stage: "done";
+      files: number;
+      languages: string[];
+      added: number;
+      cached: number;
+      branch?: string; // the repo's real default branch (omitted for local folders)
+    }
   | { stage: "error"; detail: string };
 
 export type IngestDone = Extract<IngestEvent, { stage: "done" }>;
@@ -294,6 +301,13 @@ export const api = {
     const res = await fetch("/api/stats");
     if (!res.ok) throw new Error("could not load stats");
     return res.json();
+  },
+
+  // The real frameworks/libraries detected from the code's imports, most-used first.
+  stack: async (): Promise<{ name: string; package: string; files: number }[]> => {
+    const res = await fetch("/api/stack");
+    if (!res.ok) throw new Error("could not load stack");
+    return (await res.json()).stack;
   },
 
   file: async (path: string, start?: number, end?: number): Promise<IndexedFile> => {
