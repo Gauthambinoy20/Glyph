@@ -1,0 +1,29 @@
+# Production compose used by the deploy workflow on the target VM (Lightsail / EC2).
+# Unlike docker-compose.yml (which builds locally), this PULLS pre-built images from
+# GHCR so the small box never has to compile anything. IMAGE_TAG is set by the deploy
+# job to the released git SHA; LLM_API_KEY comes from a .env file on the box.
+services:
+  backend:
+    image: ghcr.io/gauthambinoy20/glyph-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-openai/gpt-oss-120b:free}
+      - LLM_FALLBACK_MODEL=${LLM_FALLBACK_MODEL:-openai/gpt-oss-20b:free}
+      - CHROMA_DIR=/data/chroma
+    volumes:
+      - glyph-data:/data
+    expose:
+      - "8000"
+
+  frontend:
+    image: ghcr.io/gauthambinoy20/glyph-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # Serve on the standard web port so the public URL needs no :5173 suffix.
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  glyph-data:
