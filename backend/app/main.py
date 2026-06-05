@@ -472,17 +472,24 @@ def ask(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
+    # A per-question rerank=False turns the reranker off for this answer only. Whether the
+    # reranker actually ran, and which backend indexed the repo, both change the grounding
+    # chunks, so they are part of the cache key and reported back in meta.
+    active_reranker = None if request.rerank is False else reranker
+    reranked = active_reranker is not None
+    backend = _active_settings().embed_backend
+
     # Cache only standalone questions (follow-ups depend on conversation context). A repeat of
     # the same question on the same index returns instantly without calling the model.
     cacheable = not request.history
     chunk_count = store.count()
     if cacheable:
-        hit = answer_cache.get(chunk_count, request.question, request.model)
+        hit = answer_cache.get(
+            chunk_count, request.question, request.model, rerank=reranked, backend=backend
+        )
         if hit is not None:
             return {**hit, "meta": {**hit["meta"], "cached": True}}
 
-    # A per-question rerank=False turns the reranker off for this answer only.
-    active_reranker = None if request.rerank is False else reranker
     retrieve_started = time.perf_counter()
     chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, active_reranker)
     retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
@@ -512,10 +519,13 @@ def ask(
             "token_usage": token_usage,
             "stage_ms": stages,
             "cached": False,
+            "reranked": reranked,
         },
     }
     if cacheable:
-        answer_cache.put(chunk_count, request.question, request.model, result)
+        answer_cache.put(
+            chunk_count, request.question, request.model, result, rerank=reranked, backend=backend
+        )
     return result
 
 
@@ -536,9 +546,19 @@ def ask_stream(
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
 
+    active_reranker = None if request.rerank is False else reranker
+    reranked = active_reranker is not None
+    backend = _active_settings().embed_backend
+
     cacheable = not request.history
     chunk_count = store.count()
-    cached = answer_cache.get(chunk_count, request.question, request.model) if cacheable else None
+    cached = (
+        answer_cache.get(
+            chunk_count, request.question, request.model, rerank=reranked, backend=backend
+        )
+        if cacheable
+        else None
+    )
 
     def events() -> Iterator[str]:
         """Drive the model stream and translate each step into an SSE message."""
@@ -548,7 +568,6 @@ def ask_stream(
             yield _sse({"type": "final", **cached, "meta": {**cached["meta"], "cached": True}})
             return
 
-        active_reranker = None if request.rerank is False else reranker
         retrieve_started = time.perf_counter()
         chunks, system_prompt, user_prompt = _prepare_answer(
             request, embedder, store, active_reranker
@@ -588,10 +607,18 @@ def ask_stream(
                 "token_usage": usage,
                 "stage_ms": stages,
                 "cached": False,
+                "reranked": reranked,
             },
         }
         if cacheable:
-            answer_cache.put(chunk_count, request.question, request.model, result)
+            answer_cache.put(
+                chunk_count,
+                request.question,
+                request.model,
+                result,
+                rerank=reranked,
+                backend=backend,
+            )
         yield _sse({"type": "final", **result})
 
     return StreamingResponse(events(), media_type="text/event-stream")

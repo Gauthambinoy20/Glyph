@@ -31,6 +31,7 @@ export interface AnswerMeta {
   token_usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
   stage_ms?: { retrieve_ms: number; llm_ms: number };
   cached?: boolean;
+  reranked?: boolean; // whether the cross-encoder reranker actually ran for this answer
 }
 
 export interface AskResponse {

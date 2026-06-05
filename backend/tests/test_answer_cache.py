@@ -18,6 +18,19 @@ def test_cache_returns_stored_value_and_normalizes_question() -> None:
     assert cache.get(4, "where is login?", "m") is None  # different chunk count → miss
 
 
+def test_cache_distinguishes_rerank_and_backend() -> None:  # T53
+    """The same question caches separately per rerank flag and per embedding backend."""
+    cache = AnswerCache()
+    cache.put(3, "q", "m", {"answer": "reranked"}, rerank=True, backend="local")
+
+    # Same chunk-count/question/model, but the reranker was off → different grounding → miss.
+    assert cache.get(3, "q", "m", rerank=False, backend="local") is None
+    # Same everything, but a different embedding backend indexed it → miss.
+    assert cache.get(3, "q", "m", rerank=True, backend="static") is None
+    # Exact match → hit.
+    assert cache.get(3, "q", "m", rerank=True, backend="local") == {"answer": "reranked"}
+
+
 def test_cache_evicts_least_recently_used() -> None:
     cache = AnswerCache(max_size=2)
     cache.put(1, "a", None, {"answer": "A"})
