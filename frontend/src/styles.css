@@ -2608,6 +2608,48 @@ button {
     0 4px 14px var(--accent-glow);
 }
 
+/* Technical note explaining the selected indexing mode (the core trade-off). */
+.mode-note {
+  margin: 12px auto 0;
+  max-width: 460px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.mode-note-head {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.mode-note ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.mode-note li {
+  position: relative;
+  padding-left: 15px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.mode-note li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 /* ---- Landing: quick-add demo repo chips ---- */
 .land-demos {
   margin-top: 24px;

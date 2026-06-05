@@ -93,6 +93,19 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
           </div>
         )}
 
+        {!progress && (
+          <div className="mode-note">
+            <span className="mode-note-head">
+              {mode === "fast" ? "⚡ Fast" : "◎ Careful"} · {MODE_NOTES[mode].head}
+            </span>
+            <ul>
+              {MODE_NOTES[mode].points.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {progress ? (
           <IngestProgress state={progress} />
         ) : (
@@ -148,3 +161,28 @@ const DEMO_REPOS = [
   "pallets/flask",
   "expressjs/express",
 ];
+
+// The core engineering difference between the two indexing modes, shown under the toggle
+// so a technical reader can see exactly what they are trading off.
+const MODE_NOTES: Record<"fast" | "careful", { head: string; points: string[] }> = {
+  fast: {
+    head: "Static embeddings (Model2Vec)",
+    points: [
+      "Model2Vec static vectors (potion-base-8M, 256-dim), no transformer at index time.",
+      "About 100x faster indexing (measured ~22k chunks/sec); pure CPU, no model warmup.",
+      "Best for large repos or a quick first look.",
+      "Slightly lower raw recall, recovered by the cross-encoder reranker.",
+      "Matches bge-small on golden-set hit-rate in our eval.",
+    ],
+  },
+  careful: {
+    head: "Transformer embeddings (bge-small)",
+    points: [
+      "bge-small-en-v1.5 (384-dim) via fastembed and ONNX, richer semantic vectors.",
+      "Stronger on nuanced or paraphrased queries.",
+      "Slower: a cold first batch and more compute per chunk.",
+      "Its own Chroma collection keyed by model and dimension, never mixed with fast.",
+      "Best when precision matters more than indexing speed.",
+    ],
+  },
+};
