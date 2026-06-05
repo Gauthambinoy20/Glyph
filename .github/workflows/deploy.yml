@@ -1,0 +1,113 @@
+name: Deploy
+
+# Continuous deployment to the production VM (AWS Lightsail / EC2).
+#
+# This workflow is INERT until you configure it, so it never fails the pipeline
+# before the box exists. It runs only when the `DEPLOY_HOST` repository variable
+# is set. To turn it on, add under Settings → Secrets and variables → Actions:
+#
+#   Variables:  DEPLOY_HOST  (public IP / DNS of the box)
+#               DEPLOY_USER  (ssh user, e.g. ubuntu)
+#               DEPLOY_URL   (public URL, e.g. http://<ip>  — used for the smoke test)
+#   Secrets:    DEPLOY_SSH_KEY  (private key authorised on the box)
+#
+# One-time on the box: install Docker + the compose plugin, and drop a .env with
+# LLM_API_KEY next to where the compose file lands (~/glyph).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write # push images to GHCR
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never interrupt an in-flight deploy
+
+jobs:
+  build-push:
+    name: Build & push images to GHCR
+    if: ${{ vars.DEPLOY_HOST != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Compute image tag (short SHA)
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/gauthambinoy20/glyph-backend:${{ steps.meta.outputs.tag }}
+            ghcr.io/gauthambinoy20/glyph-backend:latest
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/gauthambinoy20/glyph-frontend:${{ steps.meta.outputs.tag }}
+            ghcr.io/gauthambinoy20/glyph-frontend:latest
+
+  deploy:
+    name: Roll the stack on the VM
+    needs: build-push
+    if: ${{ vars.DEPLOY_HOST != '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.DEPLOY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy the production compose file to the box
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: docker-compose.prod.yml
+          target: glyph
+
+      - name: Pull the new images and roll the stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ~/glyph
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export IMAGE_TAG=${{ needs.build-push.outputs.tag }}
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            docker image prune -f
+
+      - name: Smoke test the live site
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS "${{ vars.DEPLOY_URL }}/api/health" | grep -q '"status":"ok"'; then
+              echo "live and healthy after ${i} tries"; exit 0
+            fi
+            echo "waiting for the live site... (${i}/20)"; sleep 5
+          done
+          echo "::error::live site did not become healthy"; exit 1
