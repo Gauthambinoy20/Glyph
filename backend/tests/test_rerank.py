@@ -5,12 +5,12 @@ the real hybrid retriever + Chroma store through /api/search with a deterministi
 """
 
 from app.config import Settings
-from app.main import app, get_embedder, get_reranker, get_store
+from app.main import app, get_embedder, get_llm, get_reranker, get_store
 from app.rerank.cross_encoder import CrossEncoderReranker
 from app.rerank.factory import make_reranker
 from fastapi.testclient import TestClient
 
-from tests.helpers import FakeEmbedder, FakeReranker
+from tests.helpers import FakeEmbedder, FakeLLM, FakeReranker
 from tests.test_e2e import _fresh_store, _make_repo
 
 
@@ -90,3 +90,31 @@ def test_search_two_stage_reranks_the_recall_pool(tmp_path) -> None:  # T80
     expected = [row["id"] for row in reversed(pool["results"])][:3]
     assert [row["id"] for row in reranked["results"]] == expected
     assert len(reranked["results"]) <= 3  # cut to the requested top_k
+
+
+def test_ask_rerank_toggle_skips_reranker_when_false(tmp_path) -> None:  # T85
+    """A per-question rerank=False answers without the reranker; rerank=True uses it."""
+    repo = _make_repo(tmp_path / "repo")
+    store = _fresh_store(tmp_path)
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: store
+    app.dependency_overrides[get_llm] = lambda: FakeLLM("ok")
+    app.dependency_overrides[get_reranker] = lambda: FakeReranker()
+    try:
+        client = TestClient(app)
+        client.post("/api/ingest", json={"local_path": str(repo)})
+        # A prior turn makes the ask non-cacheable, so both calls actually run retrieval.
+        history = [{"question": "prior", "answer": "prior"}]
+        on = client.post(
+            "/api/ask", json={"question": "authenticate user", "history": history, "rerank": True}
+        ).json()
+        off = client.post(
+            "/api/ask", json={"question": "authenticate user", "history": history, "rerank": False}
+        ).json()
+    finally:
+        app.dependency_overrides.clear()
+
+    on_ids = [src["id"] for src in on["sources"]]
+    off_ids = [src["id"] for src in off["sources"]]
+    # The reversing FakeReranker reorders the pool, so rerank=True differs from rerank=False.
+    assert on_ids != off_ids

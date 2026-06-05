@@ -197,12 +197,15 @@ class Turn(BaseModel):
 
 
 class AskRequest(BaseModel):
-    """Body for /api/ask: a question, an optional model id, top_k, and prior turns."""
+    """Body for /api/ask: a question, an optional model id, top_k, prior turns, rerank toggle."""
 
     question: str
     model: str | None = None
     top_k: int = 5
     history: list[Turn] = []
+    # Per-question control of the cross-encoder reranker. None = use the server default (on);
+    # False = skip it for this question (a hair faster); True = use it when one is available.
+    rerank: bool | None = None
 
 
 @app.get("/api/health")
@@ -378,8 +381,10 @@ def ask(
         if hit is not None:
             return {**hit, "meta": {**hit["meta"], "cached": True}}
 
+    # A per-question rerank=False turns the reranker off for this answer only.
+    active_reranker = None if request.rerank is False else reranker
     retrieve_started = time.perf_counter()
-    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, reranker)
+    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, active_reranker)
     retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
 
     llm_started = time.perf_counter()
@@ -443,8 +448,11 @@ def ask_stream(
             yield _sse({"type": "final", **cached, "meta": {**cached["meta"], "cached": True}})
             return
 
+        active_reranker = None if request.rerank is False else reranker
         retrieve_started = time.perf_counter()
-        chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, reranker)
+        chunks, system_prompt, user_prompt = _prepare_answer(
+            request, embedder, store, active_reranker
+        )
         retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
         chunk_ids = [chunk["id"] for chunk in chunks]
 
