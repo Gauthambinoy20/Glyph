@@ -1,0 +1,60 @@
+// Sliding code viewer (middle column). Line numbers, highlighted cited lines, copy + close.
+
+import { useEffect, useRef } from "react";
+
+import type { Source } from "../api";
+import { Icon } from "./Icon";
+import { CopyButton, highlightLine } from "./Markdown";
+
+interface Props {
+  source: Source;
+  hlStart: number;
+  hlEnd: number;
+  onClose: () => void;
+}
+
+export function CodeViewer({ source, hlStart, hlEnd, onClose }: Props) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const lines = source.code.replace(/\n$/, "").split("\n");
+  const base = source.start_line || 1;
+
+  // Centre the highlighted block in view, within the panel only.
+  useEffect(() => {
+    const el = bodyRef.current?.querySelector(".code-line.hl") as HTMLElement | null;
+    if (el && bodyRef.current) {
+      const top = el.offsetTop - bodyRef.current.clientHeight / 2 + 40;
+      bodyRef.current.scrollTop = Math.max(0, top);
+    }
+  }, [source, hlStart, hlEnd]);
+
+  return (
+    <section className="code-col scroll">
+      <header className="code-hd">
+        <span className="code-file" title={source.file_path}>
+          {source.file_path}
+        </span>
+        <span className="code-range">
+          :{hlStart}-{hlEnd}
+        </span>
+        <span className="spacer" />
+        <CopyButton text={source.code} />
+        <button className="iconbtn" onClick={onClose} aria-label="Close code viewer" style={{ width: 28, height: 28 }}>
+          <Icon name="close" size={16} />
+        </button>
+      </header>
+      <div className="code-body scroll" ref={bodyRef}>
+        {lines.map((l, i) => {
+          const n = base + i;
+          const hl = n >= hlStart && n <= hlEnd;
+          const edge = n === hlStart || n === hlEnd;
+          return (
+            <div key={i} className={"code-line" + (hl ? " hl" : "") + (edge && hl ? " hl-edge" : "")}>
+              <span className="gutter">{n}</span>
+              <span className="src" dangerouslySetInnerHTML={{ __html: highlightLine(l) || "&nbsp;" }} />
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
