@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # SQLite file for chat history (sessions + messages); created on first use.
     db_path: str = "glyph_history.db"
 
+    # Embedding throughput knobs. embed_threads=0 means "use all CPU cores"; a bigger
+    # batch reduces per-call overhead during ingest.
+    embed_threads: int = 0
+    embed_batch_size: int = 256
+
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""

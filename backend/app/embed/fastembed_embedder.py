@@ -5,6 +5,7 @@ heavy PyTorch install and gives a fast cold start. Each vector is 384 numbers lo
 The model file downloads once on first use, then it is cached and reused.
 """
 
+import os
 from collections.abc import Sequence
 
 from fastembed import TextEmbedding
@@ -20,14 +21,24 @@ class FastEmbedEmbedder:
         self,
         model_name: str = "BAAI/bge-small-en-v1.5",
         cache_dir: str | None = None,
+        threads: int = 0,
+        batch_size: int = 256,
     ) -> None:
+        # threads=0 → use all CPU cores, so ingest embeds in parallel across the machine.
+        resolved_threads = threads if threads > 0 else (os.cpu_count() or 1)
         # Load the model once. fastembed downloads it on first use, then caches it.
-        self._model = TextEmbedding(model_name=model_name, cache_dir=cache_dir)
+        self._model = TextEmbedding(
+            model_name=model_name, cache_dir=cache_dir, threads=resolved_threads
+        )
+        self._batch_size = max(1, batch_size)
         self.dim = _BGE_SMALL_DIM
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
         """Embed code passages. fastembed yields numpy arrays, so we convert to lists."""
-        return [vector.tolist() for vector in self._model.embed(list(texts))]
+        return [
+            vector.tolist()
+            for vector in self._model.embed(list(texts), batch_size=self._batch_size)
+        ]
 
     def embed_query(self, text: str) -> list[float]:
         """Embed one question.

@@ -19,8 +19,9 @@ from app.ingest.walker import walk_files
 from app.store.chroma_store import ChromaStore
 
 # Embed (and store) the new chunks in batches this size, so progress updates land smoothly
-# instead of one long silent pause on a big repo.
-EMBED_BATCH = 64
+# instead of one long silent pause on a big repo. Larger = fewer embed round-trips (faster),
+# still frequent enough for a smooth progress bar.
+EMBED_BATCH = 128
 
 
 def ingest_path_events(

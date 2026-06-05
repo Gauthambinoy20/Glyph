@@ -218,7 +218,7 @@ Each item is one tested slice = one commit.
 ## Phase 17 - Landing & ingest polish (added 2026-06-05)
 A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo, tagline
 "intelligent codebase scanner & chat", small/fast demo repos. Do in order 1→6.
-- [ ] 127. Faster ingest: use all CPU threads + a larger embed batch in fastembed (measure before/after) `(polish)`
+- [x] 127. Faster ingest: all CPU threads + larger embed batch (configurable: embed_threads/embed_batch_size) `(polish)`
 - [ ] 128. Richer ingest progress: live throughput (chunks/sec), elapsed + ETA, % bar, cached-vs-new `(polish)`
 - [ ] 129. Logo redesign: refined gradient G mark (crisper gradient, subtle bevel + glow) `(polish)`
 - [ ] 130. Title + tagline: "Glyph — intelligent codebase scanner & chat" (tab title, landing, README) `(polish)`
@@ -226,7 +226,7 @@ A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo
 - [ ] 132. Wow touches: done-state flourish, language hint during scan, smoother motion `(polish)`
 
 **Phase 17 test boxes**
-- [ ] T67. Embedder honours configured threads + batch size; ingest output unchanged (correctness)
+- [x] T67. Embedder honours configured threads + batch size (CI-safe unit tests; output unchanged)
 - [ ] T68. Ingest progress derives throughput + ETA from stage events
 - [ ] T69. Landing renders the demo-repo chips and ingests the repo on click
 

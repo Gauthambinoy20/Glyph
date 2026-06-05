@@ -24,4 +24,6 @@ def make_embedder(settings: Settings) -> Embedder:
     return FastEmbedEmbedder(
         model_name=settings.embed_model,
         cache_dir=settings.model_cache_dir,
+        threads=settings.embed_threads,
+        batch_size=settings.embed_batch_size,
     )
