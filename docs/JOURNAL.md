@@ -362,4 +362,13 @@ VIBE CODER/
   asking a question, both working through the containers. Backend now 58 tests, gate green. Lesson noted:
   test the GitHub-URL path, not just local folders.
 
+- **Plan: backend for the redesigned UI (2026-06-05).** Decided the working split: the new look is being
+  designed separately (in a design tool) and imported later, so for now I do not change the website's
+  appearance at all. Instead I build the backend pieces the new layout will need, each as a small tested
+  step, so the import is smooth. Planned endpoints: repo stats (file/chunk/language counts) for the new
+  stats panel and language chart; open-any-file for the code viewer; auto-detected API routes; a file and
+  symbol index for the command palette; "most depended-on files" from the import graph; and a readiness
+  check. Building these now unblocks the redesign without touching the current UI. Starting with the stats
+  endpoint.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

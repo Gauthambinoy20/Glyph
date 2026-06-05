@@ -193,6 +193,25 @@ tracked as stretch item 101.
       *(found while testing: a slow GitHub clone left the Ingest button spinning with no feedback)*
 - [ ] 119. Commit: UI/UX polish batch `(polish)`
 
+## Phase 16 - Backend for the redesigned UI (added 2026-06-05)
+**Working split:** the UI/UX is being designed externally (Claude Designs) and imported later. Until
+then I do NOT change the frontend look — I only build backend endpoints + tests, and at import time
+wire data / adjust variables to align the design to the backend. These endpoints feed the new left
+"Project Intelligence" panel and the standout features, so they are ready before the redesign lands.
+Each item is one tested slice = one commit.
+
+- [ ] 120. `GET /api/stats` repo intelligence: file count, chunk count, per-language counts `(core)`
+      *(feeds the language chart + the files/chunks/cached stat tiles)*
+- [ ] 121. `GET /api/file?path=&start=&end=` return a file's code (optionally a line range) `(core)` (#63)
+      *(lets the code viewer open any file/line, not only cited ones)*
+- [ ] 122. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) from the indexed code `(polish)` (#64)
+      *(feeds the "API endpoints detected" widget)*
+- [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
+      *(feeds ⌘K search and a future file browser)*
+- [ ] 124. Extend `/api/graph` with per-file import in-degree (for "most depended-on files") `(polish)`
+- [ ] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
+- [ ] 126. Commit each of the above as its own slice, with tests
+
 ---
 
 ## ✅ Test Inventory (track every test case, one box each)
@@ -272,6 +291,14 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Performance / robustness (Phase 13-14)**
 - [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
 - [x] T58. fetchWithTimeout: resolves in time; abort → clear "timed out" message; other errors pass through
+
+**Backend for the redesigned UI (Phase 16)**
+- [ ] T61. `/api/stats` returns file count, chunk count, and per-language counts that add up
+- [ ] T62. `/api/file` returns a file's code; a line range slices it; a bad/escaping path → 4xx
+- [ ] T63. `/api/endpoints` finds routes in sample FastAPI and Express code
+- [ ] T64. `/api/symbols` lists files with their symbols; empty index → []
+- [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)
+- [ ] T66. `/api/ready` is not-ready until model + store are loaded, then ready
 - [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)
 - [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
 - [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
