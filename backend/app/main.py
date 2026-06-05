@@ -23,7 +23,7 @@ from app.analyze.files import read_indexed_file
 from app.analyze.graph import build_import_graph
 from app.analyze.stats import build_stats
 from app.analyze.symbols import list_symbols
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.db.history import History
 from app.embed.base import Embedder
 from app.embed.factory import effective_embed_model, make_embedder
@@ -117,21 +117,52 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
     )
 
 
-@lru_cache
-def get_embedder() -> Embedder:
-    """Build the embedder once and reuse it (loading the model is expensive)."""
-    return make_embedder(get_settings())
+# The embedding backend currently in use. None means "use the configured default". Ingest sets
+# it (via /api/mode) so a repo loaded in fast mode (static) is also *queried* with the static
+# index, and careful mode (the transformer) with its own — each backend keeps its own embedder
+# and its own Chroma collection, so the two never mix.
+_active_backend: str | None = None
+
+# Friendly names the UI uses, mapped to the internal embed_backend values.
+_MODE_TO_BACKEND = {"fast": "static", "careful": "local"}
 
 
-@lru_cache
-def get_store() -> ChromaStore:
-    """Build the vector store once, sized to the embedder's vector length."""
+def set_active_backend(mode_or_backend: str) -> None:
+    """Switch the embedding backend used by ingest and every read that follows it."""
+    global _active_backend
+    _active_backend = _MODE_TO_BACKEND.get(mode_or_backend, mode_or_backend)
+
+
+def _active_settings() -> Settings:
+    """Return settings with embed_backend set to the active backend (or the configured default)."""
     settings = get_settings()
-    return ChromaStore(
-        path=settings.chroma_dir,
-        embed_model=effective_embed_model(settings),
-        dim=get_embedder().dim,
-    )
+    backend = _active_backend or settings.embed_backend
+    return settings.model_copy(update={"embed_backend": backend})
+
+
+# One embedder and one store per backend, built lazily and reused (loading a model is expensive).
+_embedders: dict[str, Embedder] = {}
+_stores: dict[str, ChromaStore] = {}
+
+
+def get_embedder() -> Embedder:
+    """Return the embedder for the active backend, building it once per backend."""
+    settings = _active_settings()
+    if settings.embed_backend not in _embedders:
+        _embedders[settings.embed_backend] = make_embedder(settings)
+    return _embedders[settings.embed_backend]
+
+
+def get_store() -> ChromaStore:
+    """Return the vector store for the active backend, sized to its vectors and built once."""
+    settings = _active_settings()
+    if settings.embed_backend not in _stores:
+        _stores[settings.embed_backend] = ChromaStore(
+            path=settings.chroma_dir,
+            embed_model=effective_embed_model(settings),
+            dim=get_embedder().dim,
+        )
+    return _stores[settings.embed_backend]
 
 
 @lru_cache
@@ -208,6 +239,12 @@ class AskRequest(BaseModel):
     rerank: bool | None = None
 
 
+class ModeRequest(BaseModel):
+    """Body for /api/mode: choose the embedding backend for the next ingest and the reads after."""
+
+    mode: str  # "fast" | "careful" (or the raw "static" | "local")
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     """Return a simple ok status so callers can confirm the server is alive."""
@@ -227,10 +264,24 @@ def ready(
     """
     return {
         "ready": True,
-        "embed_model": get_settings().embed_model,
+        "embed_model": effective_embed_model(_active_settings()),
+        "backend": _active_settings().embed_backend,
         "dim": embedder.dim,
         "chunks": store.count(),
     }
+
+
+@app.post("/api/mode")
+def set_mode(request: ModeRequest) -> dict:
+    """Pick the embedding backend: 'fast' (Model2Vec) or 'careful' (the transformer).
+
+    This decides how the *next* ingest files the repo, and which index later questions read
+    from. It does not re-index an already-loaded repo — load a repo after switching to use it.
+    """
+    if request.mode not in {"fast", "careful", "static", "local"}:
+        raise HTTPException(status_code=400, detail=f"unknown mode: {request.mode}")
+    set_active_backend(request.mode)
+    return {"mode": request.mode, "backend": _active_settings().embed_backend}
 
 
 @app.post("/api/ingest")

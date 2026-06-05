@@ -19,6 +19,16 @@ def _isolate_answer_cache():
 
 
 @pytest.fixture(autouse=True)
+def _reset_active_backend():
+    """Reset the global embedding backend before each test, so mode-switch tests stay isolated."""
+    import app.main as main
+
+    main._active_backend = None
+    yield
+    main._active_backend = None
+
+
+@pytest.fixture(autouse=True)
 def _default_no_reranker():
     """Default every test to no reranker, so the suite never loads the real cross-encoder.
 
