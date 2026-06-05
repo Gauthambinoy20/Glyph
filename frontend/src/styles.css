@@ -529,6 +529,141 @@ button {
   text-wrap: pretty;
 }
 
+/* ---- Landing redesign: aurora, hero brand, clone link ---- */
+
+/* Aurora: soft coloured light blooms over the dark base, slow drift. */
+.landing-aurora {
+  position: absolute;
+  inset: -12% -12% 0 -12%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 50% 4%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+    radial-gradient(30% 26% at 20% 26%, color-mix(in srgb, #58e0b0 20%, transparent), transparent 72%),
+    radial-gradient(32% 28% at 82% 22%, color-mix(in srgb, #5aa6ff 12%, transparent), transparent 74%);
+  filter: blur(42px) saturate(125%);
+  opacity: 0.9;
+  animation: aurora-drift 20s var(--ease) infinite alternate;
+}
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(0, -2.5%, 0) scale(1.07);
+  }
+}
+
+/* Warm the original centre glow a touch. */
+.landing-glow {
+  width: 860px;
+  height: 560px;
+  opacity: calc(0.55 * var(--grid-alpha) + 0.25);
+  filter: blur(10px);
+}
+
+/* Top-right "clone the repo" link (the navbar is gone on the landing). */
+.repo-link-top {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    border-color 0.16s var(--ease),
+    color 0.16s var(--ease),
+    transform 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+.repo-link-top svg {
+  color: var(--muted);
+  transition: color 0.16s var(--ease);
+}
+.repo-link-top:hover {
+  color: var(--text);
+  border-color: var(--accent-line);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+.repo-link-top:hover svg {
+  color: var(--accent);
+}
+
+/* Hero brand: the one big Glyph logo on the page, on its own line. */
+.brand-hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  animation: hero-rise 0.7s var(--ease) both;
+}
+.brand-hero .logo-mark {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  flex: 0 0 58px;
+  font-size: 34px;
+  /* Premium depth + a soft aurora halo behind the mark. */
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -4px 9px rgba(5, 35, 9, 0.3),
+    0 0 0 1px rgba(126, 231, 135, 0.32),
+    0 12px 36px var(--accent-glow),
+    0 0 64px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.brand-hero .logo-mark::after {
+  border-radius: 16px 16px 20px 20px;
+}
+.brand-word {
+  font-size: 31px;
+  font-weight: 660;
+  letter-spacing: -0.035em;
+  color: var(--text);
+}
+.brand-word .dot {
+  color: var(--accent);
+}
+
+/* Small accent dot in the Code-intelligence badge (logo now appears only once). */
+.badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    0 0 10px var(--accent);
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-aurora,
+  .brand-hero {
+    animation: none;
+  }
+}
+
 /* Ingest box */
 .ingest {
   margin: 38px auto 0;
@@ -2610,13 +2745,31 @@ button {
 
 /* Technical note explaining the selected indexing mode (the core trade-off). */
 .mode-note {
-  margin: 12px auto 0;
+  position: relative;
+  overflow: hidden;
+  margin: 14px auto 0;
   max-width: 460px;
   text-align: left;
-  padding: 12px 14px;
+  padding: 13px 15px;
   border-radius: var(--r-md);
-  background: var(--panel-2);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 34px rgba(0, 0, 0, 0.4);
+  animation: hero-rise 0.35s var(--ease) both;
+}
+/* Soft accent glare across the top of the card. */
+.mode-note::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 62%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent);
+  pointer-events: none;
+}
+.mode-note > * {
+  position: relative;
 }
 .mode-note-head {
   display: block;

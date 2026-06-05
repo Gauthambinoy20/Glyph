@@ -516,56 +516,58 @@ export default function App() {
 
   return (
     <div className="app">
-      <nav className="nav">
-        <div className="nav-left">
-          {screen === "workspace" && repo && (
-            <span className="repo-chip">
-              <span className="dot-live" />
-              <span className="mono">
-                {repo.owner}/{repo.name}
+      {screen === "workspace" && (
+        <nav className="nav">
+          <div className="nav-left">
+            {screen === "workspace" && repo && (
+              <span className="repo-chip">
+                <span className="dot-live" />
+                <span className="mono">
+                  {repo.owner}/{repo.name}
+                </span>
               </span>
-            </span>
-          )}
-        </div>
-        <div className="nav-center">
-          <Logo />
-        </div>
-        <div className="nav-right">
-          {screen === "workspace" && <ModelPicker models={models} idx={modelIdx} onPick={setModelIdx} />}
-          {screen === "workspace" && (
+            )}
+          </div>
+          <div className="nav-center">
+            <Logo />
+          </div>
+          <div className="nav-right">
+            {screen === "workspace" && <ModelPicker models={models} idx={modelIdx} onPick={setModelIdx} />}
+            {screen === "workspace" && (
+              <button
+                className="kbar"
+                onClick={() => setRerank((r) => !r)}
+                aria-pressed={rerank}
+                title={
+                  rerank
+                    ? "Smart sort is ON — a cross-encoder reorders results so the best code is cited first. Click to turn off (slightly faster)."
+                    : "Smart sort is OFF — answers use the plain hybrid order. Click to turn on for sharper citations."
+                }
+                style={rerank ? { outline: "2px solid var(--accent)" } : { opacity: 0.7 }}
+              >
+                <Icon name="zap" size={14} /> Smart sort {rerank ? "On" : "Off"}
+              </button>
+            )}
+            {screen === "workspace" && (
+              <button className="kbar" onClick={() => setPaletteOpen(true)}>
+                <Icon name="search" /> Search <span className="kbd">⌘K</span>
+              </button>
+            )}
+            {screen === "workspace" && (
+              <button className="iconbtn" aria-label="Observability" onClick={() => setLogOpen(true)}>
+                <Icon name="activity" size={17} />
+              </button>
+            )}
             <button
-              className="kbar"
-              onClick={() => setRerank((r) => !r)}
-              aria-pressed={rerank}
-              title={
-                rerank
-                  ? "Smart sort is ON — a cross-encoder reorders results so the best code is cited first. Click to turn off (slightly faster)."
-                  : "Smart sort is OFF — answers use the plain hybrid order. Click to turn on for sharper citations."
-              }
-              style={rerank ? { outline: "2px solid var(--accent)" } : { opacity: 0.7 }}
+              className="iconbtn"
+              aria-label="Toggle theme"
+              onClick={() => pushToast("Light theme is on the roadmap — dark is the primary system.")}
             >
-              <Icon name="zap" size={14} /> Smart sort {rerank ? "On" : "Off"}
+              <Icon name="moon" size={17} />
             </button>
-          )}
-          {screen === "workspace" && (
-            <button className="kbar" onClick={() => setPaletteOpen(true)}>
-              <Icon name="search" /> Search <span className="kbd">⌘K</span>
-            </button>
-          )}
-          {screen === "workspace" && (
-            <button className="iconbtn" aria-label="Observability" onClick={() => setLogOpen(true)}>
-              <Icon name="activity" size={17} />
-            </button>
-          )}
-          <button
-            className="iconbtn"
-            aria-label="Toggle theme"
-            onClick={() => pushToast("Light theme is on the roadmap — dark is the primary system.")}
-          >
-            <Icon name="moon" size={17} />
-          </button>
-        </div>
-      </nav>
+          </div>
+        </nav>
+      )}
 
       {screen === "landing" || !panel ? (
         <Landing

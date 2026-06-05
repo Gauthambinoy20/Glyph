@@ -29,11 +29,28 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
   return (
     <div className="landing">
       <div className="landing-grid" />
+      <div className="landing-aurora" />
       <div className="landing-glow" />
 
+      <a
+        className="repo-link-top"
+        href="https://github.com/Gauthambinoy20/Glyph"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Icon name="github" size={15} /> Clone the repo
+      </a>
+
       <div className="hero" data-variant="editorial">
+        <div className="brand-hero">
+          <LogoMark large />
+          <span className="brand-word">
+            Glyph<span className="dot">.</span>
+          </span>
+        </div>
+
         <span className="badge">
-          <LogoMark /> Code intelligence
+          <span className="badge-dot" /> Code intelligence
         </span>
 
         <h1 className="h1">
