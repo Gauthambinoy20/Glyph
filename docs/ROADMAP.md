@@ -152,7 +152,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 95. Commit: dockerize, CI, finalize docs `(core)`
 
 ## Phase 11 - Standout features (graded extras)
-- [ ] 96. Quality eval set: ~10 golden questions + script reporting retrieval hit-rate `(polish)`
+- [x] 96. Quality eval set: 10 golden questions + `python -m app.quality.evaluate` hit-rate (100%) `(polish)`
 - [ ] 97. Observability dashboard: page showing query logs, latency, token usage `(polish)`
 - [ ] 98. Commit: quality eval set + observability dashboard `(polish)`
 
@@ -284,7 +284,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [ ] T46. Chat history save → load roundtrip
 
 **Quality / e2e**
-- [ ] T47. Eval script runs on the golden set and reports a hit-rate number
+- [x] T47. Eval scorer computes hit-rate from a fake retriever (offline); golden set ≥10, well-formed
 - [x] T48. Frontend ingest sends the right body (`{local_path}`) and ask calls askStream (mocked api)
 - [x] T49. End-to-end (real pipeline, fake embedder/LLM): ingest → ask → correct file retrieved + cited
 - [x] T60. End-to-end via the GitHub-URL branch (mocked clone) runs the real pipeline
