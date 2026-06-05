@@ -65,15 +65,76 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// One message off the /api/ask/stream Server-Sent Events stream.
+export type StreamMessage =
+  | { type: "token"; text: string }
+  | ({ type: "final" } & AskResponse)
+  | { type: "error"; detail: string };
+
+export interface AskBody {
+  question: string;
+  model?: string | null;
+  history?: { question: string; answer: string }[];
+}
+
+export interface StreamHandlers {
+  onToken: (text: string) => void;
+  onFinal: (res: AskResponse) => void;
+  onError: (message: string) => void;
+}
+
+/**
+ * Split a raw SSE buffer into complete JSON messages plus the unfinished remainder.
+ * Each SSE message is a `data: {json}` line ended by a blank line. Kept pure (no I/O)
+ * and exported so it can be unit tested without a live stream.
+ */
+export function parseSSE(buffer: string): { messages: StreamMessage[]; rest: string } {
+  const blocks = buffer.split("\n\n");
+  const rest = blocks.pop() ?? ""; // a trailing block with no blank line yet is incomplete
+  const messages = blocks
+    .filter((block) => block.startsWith("data: "))
+    .map((block) => JSON.parse(block.slice("data: ".length)) as StreamMessage);
+  return { messages, rest };
+}
+
+/** Ask with a live stream: tokens arrive as the answer is written, then the final payload. */
+async function askStream(body: AskBody, handlers: StreamHandlers): Promise<void> {
+  const res = await fetch("/api/ask/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
+    handlers.onError(data.detail ?? `request failed (${res.status})`);
+    return;
+  }
+
+  // Read the response body chunk by chunk, decode to text, and drain whole SSE messages.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const { messages, rest } = parseSSE(buffer);
+    buffer = rest;
+    for (const msg of messages) {
+      if (msg.type === "token") handlers.onToken(msg.text);
+      else if (msg.type === "final") handlers.onFinal(msg);
+      else if (msg.type === "error") handlers.onError(msg.detail);
+    }
+  }
+}
+
 export const api = {
   ingest: (body: { repo_url?: string; local_path?: string }) =>
     post<IngestResponse>("/api/ingest", body),
 
-  ask: (body: {
-    question: string;
-    model?: string | null;
-    history?: { question: string; answer: string }[];
-  }) => post<AskResponse>("/api/ask", body),
+  ask: (body: AskBody) => post<AskResponse>("/api/ask", body),
+
+  askStream,
 
   models: async (): Promise<{ models: ModelInfo[]; default: string }> => {
     const res = await fetch("/api/models");

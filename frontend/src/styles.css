@@ -367,6 +367,14 @@ textarea {
   font-size: 14.5px;
   color: var(--text-2);
 }
+/* Plain text while the answer streams in; it swaps to the formatted Answer when done. */
+.answer.streaming {
+  white-space: pre-wrap;
+}
+.stream-cursor {
+  color: var(--accent);
+  animation: blink 1s infinite;
+}
 .answer p {
   margin: 0 0 12px;
 }

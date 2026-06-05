@@ -110,8 +110,29 @@ export default function App() {
     setBusy(true);
     setError("");
     try {
-      const res = await api.ask({ question: q, model: selectedModel || null, history });
-      setMessages((m) => m.map((x) => (x.id === botId ? { ...x, thinking: false, data: res } : x)));
+      // Stream the answer in: append each token live, then swap to the full Answer on the
+      // final message (which carries citations, sources, and the observability meta).
+      await api.askStream(
+        { question: q, model: selectedModel || null, history },
+        {
+          onToken: (t) =>
+            setMessages((m) =>
+              m.map((x) =>
+                x.id === botId ? { ...x, thinking: false, text: (x.text ?? "") + t } : x,
+              ),
+            ),
+          onFinal: (res) =>
+            setMessages((m) =>
+              m.map((x) =>
+                x.id === botId ? { ...x, thinking: false, text: undefined, data: res } : x,
+              ),
+            ),
+          onError: (msg) => {
+            setMessages((m) => m.filter((x) => x.id !== botId));
+            setError(msg);
+          },
+        },
+      );
     } catch (e) {
       setMessages((m) => m.filter((x) => x.id !== botId));
       setError((e as Error).message);
@@ -271,6 +292,12 @@ export default function App() {
                         onOpen={(c) => openCitation(c, m.data!.sources)}
                         onFollowUp={ask}
                       />
+                    ) : m.text !== undefined ? (
+                      // Words appearing live, before the final message settles the answer.
+                      <div className="answer streaming">
+                        {m.text}
+                        <span className="stream-cursor">▍</span>
+                      </div>
                     ) : null}
                   </div>
                 ))}

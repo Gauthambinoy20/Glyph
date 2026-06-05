@@ -179,7 +179,7 @@ See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind eac
 The shell is already premium (dark, one accent, graph view). These are the high-value touches on top.
 Note: streaming the text live (115) depends on the streaming endpoint (103); light/dark toggle is also
 tracked as stretch item 101.
-- [ ] 110. Stream the answer text into the bubble live (typing effect) once 103 lands `(core)`
+- [x] 110. Stream the answer text into the bubble live (typing effect) once 103 lands `(core)`
 - [ ] 111. Skeleton / shimmer loading for ingest and for an in-flight answer (replace bare dots) `(polish)`
 - [ ] 112. Citation hover preview: peek the cited code in a small popover before clicking `(polish)`
 - [ ] 113. Copy-answer and copy-code buttons `(polish)`

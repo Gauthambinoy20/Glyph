@@ -284,4 +284,16 @@ VIBE CODER/
   lint, format, types, and security all clean. Next: wire the web UI to show the words appearing live
   (roadmap 110).
 
+- **Streaming answers, the web UI half (done, 2026-06-05).** Now you actually see the speed. The chat
+  used to sit on a spinner until the whole answer was ready; it now types the answer out word by word as
+  the server sends it, with a little blinking cursor, then settles into the full formatted answer with
+  citations, sources, and the speed/token line the moment it finishes. Under the hood I added a small
+  reader that takes the live stream apart into messages, written carefully so a half-arrived message is
+  held back and finished on the next piece instead of being dropped or garbled. The old non-streaming
+  call is still there as a backup. The frontend has no test runner yet (that is a separate planned step),
+  so I held it to the same bar as the rest of the UI: it type-checks and builds clean. I also proved the
+  stream-splitting logic on its own with a quick throwaway check covering the tricky partial-message case,
+  four cases, all passing. Note for later: a proper frontend unit test needs a test tool (vitest) added,
+  which I have flagged rather than slipped in.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
