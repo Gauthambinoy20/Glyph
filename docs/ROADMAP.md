@@ -146,6 +146,9 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 89. GitHub Actions CI: install → ruff → format → mypy → bandit → pip-audit → pytest+cov `(core)`
 - [x] 90. Orchestration note in README: why NO framework (LangChain/LlamaIndex) on purpose `(core)`
 - [x] 91. Fill README: setup, features, architecture diagram, RAG decisions `(core)`  (factual sections done; `✍️` opinion blanks left for the author)
+- [x] 91a. README badge row — accurate to the repo: CI (ci.yml), Python 3.12, FastAPI 0.136, React 18 `(polish)`
+      *(CodeQL/Security/License badges intentionally omitted — no codeql.yml/security.yml workflows and no LICENSE file yet)*
+- [ ] 91b. (optional) Add CodeQL + gitleaks + Trivy workflows (CLAUDE.md §4) and a LICENSE, then their badges `(polish)`
 - [x] 92. Create the GitHub repo and push (github.com/Gauthambinoy20/Glyph, CI green) `(core)`
 - [ ] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
 - [x] 94. Fresh `docker compose up` works from scratch: served UI, ingest, and a streamed answer (smoke-tested) `(core)`

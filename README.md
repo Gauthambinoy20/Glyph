@@ -1,6 +1,9 @@
 # Glyph — Intelligent Codebase Scanner & Chat
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
 citations**. Ingest a public GitHub repo (or local files), then ask *"where are the API endpoints?"*,
