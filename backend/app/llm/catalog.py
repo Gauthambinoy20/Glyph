@@ -17,12 +17,12 @@ class ModelInfo:
     note: str
 
 
-# Order matters: this is the order shown in the dropdown.
+# Order matters: this is the order shown in the dropdown. Only models that currently have a
+# live free endpoint on OpenRouter are listed — stale ids (qwen3-coder, llama-3.3, deepseek-r1)
+# now 404 with "No endpoints found", which would surface as a failed answer, so they are out.
 _CATALOG: list[ModelInfo] = [
     ModelInfo("openai/gpt-oss-120b:free", "GPT-OSS 120B", "free", "Large open model (default)"),
     ModelInfo("openai/gpt-oss-20b:free", "GPT-OSS 20B", "free", "Smaller and fast"),
-    ModelInfo("qwen/qwen3-coder:free", "Qwen3 Coder", "free", "Coder-tuned (can be busy)"),
-    ModelInfo("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B", "free", "General"),
     ModelInfo("openai/gpt-4o-mini", "GPT-4o mini", "paid", "~a fraction of a cent per question"),
     ModelInfo("anthropic/claude-3.5-haiku", "Claude Haiku", "paid", "Fast and cheap, needs credit"),
 ]

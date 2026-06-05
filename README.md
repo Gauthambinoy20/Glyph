@@ -27,7 +27,7 @@ _Coming once the skeleton lands._
 - **Embeddings:** local `bge-small` (fastembed), pluggable to OpenAI — §1.2.
 - **Vector DB:** Chroma (cosine, persistent) — §1.2.
 - **Retrieval:** hybrid semantic + BM25 fused with RRF, top_k=5 — §1.2.
-- **LLM:** OpenRouter free tier (default `qwen/qwen3-coder:free`), user-selectable — §1.3.
+- **LLM:** OpenRouter free tier (default `openai/gpt-oss-120b:free`), user-selectable — §1.3.
 - **Prompt & guardrails:** answer only from context; cite file:line; say "not found" otherwise.
 - **Observability:** one JSON log line per query (ids, latency, tokens).
 

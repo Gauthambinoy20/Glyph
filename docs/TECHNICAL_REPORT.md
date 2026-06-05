@@ -44,8 +44,11 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
 
 ### 1.3 LLM (OpenRouter)
 - OpenAI-compatible chat at `https://openrouter.ai/api/v1`; use `openai==1.109.1` SDK with
-  `base_url`+`api_key`. Default **`qwen/qwen3-coder:free`** (coder-tuned, ~1M context). Good free
-  fallbacks: `deepseek/deepseek-r1:free`, `meta-llama/llama-3.3-70b-instruct:free`, `openai/gpt-oss-120b:free`.
+  `base_url`+`api_key`. Default **`openai/gpt-oss-120b:free`** (large open model) with
+  `openai/gpt-oss-20b:free` as the fallback. Note: free model availability shifts over time —
+  some ids that used to work (`qwen/qwen3-coder:free`, `deepseek/deepseek-r1:free`,
+  `meta-llama/llama-3.3-70b-instruct:free`) now 404 with "No endpoints found", so the catalog
+  only lists ids with a live free endpoint.
 - **Free limits:** 20 req/min, **50 req/day** without credits (1000/day after buying $10 once).
   Failed requests count. Negative balance → 402 even on `:free`.
 - **Model IDs are env-driven** (free IDs rotate). Token usage from `completion.usage`; **default to 0

@@ -20,7 +20,8 @@ def test_models_endpoint_lists_free_and_paid() -> None:  # T38
     body = TestClient(app).get("/api/models").json()
 
     ids = [model["id"] for model in body["models"]]
-    assert "qwen/qwen3-coder:free" in ids
+    assert "openai/gpt-oss-120b:free" in ids  # a model with a live free endpoint
+    assert any(m["tier"] == "paid" for m in body["models"])  # paid options are listed too
     assert all(m["available"] for m in body["models"] if m["tier"] == "free")
     assert body["default"]
 
