@@ -352,4 +352,14 @@ VIBE CODER/
   its own code (29 files), and a question streamed back a real answer end to end. To run it the user
   drops a free key into a .env file (the project already ships a .env.example showing the names).
 
+- **Fixed: GitHub ingest crashed in Docker because git was missing (done, 2026-06-05).** Testing the
+  Docker app with a real GitHub link gave an "internal server error". The cause: the slim backend image
+  did not include git, so cloning a repo failed with a low-level error that fell through to the generic
+  500. My earlier smoke test only used a local folder, so it never ran a clone, which is exactly how this
+  slipped past. Two fixes: the backend image now installs git, and the cloner now turns a missing-git (or
+  any clone failure) into a clear message instead of a crash. Added a test for the missing-git case. Then
+  I rebuilt and tested the path I had skipped: cloning a real GitHub repo (55 files, four languages) and
+  asking a question, both working through the containers. Backend now 58 tests, gate green. Lesson noted:
+  test the GitHub-URL path, not just local folders.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

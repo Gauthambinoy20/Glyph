@@ -37,6 +37,10 @@ def clone_repo(url: str, timeout: int = 120) -> str:
             # GIT_TERMINAL_PROMPT=0 stops git asking for credentials (which would hang).
             env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         )
+    except FileNotFoundError as exc:
+        # git itself is not installed on this machine/image.
+        shutil.rmtree(dest, ignore_errors=True)
+        raise ValueError("git is not installed, so GitHub URLs cannot be cloned") from exc
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         shutil.rmtree(dest, ignore_errors=True)
         raise ValueError(f"could not clone repository: {url}") from exc

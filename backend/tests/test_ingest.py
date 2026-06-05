@@ -69,6 +69,16 @@ def test_cloner_handles_clone_failure(monkeypatch) -> None:  # T25
         clone_repo("https://github.com/owner/does-not-exist")
 
 
+def test_cloner_reports_missing_git(monkeypatch) -> None:  # T25 (git not installed)
+    # If git is not on the machine/image, the user must get a clear error, not a 500.
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "git")
+
+    monkeypatch.setattr(subprocess, "run", no_git)
+    with pytest.raises(ValueError, match="git is not installed"):
+        clone_repo("https://github.com/owner/repo")
+
+
 # ----- Pipeline -----
 
 

@@ -10,6 +10,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# git is needed at runtime to clone public GitHub repos for ingestion.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install pinned dependencies first so this layer is cached across code changes.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
