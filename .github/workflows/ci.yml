@@ -80,6 +80,12 @@ jobs:
         # UI server, which never runs in CI or production) are out of scope here.
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Format check (prettier)
+        run: npm run format:check
+
       - name: Types (tsc)
         run: npx tsc -b
 
