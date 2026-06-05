@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     # caller cannot point /api/ingest at arbitrary server files like /etc.
     ingest_base_dir: str | None = None
 
+    # Per-client request cap over a 60s window (0 disables). Protects a public deployment
+    # from abuse and denial-of-service on the unauthenticated endpoints.
+    rate_limit_per_minute: int = 60
+
 
 def get_settings() -> Settings:
     """Build and return the settings object."""

@@ -8,6 +8,7 @@ import json
 import logging
 import time
 import uuid
+from collections import defaultdict, deque
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
@@ -83,6 +84,46 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
+
+# ---- Simple in-memory per-client rate limiting ----
+# A fixed 60s window keyed by client IP. In-memory is fine for the single-box deployment;
+# a multi-instance setup would move this to a shared store (e.g. Redis).
+_RATE_WINDOW_S = 60.0
+_rate_hits: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _client_ip(request: Request) -> str:
+    """Return the best-effort real client IP.
+
+    nginx sets X-Real-IP from the connection (unspoofable behind our proxy); fall back to
+    the direct peer for local and dev use.
+    """
+    return request.headers.get("x-real-ip") or (
+        request.client.host if request.client else "unknown"
+    )
+
+
+@app.middleware("http")
+async def rate_limit(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """Cap requests per client IP over a rolling 60s window.
+
+    Health checks are exempt so uptime probes are never throttled; a limit of 0 disables
+    the check entirely.
+    """
+    limit = get_settings().rate_limit_per_minute
+    path = request.url.path
+    if limit > 0 and path.startswith("/api/") and path != "/api/health":
+        ip = _client_ip(request)
+        now = time.monotonic()
+        hits = _rate_hits[ip]
+        while hits and now - hits[0] > _RATE_WINDOW_S:
+            hits.popleft()
+        if len(hits) >= limit:
+            return JSONResponse({"detail": "rate limit exceeded, slow down"}, status_code=429)
+        hits.append(now)
+    return await call_next(request)
 
 
 @app.middleware("http")
