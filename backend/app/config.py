@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # 5174 if the first port is taken). Override in .env for a deployed frontend origin.
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174"]
 
+    # Confine local-folder ingestion to this directory. None (default) allows any path,
+    # which is fine for local dev. On a public deployment set it (e.g. /app) so a remote
+    # caller cannot point /api/ingest at arbitrary server files like /etc.
+    ingest_base_dir: str | None = None
+
 
 def get_settings() -> Settings:
     """Build and return the settings object."""

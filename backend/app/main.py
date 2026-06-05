@@ -33,6 +33,7 @@ from app.ingest.pipeline import (
     ingest_repo,
     ingest_repo_events,
 )
+from app.ingest.walker import ensure_path_allowed
 from app.llm.catalog import is_known_model, list_models
 from app.llm.client import LLMClient, LLMError
 from app.obs.logging import log_query
@@ -298,6 +299,7 @@ def ingest(
         if request.repo_url:
             return ingest_repo(request.repo_url, store, embedder)
         if request.local_path:
+            ensure_path_allowed(request.local_path, get_settings().ingest_base_dir)
             return ingest_path(request.local_path, store, embedder)
     except ValueError as exc:
         # Bad URL, failed/timed-out clone, no supported files, or no chunks.
@@ -321,6 +323,11 @@ def ingest_stream(
     """
     if not request.repo_url and not request.local_path:
         raise HTTPException(status_code=400, detail="provide repo_url or local_path")
+    if request.local_path:
+        try:
+            ensure_path_allowed(request.local_path, get_settings().ingest_base_dir)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     def events() -> Iterator[str]:
         """Drive the ingest event stream and translate each step into an SSE message."""

@@ -25,6 +25,21 @@ _SKIP_DIRS = {
 _ALLOWED_EXTS = {".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".mts", ".cts", ".tsx"}
 
 
+def ensure_path_allowed(local_path: str, base_dir: str | None) -> None:
+    """Reject a local ingest path that escapes the configured base directory.
+
+    When base_dir is None (local dev) any path is allowed. When it is set (a public
+    deployment) the resolved path must sit inside base_dir, so a remote caller cannot
+    point ingestion at arbitrary server files such as /etc. Raises ValueError if not.
+    """
+    if not base_dir:
+        return
+    base = Path(base_dir).resolve()
+    target = Path(local_path).resolve()
+    if target != base and not target.is_relative_to(base):
+        raise ValueError("local path is outside the allowed directory")
+
+
 def walk_files(
     root: str,
     max_files: int = 2000,
