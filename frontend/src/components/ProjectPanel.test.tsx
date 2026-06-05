@@ -49,6 +49,7 @@ const data: PanelData = {
   endpoints: [{ method: "POST", path: "/api/ingest" }],
   recent: [],
   latencies: [],
+  intel: { functions: 42, classes: 7, endpoints: 1, frameworks: 3 },
 };
 const session: PanelSession = { queries: 0, avgLatency: 0, tokens: 0 };
 
@@ -69,5 +70,23 @@ describe("ProjectPanel", () => {
     expect(screen.getAllByText(/typescript/i).length).toBeGreaterThan(0); // language legend + stack
     expect(screen.getByText("340")).toBeTruthy(); // chunk count tile
     expect(screen.getByText("/api/ingest")).toBeTruthy(); // endpoint row
+  });
+
+  it("shows the real code-intelligence counts", () => {
+    render(
+      <ProjectPanel
+        data={data}
+        session={session}
+        onAsk={() => {}}
+        onExpandGraph={() => {}}
+        onChangeRepo={() => {}}
+        onOpenRecent={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("Code intelligence")).toBeTruthy();
+    expect(screen.getByText("42")).toBeTruthy(); // functions
+    expect(screen.getByText("Functions")).toBeTruthy();
+    expect(screen.getByText("Frameworks")).toBeTruthy();
   });
 });

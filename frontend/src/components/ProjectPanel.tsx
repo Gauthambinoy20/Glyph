@@ -37,6 +37,8 @@ export interface PanelData {
   endpoints: Endpoint[];
   recent: Recent[];
   latencies: number[];
+  // Real counts derived from the index, surfaced as the "Code intelligence" tiles.
+  intel?: { functions: number; classes: number; endpoints: number; frameworks: number };
 }
 
 // ── Donut (SVG arcs) ─────────────────────────────────────────────────────────
@@ -307,6 +309,28 @@ function LanguageStats({ languages, stats }: { languages: LangSegment[]; stats: 
   );
 }
 
+function IndexIntel({ intel }: { intel?: PanelData["intel"] }) {
+  if (!intel) return null;
+  const tiles = [
+    { v: intel.functions, l: "Functions" },
+    { v: intel.classes, l: "Classes" },
+    { v: intel.endpoints, l: "Endpoints" },
+    { v: intel.frameworks, l: "Frameworks" },
+  ];
+  return (
+    <Card title="Code intelligence" dot>
+      <div className="metric-tiles">
+        {tiles.map((t) => (
+          <div className="tile" key={t.l}>
+            <div className="tv mono">{t.v.toLocaleString()}</div>
+            <div className="tl">{t.l}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function Overview({ text, stack }: { text: string; stack: string[] }) {
   const loading = !text;
   return (
@@ -524,6 +548,7 @@ export function ProjectPanel({
       <div className="panel-inner">
         <RepoHeader repo={data.repo} onChangeRepo={onChangeRepo} />
         <LanguageStats languages={data.languages} stats={data.stats} />
+        <IndexIntel intel={data.intel} />
         <Overview text={data.overview} stack={data.stack} />
         <GraphCard graph={data.graph} onExpand={onExpandGraph} onPick={(n) => onAsk(`Explain ${n.label}.`)} />
         <TopFiles graph={data.graph} onPick={(f) => onAsk(`Explain ${f.path || f.label}.`)} />

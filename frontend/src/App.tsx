@@ -338,6 +338,13 @@ export default function App() {
         description: overview ? overview.split(/(?<=[.!?])\s/)[0].slice(0, 140) : undefined,
       };
       const symbolRows = await api.symbols().catch(() => []);
+      // Real "code intelligence" counts from the index — no estimates.
+      const intel = {
+        functions: symbolRows.filter((s) => /function|method/i.test(s.type)).length,
+        classes: symbolRows.filter((s) => /class|interface|type|struct/i.test(s.type)).length,
+        endpoints: endpoints.length,
+        frameworks: stack.length,
+      };
       // Tailor the starter questions to this repo: a real endpoint, a real symbol, and whether
       // there is a dependency graph to ask about.
       setSuggestions(
@@ -376,6 +383,7 @@ export default function App() {
         endpoints,
         recent: [],
         latencies: [],
+        intel,
       });
       setRecent((r) =>
         [
