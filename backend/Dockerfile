@@ -22,6 +22,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Pre-download bge-small into the image (into MODEL_CACHE_DIR, where the app reads it).
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5', cache_dir='/models')"
 
+# Pre-download the cross-encoder reranker too, so turning on two-stage retrieval is instant.
+RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder('Xenova/ms-marco-MiniLM-L-6-v2', cache_dir='/models')"
+
 # Copy the application code last (changes most often).
 COPY app ./app
 

@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     embed_threads: int = 0
     embed_batch_size: int = 256
 
+    # Two-stage retrieval. With reranker_enabled on, the hybrid retriever casts a wider net
+    # (rerank_candidates chunks) and a cross-encoder reorders them by true relevance before the
+    # top few reach the LLM. It scores only those candidates per question (~tens of ms, hidden
+    # behind the model call) and never touches ingest. Off by default until the golden-set eval
+    # confirms the lift; turn it on for the sharper, two-stage answers.
+    reranker_enabled: bool = False
+    reranker_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
+    rerank_candidates: int = 20
+
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""

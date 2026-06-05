@@ -47,6 +47,18 @@ class FakeEmbedder:
         return self.embed_documents([text])[0]
 
 
+class FakeReranker:
+    """A deterministic stand-in reranker for endpoint tests.
+
+    It reverses the candidate order and keeps top_k. Reversing (rather than identity) lets a
+    test prove the reranker actually reordered the hybrid results and that only top_k come back,
+    without loading a real cross-encoder model.
+    """
+
+    def rerank(self, query, results, top_k):
+        return list(reversed(list(results)))[:top_k]
+
+
 class FakeLLM:
     """A stand-in chat client for endpoint tests: returns a preset answer and usage."""
 

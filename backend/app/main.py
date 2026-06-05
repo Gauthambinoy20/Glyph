@@ -39,6 +39,8 @@ from app.obs.logging import log_query
 from app.rag.cache import answer_cache
 from app.rag.overview import build_overview
 from app.rag.prompt import build_messages, parse_citations
+from app.rerank.base import Reranker
+from app.rerank.factory import make_reranker
 from app.retrieve.hybrid import HybridRetriever
 from app.store.chroma_store import ChromaStore
 
@@ -147,6 +149,12 @@ def get_llm() -> LLMClient:
 def get_history() -> History:
     """Build the chat-history store once (SQLite file from settings)."""
     return History(get_settings().db_path)
+
+
+@lru_cache
+def get_reranker() -> Reranker | None:
+    """Build the reranker once, or None when reranking is disabled in settings."""
+    return make_reranker(get_settings())
 
 
 class IngestRequest(BaseModel):
@@ -268,15 +276,40 @@ def ingest_stream(
     return StreamingResponse(events(), media_type="text/event-stream")
 
 
+def _retrieve(
+    store: ChromaStore,
+    embedder: Embedder,
+    reranker: Reranker | None,
+    retrieval_query: str,
+    rerank_query: str,
+    top_k: int,
+) -> list[dict]:
+    """Find the grounding chunks: hybrid recall, then optional cross-encoder rerank.
+
+    With no reranker this is just the hybrid top_k. With one, the retriever casts a wider net
+    (rerank_candidates) and the cross-encoder reorders that pool down to the top_k by true
+    relevance. `retrieval_query` may carry follow-up context; `rerank_query` is the bare
+    question, which is what the cross-encoder scores against.
+    """
+    retriever = HybridRetriever(store, embedder)
+    if reranker is None:
+        return retriever.search(retrieval_query, top_k=top_k)
+    pool = max(get_settings().rerank_candidates, top_k)
+    candidates = retriever.search(retrieval_query, top_k=pool, pool=max(20, pool))
+    return reranker.rerank(rerank_query, candidates, top_k=top_k)
+
+
 @app.post("/api/search")
 def search(
     request: SearchRequest,
     embedder: Embedder = Depends(get_embedder),
     store: ChromaStore = Depends(get_store),
+    reranker: Reranker | None = Depends(get_reranker),
 ) -> dict:
     """Debug endpoint: return the chunks Glyph would use to answer (no AI involved yet)."""
-    retriever = HybridRetriever(store, embedder)
-    results = retriever.search(request.question, top_k=request.top_k)
+    results = _retrieve(
+        store, embedder, reranker, request.question, request.question, request.top_k
+    )
     return {"question": request.question, "results": results}
 
 
@@ -294,17 +327,21 @@ def _sse(payload: dict) -> str:
 
 
 def _prepare_answer(
-    request: AskRequest, embedder: Embedder, store: ChromaStore
+    request: AskRequest,
+    embedder: Embedder,
+    store: ChromaStore,
+    reranker: Reranker | None = None,
 ) -> tuple[list[dict], str, str]:
     """Retrieve the grounding chunks and build the prompt shared by /ask and /ask/stream.
 
     For a follow-up, the previous question is prepended to the retrieval query so vague
     questions like "where is that called?" still retrieve the right subject. The last few
-    conversation turns are folded into the prompt so follow-ups stay coherent.
+    conversation turns are folded into the prompt so follow-ups stay coherent. When a reranker
+    is present, retrieval becomes two-stage (wide recall, then rerank to top_k).
     """
     recent = " ".join(turn.question for turn in request.history[-1:])
     retrieval_query = f"{recent} {request.question}".strip()
-    chunks = HybridRetriever(store, embedder).search(retrieval_query, top_k=request.top_k)
+    chunks = _retrieve(store, embedder, reranker, retrieval_query, request.question, request.top_k)
     recent_history = [{"question": t.question, "answer": t.answer} for t in request.history[-4:]]
     system_prompt, user_prompt = build_messages(request.question, chunks, recent_history)
     return chunks, system_prompt, user_prompt
@@ -316,6 +353,7 @@ def ask(
     embedder: Embedder = Depends(get_embedder),
     store: ChromaStore = Depends(get_store),
     llm: LLMClient = Depends(get_llm),
+    reranker: Reranker | None = Depends(get_reranker),
 ) -> dict:
     """Answer a question grounded in the repo's code, with file:line citations."""
     if request.model is not None and not is_known_model(request.model):
@@ -331,7 +369,7 @@ def ask(
             return {**hit, "meta": {**hit["meta"], "cached": True}}
 
     retrieve_started = time.perf_counter()
-    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+    chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, reranker)
     retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
 
     llm_started = time.perf_counter()
@@ -372,6 +410,7 @@ def ask_stream(
     embedder: Embedder = Depends(get_embedder),
     store: ChromaStore = Depends(get_store),
     llm: LLMClient = Depends(get_llm),
+    reranker: Reranker | None = Depends(get_reranker),
 ) -> StreamingResponse:
     """Stream the grounded answer token by token over Server-Sent Events.
 
@@ -395,7 +434,7 @@ def ask_stream(
             return
 
         retrieve_started = time.perf_counter()
-        chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store)
+        chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, reranker)
         retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
         chunk_ids = [chunk["id"] for chunk in chunks]
 
