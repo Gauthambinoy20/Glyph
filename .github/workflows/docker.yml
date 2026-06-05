@@ -1,0 +1,57 @@
+name: Docker
+
+# Prove the whole app actually builds and runs as containers, end to end —
+# not just that the unit tests pass. This is the "docker compose up runs the
+# service" gate.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    name: Build images & end-to-end smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Scan the backend image for CVEs (Trivy)
+        # The backend image carries an OS base + the Python runtime deps, so it
+        # is the meatiest attack surface. Fail on fixable CRITICAL/HIGH only.
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: glyph-backend
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Start the stack
+        run: docker compose up -d
+
+      - name: Wait for the backend to be healthy (via the nginx proxy)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:5173/api/health | grep -q '"status":"ok"'; then
+              echo "backend healthy after ${i} tries"; exit 0
+            fi
+            echo "waiting for backend... (${i}/30)"; sleep 3
+          done
+          echo "::error::backend did not become healthy"; docker compose logs; exit 1
+
+      - name: Smoke test the frontend
+        run: curl -fsS http://localhost:5173 | grep -qi "glyph"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
