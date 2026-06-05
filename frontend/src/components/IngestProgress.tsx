@@ -2,6 +2,8 @@
 // The pure helpers (initialIngestState / applyIngestEvent / deriveSteps) carry all the
 // logic so they can be unit tested without rendering, leaving the component presentational.
 
+import { useEffect, useRef, useState } from "react";
+
 import type { IngestEvent } from "../api";
 import { Icon } from "./Icon";
 
@@ -72,15 +74,41 @@ export function deriveSteps(s: IngestState): Step[] {
     if (key === "walk" && s.files != null) detail = `${s.files} files`;
     if (key === "chunk" && s.chunks != null) detail = `${s.chunks} chunks`;
     if (key === "embed" && s.embed) {
-      detail = s.embed.total ? `${s.embed.done} / ${s.embed.total}` : "all cached";
+      const cached = s.chunks != null ? Math.max(0, s.chunks - s.embed.total) : 0;
+      detail = s.embed.total
+        ? `${s.embed.done} / ${s.embed.total}${cached ? ` · ${cached} cached` : ""}`
+        : "all cached";
       pct = s.embed.total ? Math.round((s.embed.done / s.embed.total) * 100) : 100;
     }
     return { key, label: LABELS[key], detail, state, pct };
   });
 }
 
+/** Live embed throughput + ETA from progress so far. Pure, so it is unit tested. */
+export function embedStats(embed: { done: number; total: number }, elapsedMs: number) {
+  const pct = embed.total ? Math.round((embed.done / embed.total) * 100) : 100;
+  const perSec = elapsedMs > 0 ? embed.done / (elapsedMs / 1000) : 0;
+  const remaining = Math.max(0, embed.total - embed.done);
+  const etaSec = perSec > 0 && remaining > 0 ? remaining / perSec : 0;
+  return { pct, perSec, etaSec };
+}
+
 export function IngestProgress({ state }: { state: IngestState }) {
   const steps = deriveSteps(state);
+  const startRef = useRef(Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const embedding = state.embed != null && state.embed.done < state.embed.total;
+
+  // Tick a clock while embedding so elapsed/throughput/ETA stay live.
+  useEffect(() => {
+    if (!embedding) return;
+    const id = setInterval(() => setNow(Date.now()), 400);
+    return () => clearInterval(id);
+  }, [embedding]);
+
+  const elapsedMs = now - startRef.current;
+  const stats = state.embed && state.embed.total > 0 ? embedStats(state.embed, elapsedMs) : null;
+
   return (
     <div className="ingest-progress" role="status" aria-live="polite">
       {steps.map((step) => (
@@ -103,6 +131,13 @@ export function IngestProgress({ state }: { state: IngestState }) {
           )}
         </div>
       ))}
+      {stats && (
+        <div className="ip-foot mono">
+          {(elapsedMs / 1000).toFixed(1)}s elapsed
+          {stats.perSec > 0 && ` · ${Math.round(stats.perSec)}/s`}
+          {stats.etaSec > 0 && ` · ~${Math.ceil(stats.etaSec)}s left`}
+        </div>
+      )}
     </div>
   );
 }

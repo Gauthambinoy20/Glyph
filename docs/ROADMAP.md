@@ -219,7 +219,7 @@ Each item is one tested slice = one commit.
 A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo, tagline
 "intelligent codebase scanner & chat", small/fast demo repos. Do in order 1→6.
 - [x] 127. Faster ingest: all CPU threads + larger embed batch (configurable: embed_threads/embed_batch_size) `(polish)`
-- [ ] 128. Richer ingest progress: live throughput (chunks/sec), elapsed + ETA, % bar, cached-vs-new `(polish)`
+- [x] 128. Richer ingest progress: live throughput (chunks/s), elapsed + ETA, cached count `(polish)`
 - [ ] 129. Logo redesign: refined gradient G mark (crisper gradient, subtle bevel + glow) `(polish)`
 - [ ] 130. Title + tagline: "Glyph — intelligent codebase scanner & chat" (tab title, landing, README) `(polish)`
 - [ ] 131. Quick-add demo repos on landing: pallets/click, expressjs/express, honojs/hono, sindresorhus/ky, psf/requests `(polish)`
@@ -227,7 +227,7 @@ A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo
 
 **Phase 17 test boxes**
 - [x] T67. Embedder honours configured threads + batch size (CI-safe unit tests; output unchanged)
-- [ ] T68. Ingest progress derives throughput + ETA from stage events
+- [x] T68. embedStats derives pct, throughput and ETA from progress
 - [ ] T69. Landing renders the demo-repo chips and ingests the repo on click
 
 ---

@@ -6,10 +6,25 @@ import { describe, expect, it } from "vitest";
 import {
   applyIngestEvent,
   deriveSteps,
+  embedStats,
   IngestProgress,
   initialIngestState,
   type IngestState,
 } from "./IngestProgress";
+
+describe("embedStats", () => {
+  it("computes percentage, throughput, and ETA from progress", () => {
+    const s = embedStats({ done: 100, total: 400 }, 2000); // 100 done in 2s → 50/s, 300 left → 6s
+    expect(s.pct).toBe(25);
+    expect(Math.round(s.perSec)).toBe(50);
+    expect(Math.round(s.etaSec)).toBe(6);
+  });
+
+  it("has no ETA when finished, and no rate before any time passes", () => {
+    expect(embedStats({ done: 10, total: 10 }, 1000).etaSec).toBe(0);
+    expect(embedStats({ done: 5, total: 10 }, 0).perSec).toBe(0);
+  });
+});
 
 describe("ingest state helpers", () => {
   it("starts with cloning running for a repo, idle for a local path", () => {
