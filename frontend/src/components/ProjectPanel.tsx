@@ -500,7 +500,11 @@ function SessionMetrics({ session, latencies }: { session: PanelSession; latenci
           <span className="sl">Answer latency</span>
           <span className="sv">{latencies.length ? fmt(latencies[latencies.length - 1]) : "—"}</span>
         </div>
-        <Sparkline values={latencies.length >= 2 ? latencies : [0, 0]} />
+        {latencies.length >= 2 ? (
+          <Sparkline values={latencies} />
+        ) : (
+          <div className="spark-empty">Ask a question to chart latency over time</div>
+        )}
       </div>
     </Card>
   );

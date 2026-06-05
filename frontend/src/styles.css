@@ -707,6 +707,20 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--pad-card);
+  transition:
+    border-color 0.18s var(--ease),
+    transform 0.18s var(--ease);
+}
+.card:hover {
+  border-color: var(--border-strong, var(--border));
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover {
+    transition: none;
+    transform: none;
+  }
 }
 .card-hd {
   display: flex;
@@ -1237,6 +1251,15 @@ button {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-2);
+}
+.spark-empty {
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
 }
 
 /* recent repos */
