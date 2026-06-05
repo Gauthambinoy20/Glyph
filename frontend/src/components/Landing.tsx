@@ -85,6 +85,7 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
                 className="rr"
                 onClick={() => onMode(m)}
                 aria-pressed={mode === m}
+                aria-label={m === "fast" ? "Fast indexing" : "Careful indexing"}
                 title={
                   m === "fast"
                     ? "Fast — files the repo almost instantly (Model2Vec static embeddings). Best for large repos or a quick look."
@@ -144,5 +145,12 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
   );
 }
 
-// Small, popular, fast-to-ingest repos for one-click demos.
-const DEMO_REPOS = ["pallets/click", "expressjs/express", "honojs/hono", "sindresorhus/ky", "psf/requests"];
+// Recognizable, fast-to-ingest repos for one-click demos — a spread of TypeScript, Python and
+// JavaScript (the languages the chunker parses), each small enough to index in seconds.
+const DEMO_REPOS = [
+  "pmndrs/zustand",
+  "colinhacks/zod",
+  "fastapi/typer",
+  "pallets/flask",
+  "expressjs/express",
+];

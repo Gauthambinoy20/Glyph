@@ -39,10 +39,10 @@ describe("Landing", () => {
     const user = userEvent.setup();
     render(<Landing onIngest={onIngest} {...base} />);
 
-    const chip = screen.getByRole("button", { name: /pallets\/click/i });
+    const chip = screen.getByRole("button", { name: /pmndrs\/zustand/i });
     await user.click(chip);
 
-    expect(onIngest).toHaveBeenCalledWith("https://github.com/pallets/click");
+    expect(onIngest).toHaveBeenCalledWith("https://github.com/pmndrs/zustand");
   });
 
   it("lets the user pick the fast indexing mode", async () => {
@@ -50,7 +50,7 @@ describe("Landing", () => {
     const user = userEvent.setup();
     render(<Landing onIngest={() => {}} {...base} onMode={onMode} />);
 
-    await user.click(screen.getByRole("button", { name: /fast/i }));
+    await user.click(screen.getByRole("button", { name: /fast indexing/i }));
 
     expect(onMode).toHaveBeenCalledWith("fast");
   });
