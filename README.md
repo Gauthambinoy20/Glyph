@@ -90,8 +90,13 @@ architecture, data-flow, sequence and ER diagrams live in
 [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md).
 
 ## Screenshots
-<!-- Captured from a real run: landing, workspace (chat + panel), code viewer, command palette. -->
-_Added from a live run — see the demo._
+
+| | |
+|---|---|
+| ![Landing](docs/screenshots/landing.png) | ![Workspace](docs/screenshots/workspace.png) |
+| ![Code viewer](docs/screenshots/code-viewer.png) | ![Command palette](docs/screenshots/command-palette.png) |
+
+_Landing · Workspace (chat + project panel) · Code viewer · ⌘K command palette._
 
 ## RAG / LLM approach & decisions
 - **Chunking:** AST-aware via tree-sitter (by function/class) — see TECHNICAL_REPORT §1.1.
