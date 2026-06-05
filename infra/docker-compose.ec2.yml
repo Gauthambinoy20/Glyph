@@ -1,0 +1,7 @@
+# Deploy override for the EC2 host: serve the frontend on the standard web port (80)
+# so the public URL needs no port suffix. Used together with the root docker-compose.yml:
+#   docker compose -f docker-compose.yml -f infra/docker-compose.ec2.yml up -d --build
+services:
+  frontend:
+    ports:
+      - "80:80"

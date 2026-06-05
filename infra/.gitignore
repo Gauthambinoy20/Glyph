@@ -1,0 +1,12 @@
+# Terraform state can contain secrets and resource detail — never commit it.
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Generated SSH private key for the deploy host.
+*.pem
+
+# Local variable overrides.
+*.tfvars
