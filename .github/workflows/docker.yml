@@ -27,7 +27,7 @@ jobs:
       - name: Scan the backend image for CVEs (Trivy)
         # The backend image carries an OS base + the Python runtime deps, so it
         # is the meatiest attack surface. Fail on fixable CRITICAL/HIGH only.
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: glyph-backend
