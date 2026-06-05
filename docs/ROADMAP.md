@@ -47,7 +47,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 13. `app/main.py` FastAPI app + `GET /api/health` `(core)`
 - [x] 14. Test: `/api/health` returns `{"status":"ok"}` `(core)`
 - [x] 15. Commit: add config and health endpoint `(core)`
-- [ ] 15a. `GET /api/ready` readiness probe (reports if model + store are loaded) `(polish)`
+- [x] 15a. `GET /api/ready` readiness probe (reports model + store loaded, chunk count) `(polish)`
 - [x] 15b. CORS locked to the frontend origin; request-id on every response `(core)`
 - [x] 15c. Global error handler: generic message to client, full detail to logs `(core)`
 
@@ -212,7 +212,7 @@ Each item is one tested slice = one commit.
 - [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
       *(feeds ⌘K search and a future file browser)*
 - [x] 124. Per-file import in-degree for "most depended-on files" `(polish)`  (done client-side in computeTopFiles; no backend change needed)
-- [ ] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
+- [x] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
 - [ ] 126. Commit each of the above as its own slice, with tests
 
 ---
@@ -223,7 +223,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Health / app**
 - [x] T01. `/api/health` → 200 + `{"status":"ok"}`
-- [ ] T02. `/api/ready` reflects model + store loaded
+- [x] T02. `/api/ready` reflects model + store loaded (dim + chunk count)
 - [x] T03. Unknown route → clean 404; bad body → 422 with friendly message  (test_e2e.py)
 
 **Chunker**

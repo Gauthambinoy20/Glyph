@@ -158,6 +158,24 @@ def health() -> dict[str, str]:
     return {"status": "ok", "app": settings.app_name}
 
 
+@app.get("/api/ready")
+def ready(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Readiness probe: 200 once the embedding model and vector store are loaded.
+
+    Unlike /api/health (is the process up?), this forces the heavy dependencies to build,
+    so a 200 means the app can actually answer; it also reports how many chunks are indexed.
+    """
+    return {
+        "ready": True,
+        "embed_model": get_settings().embed_model,
+        "dim": embedder.dim,
+        "chunks": store.count(),
+    }
+
+
 @app.post("/api/ingest")
 def ingest(
     request: IngestRequest,
