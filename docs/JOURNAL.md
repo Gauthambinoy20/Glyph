@@ -402,4 +402,25 @@ VIBE CODER/
   current code. Backend went to 75 tests, frontend to 41, types and build clean, and I smoke-tested the
   real stream against the running backend (walk → chunk → embed 0/4 → 4/4 → done).
 
+- **Deep verification + doc accuracy pass (done, 2026-06-05).** Ran an exhaustive cross-check of the
+  whole project (backend gate, frontend gate, git cleanliness, the new live-ingest feature, the reports
+  against the code, and a live ingest/ask timing). Result: everything works — 78 backend + 41 frontend
+  tests green, clean git with a single author and no assistant fingerprints, the streaming-ingest feature
+  wired end to end, ingest about 0.6s warm and a real answer about 10s (the free model is the slow part).
+  The only problems were the reports drifting behind the code, so I fixed them: corrected the endpoint
+  count (7 → 11) and the test/coverage figures (now 78 tests, 91%), ticked the feature catalogue rows that
+  were already built, and marked the SQLite history layer and the question-length / rate-limit guards as
+  planned (designed, not yet built) so the diagrams do not overclaim.
+
+- **README filled (the factual parts) (done, 2026-06-05).** Wrote the Quick start (Docker and local), a
+  Features list, an Architecture section with a diagram, and the "no framework, on purpose" note. Left
+  every opinion section (productionizing, key decisions, standards, how I used AI, what I would do
+  differently, edge cases, license) as my own to write later, and scaffolded the screenshots section so
+  four captures drop straight in.
+
+- **API endpoints detection (done, 2026-06-05).** Added a small detector that finds HTTP routes in the
+  indexed code (FastAPI/Flask decorators and Express-style calls) and a `/api/endpoints` endpoint, then
+  wired the project panel to show them. Pointed at Glyph itself it correctly lists all eleven of its own
+  routes. Four tests on the detector and the endpoint; the panel card, previously hidden, now fills in.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
