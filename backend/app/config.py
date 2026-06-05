@@ -18,9 +18,12 @@ class Settings(BaseSettings):
     # Human readable app name, surfaced by the health endpoint.
     app_name: str = "Glyph"
 
-    # Embeddings: local and free by default; switchable to OpenAI with one setting.
-    embed_backend: str = "local"  # local | openai
+    # Embeddings: local and free by default. "openai" swaps to a hosted model; "static" uses
+    # Model2Vec for ~100x faster ingest (the "fast mode"), trading some accuracy that the
+    # reranker + BM25 largely recover. static_model is used only when embed_backend=static.
+    embed_backend: str = "local"  # local | openai | static
     embed_model: str = "BAAI/bge-small-en-v1.5"
+    static_model: str = "minishlab/potion-base-8M"
     model_cache_dir: str = ".model_cache"
     openai_api_key: str = ""
 

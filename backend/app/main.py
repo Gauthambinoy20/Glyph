@@ -26,7 +26,7 @@ from app.analyze.symbols import list_symbols
 from app.config import get_settings
 from app.db.history import History
 from app.embed.base import Embedder
-from app.embed.factory import make_embedder
+from app.embed.factory import effective_embed_model, make_embedder
 from app.ingest.pipeline import (
     ingest_path,
     ingest_path_events,
@@ -127,7 +127,7 @@ def get_store() -> ChromaStore:
     settings = get_settings()
     return ChromaStore(
         path=settings.chroma_dir,
-        embed_model=settings.embed_model,
+        embed_model=effective_embed_model(settings),
         dim=get_embedder().dim,
     )
 

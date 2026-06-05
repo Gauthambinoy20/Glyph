@@ -25,6 +25,9 @@ RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-smal
 # Pre-download the cross-encoder reranker too, so turning on two-stage retrieval is instant.
 RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder('Xenova/ms-marco-MiniLM-L-6-v2', cache_dir='/models')"
 
+# Pre-download the Model2Vec static embedder used by fast mode (EMBED_BACKEND=static).
+RUN python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-8M')"
+
 # Copy the application code last (changes most often).
 COPY app ./app
 
