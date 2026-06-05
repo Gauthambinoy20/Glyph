@@ -1,0 +1,29 @@
+# One command runs the whole app:  docker compose up --build
+# Then open http://localhost:5173
+#
+# The free OpenRouter key is read from a .env file next to this one (copy .env.example to
+# .env and fill in LLM_API_KEY). Without a key the UI and ingest still work; only the
+# answer step needs it.
+services:
+  backend:
+    build: ./backend
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-openai/gpt-oss-120b:free}
+      - LLM_FALLBACK_MODEL=${LLM_FALLBACK_MODEL:-openai/gpt-oss-20b:free}
+      # Keep the vector index on a named volume so it survives restarts.
+      - CHROMA_DIR=/data/chroma
+    volumes:
+      - glyph-data:/data
+    expose:
+      - "8000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  glyph-data:

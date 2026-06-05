@@ -140,15 +140,15 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
 
 ## Phase 10 - Ship it
-- [ ] 86. Backend Dockerfile (pre-downloads bge-small) + `.dockerignore` `(core)`
-- [ ] 87. Frontend Dockerfile (build → static serve) + `.dockerignore` `(core)`
-- [ ] 88. `docker-compose.yml` so `docker compose up` runs the whole app `(core)`
+- [x] 86. Backend Dockerfile (pre-downloads bge-small) + `.dockerignore` `(core)`
+- [x] 87. Frontend Dockerfile (build → nginx static serve, /api proxied) + `.dockerignore` `(core)`
+- [x] 88. `docker-compose.yml` so `docker compose up` runs the whole app `(core)`
 - [x] 89. GitHub Actions CI: install → ruff → format → mypy → bandit → pip-audit → pytest+cov `(core)`
 - [ ] 90. Orchestration note in README: why NO framework (LangChain/LlamaIndex) on purpose `(core)`
 - [ ] 91. Fill README: setup, architecture diagram, productionize/scale, RAG decisions; keep `✍️` blanks `(core)`
 - [x] 92. Create the GitHub repo and push (github.com/Gauthambinoy20/Glyph, CI green) `(core)`
 - [ ] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
-- [ ] 94. Final pass: all tests green, fresh `docker compose up` works from scratch `(core)`
+- [x] 94. Fresh `docker compose up` works from scratch: served UI, ingest, and a streamed answer (smoke-tested) `(core)`
 - [ ] 95. Commit: dockerize, CI, finalize docs `(core)`
 
 ## Phase 11 - Standout features (graded extras)

@@ -341,4 +341,15 @@ VIBE CODER/
   allowed, an unknown origin is not, and a forced crash returns a clean 500 with the internal detail hidden.
   Backend now at 57 tests, full gate green.
 
+- **One-command run with Docker (done, 2026-06-05).** Glyph now starts with a single command,
+  `docker compose up`, and opens at http://localhost:5173. There are two small images: the backend
+  (FastAPI, with the search model baked in so the first question is not slowed by a download) and the
+  frontend (the built website served by a tiny web server that also forwards the API calls to the
+  backend, so to the browser it is all one address and there is no cross-origin hassle). I made sure the
+  forwarding does not buffer, so the live word-by-word answers still stream through. The vector index is
+  kept on a saved volume so it survives restarts, and the secret key is never baked into the image. I
+  smoke-tested the whole thing in the containers: the site loads, the health check answers, it indexed
+  its own code (29 files), and a question streamed back a real answer end to end. To run it the user
+  drops a free key into a .env file (the project already ships a .env.example showing the names).
+
 *(Next entries get added here, newest at the bottom, one per step.)*

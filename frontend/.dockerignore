@@ -1,0 +1,5 @@
+# Build happens inside the image; these are local-only and would bloat the context.
+node_modules/
+dist/
+.vite/
+*.log
