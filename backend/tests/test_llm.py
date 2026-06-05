@@ -106,3 +106,18 @@ def test_llm_stream_falls_back_on_rate_limit() -> None:  # T36 for streaming
     events = list(_client_with(behavior).stream("system", "user"))
 
     assert "".join(event["text"] for event in events if event["type"] == "delta") == "from backup"
+
+
+def test_llm_retries_on_5xx_then_succeeds() -> None:  # transient 5xx → fallback model
+    def behavior(model: str):
+        return _http_error(APIStatusError, 503) if model == "primary" else _completion("recovered")
+
+    text, _ = _client_with(behavior).complete("system", "user")
+
+    assert text == "recovered"
+
+
+def test_llm_raises_when_both_models_are_down() -> None:  # both fail → clear LLMError
+    client = _client_with(lambda model: _http_error(APIStatusError, 500))
+    with pytest.raises(LLMError):
+        client.complete("system", "user")

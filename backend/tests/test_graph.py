@@ -30,3 +30,23 @@ def test_import_graph_links_internal_imports(tmp_path) -> None:
     assert {"source": "ingest/cache.py", "target": "store/chroma_store.py"} in graph["edges"]
     # lonely.py imports nothing internal -> it has no outgoing edge.
     assert all(edge["source"] != "lonely.py" for edge in graph["edges"])
+
+
+def test_import_graph_resolves_relative_js_ts_imports(tmp_path) -> None:
+    """Relative JS/TS imports (./x, ../y) resolve to the right file (covers _resolve_relative)."""
+    store = ChromaStore(path=str(tmp_path / "c"), embed_model="fake", dim=8)
+    chunks = [
+        make_chunk(
+            'import { thing } from "./util";\nexport function a() {}', name="a", path="src/app.ts"
+        ),
+        make_chunk('import { a } from "../src/app";\n', name="t", path="test/app.test.ts"),
+        make_chunk("export const thing = 1;\n", name="thing", path="src/util.ts"),
+    ]
+    embed_new_chunks(chunks, store, FakeEmbedder(dim=8))
+
+    edges = build_import_graph(store)["edges"]
+
+    # app.ts imports ./util -> src/util.ts
+    assert {"source": "src/app.ts", "target": "src/util.ts"} in edges
+    # app.test.ts imports ../src/app -> src/app.ts
+    assert {"source": "test/app.test.ts", "target": "src/app.ts"} in edges
