@@ -1,4 +1,4 @@
-# Glyph — Code Documentation Assistant
+# Glyph — Intelligent Codebase Scanner & Chat
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
 
