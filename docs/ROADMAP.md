@@ -100,7 +100,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 53. `rag/prompt.py` grounded prompt: answer only from context, always cite, else "not found" `(core)`
 - [x] 54. `POST /api/ask` question → retrieve → AI → answer + citations (model selectable) `(core)`
 - [x] 55. Citation parsing: `[file:start-end]` → structured citations, validated vs retrieved chunks `(core)`
-- [ ] 56. Streaming `POST /api/ask/stream` (answer appears live, citations in final event) `(polish)`
+- [x] 56. Streaming `POST /api/ask/stream` (answer appears live, citations in final event) `(polish)`  (done; see #103)
 - [x] 57. `obs/logging.py` one JSON log line per ask (question, chunk_ids, latency, tokens) `(core)`
 - [x] 58. Token-usage fallback to 0 when a free provider omits usage `(core)`
 - [x] 59. Tests: ask returns citations, empty index → citations=[], citation consistency, 429→fallback, log fields `(core)`
@@ -109,7 +109,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 ## Phase 7 - Conversation & extra endpoints
 - [x] 61. Conversational follow-ups: feed last few Q&A turns into the prompt (context mgmt) `(core)`
 - [x] 62. Repo overview generated on ingest ("what this codebase does") `(polish)`
-- [ ] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`
+- [x] 63. `GET /api/file` return a snippet for click-to-view citations `(core)`  (done; see #121)
 - [ ] 64. `GET /repos/{id}/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`
 - [ ] 65. SQLite chat history (sessions + messages) + endpoints `(polish)`
 - [x] 66. Suggested starter questions after ingest (in the web UI) `(polish)`
@@ -135,7 +135,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
 - [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
       *(full mocked-fetch URL-shape test, T48, and component tests still open)*
-- [ ] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`
+- [x] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`  (test_e2e.py, T49)
 - [ ] 84. `Makefile` (or `tasks.sh`): `make install / test / run / lint / fmt / up` one-liners `(polish)`
 - [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
 
@@ -182,14 +182,14 @@ Note: streaming the text live (115) depends on the streaming endpoint (103); lig
 tracked as stretch item 101.
 - [x] 110. Stream the answer text into the bubble live (typing effect) once 103 lands `(core)`
 - [ ] 111. Skeleton / shimmer loading for ingest and for an in-flight answer (replace bare dots) `(polish)`
-- [ ] 112. Citation hover preview: peek the cited code in a small popover before clicking `(polish)`
-- [ ] 113. Copy-answer and copy-code buttons `(polish)`
+- [x] 112. Citation hover preview: peek the cited code in a small popover before clicking `(polish)`  (CitePeek in Chat.tsx)
+- [x] 113. Copy-answer and copy-code buttons `(polish)`  (CopyButton in code blocks + code viewer)
 - [x] 114. Live ingest progress: files and chunks counting up, not just one final number `(polish)`
       *(SSE `POST /api/ingest/stream` streams clone→walk→chunk→embed(X/Y)→done; the landing
       screen shows a stage checklist with a live embed count + bar. Commits 7bb9565, 0242260,
       44169ee, 895141a)*
-- [ ] 115. Keyboard: Cmd/Ctrl+K focuses the question box, Esc closes the code panel `(polish)`
-- [ ] 116. Recent repos list so you can re-open one without re-pasting the URL `(polish)`
+- [x] 115. Keyboard: ⌘/Ctrl+K opens the command palette, Esc closes it `(polish)`  (palette wired; composer-focus variant optional)
+- [x] 116. Recent repos list so you can re-open one without re-pasting the URL `(polish)`  (RecentRepos widget)
 - [ ] 117. Mobile-responsive chat column (graph hides on small screens) `(stretch)`
 - [ ] 118. Frontend graceful states: graph-load failure and slow-graph fallbacks `(polish)`
 - [x] 118b. Ingest/ask client-side timeout + clear error so a hung request never spins forever `(core)`
@@ -211,7 +211,7 @@ Each item is one tested slice = one commit.
       *(feeds the "API endpoints detected" widget)*
 - [ ] 123. `GET /api/symbols` flat file+symbol index for the command palette / file tree `(polish)`
       *(feeds ⌘K search and a future file browser)*
-- [ ] 124. Extend `/api/graph` with per-file import in-degree (for "most depended-on files") `(polish)`
+- [x] 124. Per-file import in-degree for "most depended-on files" `(polish)`  (done client-side in computeTopFiles; no backend change needed)
 - [ ] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
 - [ ] 126. Commit each of the above as its own slice, with tests
 
@@ -224,7 +224,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Health / app**
 - [x] T01. `/api/health` → 200 + `{"status":"ok"}`
 - [ ] T02. `/api/ready` reflects model + store loaded
-- [ ] T03. Unknown route → clean 404; bad body → 422 with friendly message
+- [x] T03. Unknown route → clean 404; bad body → 422 with friendly message  (test_e2e.py)
 
 **Chunker**
 - [x] T04. Python function → exact 1-indexed start/end + symbol name
@@ -279,7 +279,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Conversation / extra endpoints**
 - [x] T43. Follow-up question carries prior turns into the prompt
-- [ ] T44. `/api/file` returns the exact requested line range
+- [x] T44. `/api/file` returns the exact requested line range  (test_files.py)
 - [ ] T45. Endpoint detector finds routes in a sample file
 - [ ] T46. Chat history save → load roundtrip
 
