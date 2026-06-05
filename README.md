@@ -119,12 +119,30 @@ architecture, data-flow, sequence and ER diagrams live in
 
 ## Screenshots
 
+**Grounded answer with `file:line` citations** — the core: ask in natural language, get an answer built only from the retrieved code, with clickable citations and the model/latency/tokens it used.
+
+![Grounded answer with citations](docs/screenshots/answer-citations.png)
+
+**Click a citation → the highlighted source**, beside the live "Project Intelligence" panel (real detected stack, code-intelligence counts, tailored starter questions).
+
+![Code viewer](docs/screenshots/code-viewer.png)
+
 | | |
 |---|---|
-| ![Landing](docs/screenshots/landing.png) | ![Workspace](docs/screenshots/workspace.png) |
-| ![Code viewer](docs/screenshots/code-viewer.png) | ![Command palette](docs/screenshots/command-palette.png) |
+| **Landing** — pick Fast/Careful indexing, or one-click a demo repo | **Live ingest** — clone → scan → chunk → embed, counting up |
+| ![Landing](docs/screenshots/landing.png) | ![Ingest progress](docs/screenshots/ingest-progress.png) |
+| **Workspace** — panel + chat with repo-aware starter questions | **Code intelligence** — real functions / classes / endpoints / frameworks |
+| ![Workspace](docs/screenshots/workspace.png) | ![Code intelligence](docs/screenshots/code-intelligence.png) |
+| **Architecture graph** — file dependency graph from real imports | **Expanded architecture** — full-screen, click a node to ask about it |
+| ![Architecture graph](docs/screenshots/architecture-graph.png) | ![Architecture modal](docs/screenshots/architecture-modal.png) |
+| **Most depended-on files** — ranked by import in-degree | **Language breakdown** — share of the codebase per language |
+| ![Most depended-on](docs/screenshots/top-files.png) | ![Languages](docs/screenshots/languages.png) |
+| **⌘K command palette** — jump to any symbol or endpoint | **Model picker** — free + cheapest-paid models, selectable per question |
+| ![Command palette](docs/screenshots/command-palette.png) | ![Model picker](docs/screenshots/model-picker.png) |
 
-_Landing · Workspace (chat + project panel) · Code viewer · ⌘K command palette._
+**Observability** — per-query log with retrieve/LLM latency split, tokens and cache hits.
+
+![Query log](docs/screenshots/query-log.png)
 
 ## RAG / LLM approach & decisions
 - **Chunking:** AST-aware via tree-sitter (by function/class) — see TECHNICAL_REPORT §1.1.
