@@ -5,12 +5,16 @@ built once (cached) and injected as dependencies, so tests can swap in fakes.
 """
 
 import json
+import logging
 import time
-from collections.abc import Iterator
+import uuid
+from collections.abc import Awaitable, Callable, Iterator
+from contextvars import ContextVar
 from functools import lru_cache
 
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from app.analyze.graph import build_import_graph
@@ -26,8 +30,57 @@ from app.rag.prompt import build_messages, parse_citations
 from app.retrieve.hybrid import HybridRetriever
 from app.store.chroma_store import ChromaStore
 
+logger = logging.getLogger("glyph")
+
+# Holds the current request's id so the error handler can stamp it even when the request
+# object is not handy. Set per request by the middleware below.
+_request_id: ContextVar[str] = ContextVar("request_id", default="")
+
 # The single FastAPI application instance that the server runs.
 app = FastAPI(title="Glyph API")
+
+# Lock cross-origin access to the known frontend origins (a browser will block others).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
+)
+
+
+@app.middleware("http")
+async def add_request_id(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """Tag every request with a short id, echoed back in the X-Request-ID header.
+
+    The id ties a client-visible response to its server logs, so an error a user reports
+    can be found in the logs without exposing any internal detail to them.
+    """
+    request_id = uuid.uuid4().hex[:12]
+    _request_id.set(request_id)
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    """Turn any unhandled error into a clean 500: generic message out, full detail in logs.
+
+    Known, expected failures already raise HTTPException with a helpful message; this only
+    catches the truly unexpected, so we never leak a stack trace or internals to the client.
+    """
+    request_id = getattr(request.state, "request_id", "") or _request_id.get()
+    logger.exception("unhandled error (request_id=%s): %s", request_id, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "internal server error", "request_id": request_id},
+        headers={"X-Request-ID": request_id},
+    )
 
 
 @lru_cache

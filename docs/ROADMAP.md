@@ -48,8 +48,8 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 14. Test: `/api/health` returns `{"status":"ok"}` `(core)`
 - [x] 15. Commit: add config and health endpoint `(core)`
 - [ ] 15a. `GET /api/ready` readiness probe (reports if model + store are loaded) `(polish)`
-- [ ] 15b. CORS locked to the frontend origin; request-id on every response `(core)`
-- [ ] 15c. Global error handler: generic message to client, full detail to logs `(core)`
+- [x] 15b. CORS locked to the frontend origin; request-id on every response `(core)`
+- [x] 15c. Global error handler: generic message to client, full detail to logs `(core)`
 
 ## Phase 2 - Code chunking (the accuracy core)
 - [x] 16. `ingest/chunker.py` tree-sitter parser setup + extension→language map `(core)`
@@ -274,8 +274,8 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [ ] T52. Answer cache: identical (repo, question, model) returns the cached answer, no LLM call
 - [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
 - [ ] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)
-- [ ] T55. CORS preflight from the frontend origin is allowed; others rejected
-- [ ] T56. Global error handler returns a clean generic body, full detail only in logs
+- [x] T55. CORS allows the frontend origin; an unknown origin gets no allow header
+- [x] T56. Global error handler returns a clean generic 500, internals never leak; + request-id on every response
 - [ ] T57. `/api/ready` reports not-ready until model + store are loaded
 
 ---

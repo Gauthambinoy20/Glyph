@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     llm_fallback_model: str = "openai/gpt-oss-20b:free"
     app_url: str = "http://localhost:5173"
 
+    # Browser origins allowed to call the API (the dev frontend, which may land on 5173 or
+    # 5174 if the first port is taken). Override in .env for a deployed frontend origin.
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174"]
+
 
 def get_settings() -> Settings:
     """Build and return the settings object."""

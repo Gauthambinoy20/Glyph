@@ -331,4 +331,14 @@ VIBE CODER/
   build still passes. Together with the timeout fix, the stuck-button case is now both fixed and guarded
   by a test so it cannot quietly come back.
 
+- **Server hardening: CORS, request ids, and one error handler (done, 2026-06-05).** Three small but
+  important safety pieces. First, the API now only accepts browser calls from the known frontend address,
+  so a random website cannot quietly call it. Second, every response carries a short request id, so if a
+  user hits an error we can find that exact request in the logs without showing them anything internal.
+  Third, any unexpected crash now turns into one clean "internal server error" message with that id, while
+  the full detail stays in the logs, instead of leaking a stack trace. The expected, helpful errors (bad
+  link, empty folder) are untouched. Four tests cover it: the id is always present, the frontend origin is
+  allowed, an unknown origin is not, and a forced crash returns a clean 500 with the internal detail hidden.
+  Backend now at 57 tests, full gate green.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
