@@ -215,3 +215,57 @@ def test_ingest_endpoint_rejects_bad_repo_url() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 400
+
+
+# ----- Streaming endpoint -----
+
+
+def _parse_sse(body: str) -> list[dict]:
+    """Pull the JSON payloads out of an SSE response body."""
+    import json
+
+    return [
+        json.loads(line[len("data: ") :]) for line in body.splitlines() if line.startswith("data: ")
+    ]
+
+
+def test_ingest_stream_endpoint_emits_stages_then_done(tmp_path) -> None:  # T71
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _fresh_store(tmp_path)
+    try:
+        response = TestClient(app).post("/api/ingest/stream", json={"local_path": str(FIXTURES)})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    events = _parse_sse(response.text)
+    stages = [event["stage"] for event in events]
+    assert "walk" in stages and "embed" in stages
+    assert stages[-1] == "done"
+    assert events[-1]["added"] > 0
+
+
+def test_ingest_stream_endpoint_requires_input() -> None:  # T72
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: None
+    try:
+        response = TestClient(app).post("/api/ingest/stream", json={})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 400
+
+
+def test_ingest_stream_endpoint_reports_bad_url_as_error_event(tmp_path) -> None:  # T73
+    # A bad URL only fails once cloning starts, so it arrives as an error event, not a 400.
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _fresh_store(tmp_path)
+    try:
+        response = TestClient(app).post("/api/ingest/stream", json={"repo_url": "not-a-github-url"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    events = _parse_sse(response.text)
+    assert events[-1]["stage"] == "error"
+    assert "detail" in events[-1]

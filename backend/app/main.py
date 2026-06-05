@@ -23,7 +23,12 @@ from app.analyze.stats import build_stats
 from app.config import get_settings
 from app.embed.base import Embedder
 from app.embed.factory import make_embedder
-from app.ingest.pipeline import ingest_path, ingest_repo
+from app.ingest.pipeline import (
+    ingest_path,
+    ingest_path_events,
+    ingest_repo,
+    ingest_repo_events,
+)
 from app.llm.catalog import is_known_model, list_models
 from app.llm.client import LLMClient, LLMError
 from app.obs.logging import log_query
@@ -171,6 +176,41 @@ def ingest(
         # Bad URL, failed/timed-out clone, no supported files, or no chunks.
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     raise HTTPException(status_code=400, detail="provide repo_url or local_path")
+
+
+@app.post("/api/ingest/stream")
+def ingest_stream(
+    request: IngestRequest,
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> StreamingResponse:
+    """Ingest a repo or folder, streaming one progress event per stage over SSE.
+
+    Emits the pipeline's stage events (`walk`, `chunk`, `embed` with running counts, then
+    `done` with the final summary). Bad input is rejected up front with a 400; a failure
+    that only surfaces once streaming has started (a failed/timed-out clone, no supported
+    files, no chunks) is delivered as a final `{"stage":"error","detail":...}` message,
+    since the 200 response headers have already been sent.
+    """
+    if not request.repo_url and not request.local_path:
+        raise HTTPException(status_code=400, detail="provide repo_url or local_path")
+
+    def events() -> Iterator[str]:
+        """Drive the ingest event stream and translate each step into an SSE message."""
+        try:
+            if request.repo_url:
+                stream = ingest_repo_events(request.repo_url, store, embedder)
+            elif request.local_path:
+                stream = ingest_path_events(request.local_path, store, embedder)
+            else:  # pragma: no cover - guarded by the 400 check above
+                return
+            for event in stream:
+                yield _sse(event)
+        except ValueError as exc:
+            # Bad URL, failed/timed-out clone, no supported files, or no chunks.
+            yield _sse({"stage": "error", "detail": str(exc)})
+
+    return StreamingResponse(events(), media_type="text/event-stream")
 
 
 @app.post("/api/search")
