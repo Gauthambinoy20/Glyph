@@ -60,19 +60,6 @@ function mdInlineSafe(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
 
-// ── User message ─────────────────────────────────────────────────────────────
-export function UserMessage({ text }: { text: string }) {
-  return (
-    <div className="msg">
-      <div className="msg-head">
-        <span className="avatar user">U</span>
-        <span className="msg-who">You</span>
-      </div>
-      <div className="user-bubble">{text}</div>
-    </div>
-  );
-}
-
 // ── Thinking ─────────────────────────────────────────────────────────────────
 export function Thinking() {
   return (

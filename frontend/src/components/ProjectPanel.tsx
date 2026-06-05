@@ -9,13 +9,13 @@ import type { Endpoint, Recent, Repo } from "../types";
 import { ForceGraph, langColor } from "./ForceGraph";
 import { Icon } from "./Icon";
 
-export interface LangSegment {
+interface LangSegment {
   name: string;
   pct: number;
   color: string;
 }
 
-export interface PanelStats {
+interface PanelStats {
   files: number;
   chunks: number;
   cached: number;
@@ -531,21 +531,6 @@ export function ProjectPanel({
         />
         <SessionMetrics session={session} latencies={data.latencies} />
         <RecentRepos recent={data.recent} onOpen={onOpenRecent} />
-      </div>
-    </aside>
-  );
-}
-
-export function PanelEmpty() {
-  return (
-    <aside className="panel-col scroll">
-      <div className="panel-empty">
-        <div>
-          <div className="pe-mark">
-            <Icon name="layers" />
-          </div>
-          <p>Load a repo to see its intelligence.</p>
-        </div>
       </div>
     </aside>
   );
