@@ -136,7 +136,7 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
       *(full mocked-fetch URL-shape test, T48, and component tests still open)*
 - [x] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`  (test_e2e.py, T49)
-- [ ] 84. `Makefile` (or `tasks.sh`): `make install / test / run / lint / fmt / up` one-liners `(polish)`
+- [x] 84. `Makefile`: `make install / test / run / lint / fmt / up / eval` one-liners `(polish)`
 - [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
 
 ## Phase 10 - Ship it
