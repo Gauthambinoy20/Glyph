@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from app.analyze.endpoints import detect_endpoints
 from app.analyze.files import read_indexed_file
 from app.analyze.graph import build_import_graph
+from app.analyze.stack import detect_stack
 from app.analyze.stats import build_stats
 from app.analyze.symbols import list_symbols
 from app.config import Settings, get_settings
@@ -635,6 +636,16 @@ def endpoints(
     """Return HTTP API routes detected in the indexed code (FastAPI/Flask/Express styles)."""
     _ = embedder
     return {"endpoints": detect_endpoints(store)}
+
+
+@app.get("/api/stack")
+def stack(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Return the real frameworks/libraries detected from the code's imports, most-used first."""
+    _ = embedder
+    return {"stack": detect_stack(store)}
 
 
 @app.get("/api/symbols")
