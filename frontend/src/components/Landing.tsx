@@ -71,12 +71,7 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
         </form>
 
         {!progress && (
-          <div
-            className="mode-pick"
-            role="group"
-            aria-label="Indexing mode"
-            style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 12 }}
-          >
+          <div className="mode-pick" role="group" aria-label="Indexing mode">
             <span className="ld-label">Indexing</span>
             {(["fast", "careful"] as const).map((m) => (
               <button
@@ -91,7 +86,6 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
                     ? "Fast — files the repo almost instantly (Model2Vec static embeddings). Best for large repos or a quick look."
                     : "Careful — slightly slower to file, a touch more precise (transformer embeddings)."
                 }
-                style={mode === m ? { outline: "2px solid var(--accent)", opacity: 1 } : { opacity: 0.55 }}
               >
                 <span className="mono">{m === "fast" ? "⚡ Fast" : "◎ Careful"}</span>
               </button>

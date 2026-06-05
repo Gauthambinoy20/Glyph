@@ -2564,6 +2564,50 @@ button {
   letter-spacing: 0;
 }
 
+/* ---- Landing: fast / careful indexing-mode toggle ---- */
+.mode-pick {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+.mode-pick .rr {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--text-2);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  transition:
+    border-color 0.16s var(--ease),
+    color 0.16s var(--ease),
+    background 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+.mode-pick .rr .mono {
+  color: inherit;
+  font-size: 12px;
+}
+.mode-pick .rr:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+/* Selected mode: accent-tinted pill, driven by aria-pressed (no inline styles). */
+.mode-pick .rr[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-line),
+    0 4px 14px var(--accent-glow);
+}
+
 /* ---- Landing: quick-add demo repo chips ---- */
 .land-demos {
   margin-top: 24px;
