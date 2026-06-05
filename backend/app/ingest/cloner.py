@@ -45,3 +45,24 @@ def clone_repo(url: str, timeout: int = 120) -> str:
         shutil.rmtree(dest, ignore_errors=True)
         raise ValueError(f"could not clone repository: {url}") from exc
     return dest
+
+
+def read_default_branch(repo_dir: str, timeout: int = 10) -> str | None:
+    """Return the checked-out branch name of a clone (e.g. "main", "master"), or None.
+
+    A shallow clone checks out the repo's default branch, so HEAD's branch name *is* the real
+    default branch — no guessing. Returns None if git is missing or the name can't be read.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo_dir, "rev-parse", "--abbrev-ref", "HEAD"],
+            check=True,
+            capture_output=True,
+            timeout=timeout,
+            text=True,
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return None
+    branch = result.stdout.strip()
+    return branch or None

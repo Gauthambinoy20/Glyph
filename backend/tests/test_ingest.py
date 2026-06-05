@@ -179,6 +179,40 @@ def test_ingest_repo_events_clone_then_ingest(tmp_path, monkeypatch) -> None:  #
     assert not clone_dir.exists()  # the temporary clone is cleaned up afterwards
 
 
+def test_ingest_repo_events_reports_the_real_branch(tmp_path, monkeypatch) -> None:  # T91
+    """The final summary carries the clone's actual branch, not a guessed "main"."""
+    clone_dir = tmp_path / "clone"
+    shutil.copytree(FIXTURES, clone_dir)
+    monkeypatch.setattr(pipeline_mod, "clone_repo", lambda url: str(clone_dir))
+    monkeypatch.setattr(pipeline_mod, "read_default_branch", lambda _dir: "develop")
+
+    store, embedder = _fresh_store(tmp_path), FakeEmbedder(dim=8)
+    done = list(ingest_repo_events("https://github.com/owner/repo", store, embedder))[-1]
+
+    assert done["stage"] == "done"
+    assert done["branch"] == "develop"
+
+
+def test_read_default_branch_parses_git_output(monkeypatch) -> None:  # T92
+    from app.ingest import cloner
+
+    class _Result:
+        stdout = "release-2.0\n"
+
+    monkeypatch.setattr(cloner.subprocess, "run", lambda *a, **k: _Result())
+    assert cloner.read_default_branch("/tmp/x") == "release-2.0"
+
+
+def test_read_default_branch_none_when_git_missing(monkeypatch) -> None:  # T92
+    from app.ingest import cloner
+
+    def _boom(*a, **k):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(cloner.subprocess, "run", _boom)
+    assert cloner.read_default_branch("/tmp/x") is None
+
+
 # ----- Endpoint -----
 
 

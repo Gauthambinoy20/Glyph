@@ -14,7 +14,7 @@ from collections.abc import Iterator
 from app.embed.base import Embedder
 from app.ingest.cache import select_new_chunks
 from app.ingest.chunker import chunk_file
-from app.ingest.cloner import clone_repo
+from app.ingest.cloner import clone_repo, read_default_branch
 from app.ingest.walker import walk_files
 from app.store.chroma_store import ChromaStore
 
@@ -86,11 +86,18 @@ def ingest_repo_events(
     """
     yield {"stage": "clone", "status": "start"}
     repo_dir = clone_repo(repo_url)
+    # The shallow clone checks out the real default branch — capture it before we ingest so the
+    # final summary reports the actual branch instead of a guessed "main".
+    branch = read_default_branch(repo_dir)
     yield {"stage": "clone", "status": "done"}
     try:
-        yield from ingest_path_events(
+        for event in ingest_path_events(
             repo_dir, store, embedder, max_files=max_files, max_file_bytes=max_file_bytes
-        )
+        ):
+            # Attach the real branch to the final summary event.
+            if event["stage"] == "done" and branch:
+                event = {**event, "branch": branch}
+            yield event
     finally:
         shutil.rmtree(repo_dir, ignore_errors=True)
 
