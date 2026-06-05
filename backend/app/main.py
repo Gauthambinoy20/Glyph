@@ -57,7 +57,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     app without entering the lifespan, so this never forces a real model download in CI.)
     """
     try:
-        get_embedder()
+        # Construct the model AND run one real embed, so ONNX does its graph optimization now
+        # instead of on the user's first ingest batch — that cold first batch is exactly what
+        # made "Embedding & indexing" sit at 0 for several seconds before moving.
+        get_embedder().embed_documents(["def warmup() -> int: return 0"])
     except Exception:  # noqa: BLE001 - warmup must never stop the server from starting
         logger.exception("embedder warmup failed; it will load on first use")
     yield

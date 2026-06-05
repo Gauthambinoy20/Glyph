@@ -13,6 +13,11 @@ from fastembed import TextEmbedding
 # bge-small always produces 384-dimensional vectors.
 _BGE_SMALL_DIM = 384
 
+# bge-small is small enough that pinning every core as an ONNX intra-op thread hurts more
+# than it helps on a many-core box: the threads contend and the first batch stalls. Cap the
+# auto default here; an explicit embed_threads > 0 always overrides it.
+_DEFAULT_MAX_THREADS = 8
+
 
 class FastEmbedEmbedder:
     """Turn text into vectors locally with bge-small."""
@@ -24,8 +29,10 @@ class FastEmbedEmbedder:
         threads: int = 0,
         batch_size: int = 256,
     ) -> None:
-        # threads=0 → use all CPU cores, so ingest embeds in parallel across the machine.
-        resolved_threads = threads if threads > 0 else (os.cpu_count() or 1)
+        # threads<=0 → auto: use the cores we have, but capped so a many-core box does not
+        # oversubscribe ONNX and stall the first batch. An explicit threads > 0 always wins.
+        cores = os.cpu_count() or 1
+        resolved_threads = threads if threads > 0 else min(_DEFAULT_MAX_THREADS, cores)
         # Load the model once. fastembed downloads it on first use, then caches it.
         self._model = TextEmbedding(
             model_name=model_name, cache_dir=cache_dir, threads=resolved_threads

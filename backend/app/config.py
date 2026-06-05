@@ -30,8 +30,9 @@ class Settings(BaseSettings):
     # SQLite file for chat history (sessions + messages); created on first use.
     db_path: str = "glyph_history.db"
 
-    # Embedding throughput knobs. embed_threads=0 means "use all CPU cores"; a bigger
-    # batch reduces per-call overhead during ingest.
+    # Embedding throughput knobs. embed_threads=0 means "auto": use the CPU cores, but capped
+    # at 8 so a many-core box does not oversubscribe ONNX and stall the first batch. Set it
+    # >0 to pin an exact count. A bigger batch reduces per-call overhead during ingest.
     embed_threads: int = 0
     embed_batch_size: int = 256
 

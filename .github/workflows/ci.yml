@@ -86,6 +86,11 @@ jobs:
       - name: Format check (prettier)
         run: npm run format:check
 
+      - name: Dead-code check (knip)
+        # Flags unused dependencies and unreachable files. Export/type-level
+        # checks are off by design — too noisy for the value.
+        run: npm run knip
+
       - name: Types (tsc)
         run: npx tsc -b
 

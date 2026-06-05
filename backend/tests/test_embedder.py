@@ -38,7 +38,7 @@ def test_embedder_passes_threads_and_batch_to_fastembed(
     assert len(vectors) == 2 and len(vectors[0]) == 384
 
 
-def test_embedder_threads_zero_uses_all_cores(monkeypatch) -> None:  # T67
+def test_embedder_threads_zero_is_auto_capped(monkeypatch) -> None:  # T67
     import os
 
     captured: dict = {}
@@ -47,7 +47,8 @@ def test_embedder_threads_zero_uses_all_cores(monkeypatch) -> None:  # T67
         lambda model_name, cache_dir=None, threads=None: captured.setdefault("threads", threads),
     )
     FastEmbedEmbedder(threads=0)
-    assert captured["threads"] == (os.cpu_count() or 1)  # 0 → all cores
+    # 0 → auto: use the cores, but capped at 8 so a many-core box does not oversubscribe ONNX.
+    assert captured["threads"] == min(8, os.cpu_count() or 1)
 
 
 @pytest.mark.integration
