@@ -30,7 +30,8 @@ export function QueryLog({ entries, onClose }: { entries: QueryLogEntry[]; onClo
       >
         <div className="modal-hd">
           <span className="card-title" style={{ fontSize: 13 }}>
-            <span className="gd" /> Observability · {entries.length} {entries.length === 1 ? "query" : "queries"}
+            <span className="gd" /> Observability · {entries.length}{" "}
+            {entries.length === 1 ? "query" : "queries"}
           </span>
           <button className="iconbtn" onClick={onClose} aria-label="Close" style={{ width: 30, height: 30 }}>
             <Icon name="close" />
@@ -38,7 +39,9 @@ export function QueryLog({ entries, onClose }: { entries: QueryLogEntry[]; onClo
         </div>
         <div className="modal-body scroll" style={{ overflow: "auto", padding: 0 }}>
           {entries.length === 0 ? (
-            <div className="pal-empty">No queries yet — ask something to see its latency and tokens here.</div>
+            <div className="pal-empty">
+              No queries yet — ask something to see its latency and tokens here.
+            </div>
           ) : (
             <table className="qlog">
               <thead>

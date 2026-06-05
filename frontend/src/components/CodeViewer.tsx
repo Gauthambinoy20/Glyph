@@ -38,7 +38,12 @@ export function CodeViewer({ source, hlStart, hlEnd, onClose }: Props) {
         </span>
         <span className="spacer" />
         <CopyButton text={source.code} />
-        <button className="iconbtn" onClick={onClose} aria-label="Close code viewer" style={{ width: 28, height: 28 }}>
+        <button
+          className="iconbtn"
+          onClick={onClose}
+          aria-label="Close code viewer"
+          style={{ width: 28, height: 28 }}
+        >
           <Icon name="close" size={16} />
         </button>
       </header>

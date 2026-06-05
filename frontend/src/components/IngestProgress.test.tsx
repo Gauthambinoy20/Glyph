@@ -61,17 +61,35 @@ describe("deriveSteps", () => {
   });
 
   it("computes the embed percentage and completes it at the total", () => {
-    const half = deriveSteps({ isRepo: false, clone: "idle", files: 5, chunks: 10, embed: { done: 5, total: 10 } });
+    const half = deriveSteps({
+      isRepo: false,
+      clone: "idle",
+      files: 5,
+      chunks: 10,
+      embed: { done: 5, total: 10 },
+    });
     const embed = half.find((x) => x.key === "embed");
     expect(embed?.pct).toBe(50);
     expect(embed?.state).toBe("running");
 
-    const full = deriveSteps({ isRepo: false, clone: "idle", files: 5, chunks: 10, embed: { done: 10, total: 10 } });
+    const full = deriveSteps({
+      isRepo: false,
+      clone: "idle",
+      files: 5,
+      chunks: 10,
+      embed: { done: 10, total: 10 },
+    });
     expect(full.find((x) => x.key === "embed")?.state).toBe("done");
   });
 
   it("labels an all-cached embed (total zero) as done", () => {
-    const steps = deriveSteps({ isRepo: false, clone: "idle", files: 5, chunks: 10, embed: { done: 0, total: 0 } });
+    const steps = deriveSteps({
+      isRepo: false,
+      clone: "idle",
+      files: 5,
+      chunks: 10,
+      embed: { done: 0, total: 0 },
+    });
     const embed = steps.find((x) => x.key === "embed");
     expect(embed?.state).toBe("done");
     expect(embed?.detail).toBe("all cached");
@@ -80,7 +98,11 @@ describe("deriveSteps", () => {
 
 describe("IngestProgress component", () => {
   it("renders each step label with live detail", () => {
-    render(<IngestProgress state={{ isRepo: false, clone: "idle", files: 7, chunks: 20, embed: { done: 10, total: 20 } }} />);
+    render(
+      <IngestProgress
+        state={{ isRepo: false, clone: "idle", files: 7, chunks: 20, embed: { done: 10, total: 20 } }}
+      />,
+    );
 
     expect(screen.getByText("Scanning files")).toBeTruthy();
     expect(screen.getByText("7 files")).toBeTruthy();

@@ -7,8 +7,7 @@ import { fetchWithTimeout, parseIngestSSE, parseSSE } from "./api";
 
 describe("parseSSE", () => {
   it("parses two complete messages and leaves no remainder", () => {
-    const buffer =
-      'data: {"type":"token","text":"Hi"}\n\n' + 'data: {"type":"token","text":" there"}\n\n';
+    const buffer = 'data: {"type":"token","text":"Hi"}\n\n' + 'data: {"type":"token","text":" there"}\n\n';
 
     const { messages, rest } = parseSSE(buffer);
 

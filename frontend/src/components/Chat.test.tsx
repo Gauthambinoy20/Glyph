@@ -24,7 +24,11 @@ const answer: Extract<Message, { role: "glyph" }> = {
       language: "python",
     },
   ],
-  meta: { model: "test/model", latency_ms: 1200, token_usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } },
+  meta: {
+    model: "test/model",
+    latency_ms: 1200,
+    token_usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+  },
   followups: ["Where is it called?"],
 };
 

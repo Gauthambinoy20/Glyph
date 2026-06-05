@@ -81,15 +81,31 @@ function Donut({
           return el;
         })}
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>
+      <div
+        style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}
+      >
         <div>
           <div
             className="mono"
-            style={{ fontSize: 17, fontWeight: 600, color: "var(--text)", letterSpacing: "-0.02em", lineHeight: 1 }}
+            style={{
+              fontSize: 17,
+              fontWeight: 600,
+              color: "var(--text)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}
           >
             {centerTop}
           </div>
-          <div style={{ fontSize: 9.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 3 }}>
+          <div
+            style={{
+              fontSize: 9.5,
+              color: "var(--muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              marginTop: 3,
+            }}
+          >
             {centerBottom}
           </div>
         </div>
@@ -99,7 +115,15 @@ function Donut({
 }
 
 // ── Sparkline ────────────────────────────────────────────────────────────────
-function Sparkline({ values, width = 248, height = 40 }: { values: number[]; width?: number; height?: number }) {
+function Sparkline({
+  values,
+  width = 248,
+  height = 40,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+}) {
   if (!values || values.length < 2) return <div style={{ height }} />;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -113,7 +137,13 @@ function Sparkline({ values, width = 248, height = 40 }: { values: number[]; wid
   const area = line + ` L${width} ${height} L0 ${height} Z`;
   const last = pts[pts.length - 1];
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ display: "block", overflow: "visible" }}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      style={{ display: "block", overflow: "visible" }}
+    >
       <defs>
         <linearGradient id="spark-g" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
@@ -121,7 +151,15 @@ function Sparkline({ values, width = 248, height = 40 }: { values: number[]; wid
         </linearGradient>
       </defs>
       <path d={area} fill="url(#spark-g)" />
-      <path d={line} fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path
+        d={line}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
       <circle cx={last[0]} cy={last[1]} r="2.6" fill="var(--accent)" />
     </svg>
   );
@@ -151,7 +189,11 @@ function Card({
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }} onClick={(e) => e.stopPropagation()}>
           {action}
-          <span className="chev" onClick={() => setOpen((o) => !o)} style={{ cursor: "pointer", display: "grid", placeItems: "center" }}>
+          <span
+            className="chev"
+            onClick={() => setOpen((o) => !o)}
+            style={{ cursor: "pointer", display: "grid", placeItems: "center" }}
+          >
             <Icon name="chevDown" size={15} />
           </span>
         </div>
@@ -230,7 +272,11 @@ function LanguageStats({ languages, stats }: { languages: LangSegment[]; stats: 
   return (
     <Card title="Languages · Index" dot>
       <div className="donut-wrap">
-        <Donut segments={languages} centerTop={top.pct + "%"} centerBottom={SHORT[top.name] || top.name.slice(0, 2).toUpperCase()} />
+        <Donut
+          segments={languages}
+          centerTop={top.pct + "%"}
+          centerBottom={SHORT[top.name] || top.name.slice(0, 2).toUpperCase()}
+        />
         <div className="lang-legend" style={{ flex: 1 }}>
           {languages.map((l) => (
             <span className="li" key={l.name}>
@@ -299,7 +345,15 @@ function inline(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
 
-function GraphCard({ graph, onExpand, onPick }: { graph: GraphData; onExpand: () => void; onPick: (n: GraphNode) => void }) {
+function GraphCard({
+  graph,
+  onExpand,
+  onPick,
+}: {
+  graph: GraphData;
+  onExpand: () => void;
+  onPick: (n: GraphNode) => void;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(280);
   useEffect(() => {
@@ -471,7 +525,10 @@ export function ProjectPanel({
         <Overview text={data.overview} stack={data.stack} />
         <GraphCard graph={data.graph} onExpand={onExpandGraph} onPick={(n) => onAsk(`Explain ${n.label}.`)} />
         <TopFiles graph={data.graph} onPick={(f) => onAsk(`Explain ${f.path || f.label}.`)} />
-        <Endpoints endpoints={data.endpoints} onPick={(e) => onAsk(`Explain the ${e.method} ${e.path} endpoint.`)} />
+        <Endpoints
+          endpoints={data.endpoints}
+          onPick={(e) => onAsk(`Explain the ${e.method} ${e.path} endpoint.`)}
+        />
         <SessionMetrics session={session} latencies={data.latencies} />
         <RecentRepos recent={data.recent} onOpen={onOpenRecent} />
       </div>

@@ -31,7 +31,13 @@ describe("computeTopFiles", () => {
 });
 
 const data: PanelData = {
-  repo: { owner: "glyph-dev", name: "glyph", branch: "main", url: "https://github.com/glyph-dev/glyph", visibility: "Public" },
+  repo: {
+    owner: "glyph-dev",
+    name: "glyph",
+    branch: "main",
+    url: "https://github.com/glyph-dev/glyph",
+    visibility: "Public",
+  },
   languages: [
     { name: "TypeScript", pct: 60, color: "#4c9eff" },
     { name: "Python", pct: 40, color: "#ffd866" },

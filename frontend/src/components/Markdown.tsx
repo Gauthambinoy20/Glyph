@@ -16,7 +16,9 @@ const TOKEN_RE = new RegExp(
   "(#[^\\n]*|//[^\\n]*)" + // comment
     "|(\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|`(?:[^`\\\\]|\\\\.)*`)" + // string
     "|\\b(\\d[\\d_.]*)\\b" + // number
-    "|\\b(" + KW + ")\\b" + // keyword
+    "|\\b(" +
+    KW +
+    ")\\b" + // keyword
     "|([A-Za-z_][\\w]*)(?=\\s*\\()", // function call
   "g",
 );
@@ -80,12 +82,16 @@ export function Markdown({ children }: { children: string }) {
     }
 
     if (/^####\s/.test(line)) {
-      blocks.push(<h4 key={key++} dangerouslySetInnerHTML={{ __html: mdInline(line.replace(/^####\s/, "")) }} />);
+      blocks.push(
+        <h4 key={key++} dangerouslySetInnerHTML={{ __html: mdInline(line.replace(/^####\s/, "")) }} />,
+      );
       i++;
       continue;
     }
     if (/^###\s/.test(line)) {
-      blocks.push(<h3 key={key++} dangerouslySetInnerHTML={{ __html: mdInline(line.replace(/^###\s/, "")) }} />);
+      blocks.push(
+        <h3 key={key++} dangerouslySetInnerHTML={{ __html: mdInline(line.replace(/^###\s/, "")) }} />,
+      );
       i++;
       continue;
     }

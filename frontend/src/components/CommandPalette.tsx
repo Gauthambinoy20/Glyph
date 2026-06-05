@@ -54,7 +54,13 @@ export function CommandPalette({ endpoints, sources, onClose, onOpenCode, onAsk,
 
   const items = useMemo<Item[]>(() => {
     const arr: Item[] = [
-      { kind: "action", icon: "refresh", main: "Re-ingest repository", sub: "Re-index from source", run: onChangeRepo },
+      {
+        kind: "action",
+        icon: "refresh",
+        main: "Re-ingest repository",
+        sub: "Re-index from source",
+        run: onChangeRepo,
+      },
       {
         kind: "action",
         icon: "compass",

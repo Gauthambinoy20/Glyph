@@ -28,7 +28,14 @@ const SUGGESTIONS: Suggestion[] = [
 /** Parse a GitHub URL or local path into a Repo header. */
 function parseRepo(input: string): Repo {
   const m = input.match(/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/);
-  if (m) return { owner: m[1], name: m[2], branch: "main", url: `https://github.com/${m[1]}/${m[2]}`, visibility: "Public" };
+  if (m)
+    return {
+      owner: m[1],
+      name: m[2],
+      branch: "main",
+      url: `https://github.com/${m[1]}/${m[2]}`,
+      visibility: "Public",
+    };
   const name = input.split("/").filter(Boolean).pop() || input;
   return { owner: "local", name, branch: "main", url: input };
 }
@@ -63,7 +70,15 @@ function deserializeMessages(rows: { role: string; content: string; data: unknow
   );
 }
 
-function ModelPicker({ models, idx, onPick }: { models: ModelInfo[]; idx: number; onPick: (i: number) => void }) {
+function ModelPicker({
+  models,
+  idx,
+  onPick,
+}: {
+  models: ModelInfo[];
+  idx: number;
+  onPick: (i: number) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -115,7 +130,15 @@ function ModelPicker({ models, idx, onPick }: { models: ModelInfo[]; idx: number
   );
 }
 
-function GraphModal({ data, onClose, onPick }: { data: PanelData; onClose: () => void; onPick: (label: string) => void }) {
+function GraphModal({
+  data,
+  onClose,
+  onPick,
+}: {
+  data: PanelData;
+  onClose: () => void;
+  onPick: (label: string) => void;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [dim, setDim] = useState({ w: 900, h: 560 });
   useEffect(() => {
@@ -146,13 +169,25 @@ function GraphModal({ data, onClose, onPick }: { data: PanelData; onClose: () =>
                 </span>
               ))}
             </div>
-            <button className="iconbtn" onClick={onClose} aria-label="Close" style={{ width: 30, height: 30 }}>
+            <button
+              className="iconbtn"
+              onClick={onClose}
+              aria-label="Close"
+              style={{ width: 30, height: 30 }}
+            >
               <Icon name="close" />
             </button>
           </div>
         </div>
         <div className="modal-body" ref={wrapRef}>
-          <ForceGraph nodes={data.graph.nodes} edges={data.graph.edges} width={dim.w} height={dim.h} onPick={(n) => onPick(n.label)} big />
+          <ForceGraph
+            nodes={data.graph.nodes}
+            edges={data.graph.edges}
+            width={dim.w}
+            height={dim.h}
+            onPick={(n) => onPick(n.label)}
+            big
+          />
         </div>
       </div>
     </div>
@@ -217,7 +252,11 @@ export default function App() {
   useEffect(() => {
     if (!repo || !messages.some((m) => m.role === "glyph")) return;
     api
-      .saveHistory({ repo: repoKey(repo), messages: serializeMessages(messages), session_id: sessionIdRef.current })
+      .saveHistory({
+        repo: repoKey(repo),
+        messages: serializeMessages(messages),
+        session_id: sessionIdRef.current,
+      })
       .then((r) => {
         sessionIdRef.current = r.session_id;
         try {
@@ -285,7 +324,10 @@ export default function App() {
       const parsed = parseRepo(value);
       const [stats, overview, graph, endpoints] = await Promise.all([
         api.stats(),
-        api.overview().then((o) => o.overview).catch(() => ""),
+        api
+          .overview()
+          .then((o) => o.overview)
+          .catch(() => ""),
         api.graph().catch(() => ({ nodes: [], edges: [] })),
         api.endpoints().catch(() => []),
       ]);
@@ -320,7 +362,12 @@ export default function App() {
         recent: [],
         latencies: [],
       });
-      setRecent((r) => [{ owner: parsed.owner, name: parsed.name, when: "now" }, ...r.filter((x) => x.name !== parsed.name)].slice(0, 4));
+      setRecent((r) =>
+        [
+          { owner: parsed.owner, name: parsed.name, when: "now" },
+          ...r.filter((x) => x.name !== parsed.name),
+        ].slice(0, 4),
+      );
 
       // Restore a saved chat for this repo if there is one; otherwise start fresh.
       const savedSid = localStorage.getItem(`glyph:session:${repoKey(parsed)}`);
@@ -393,7 +440,9 @@ export default function App() {
       return;
     }
     const c = ref as Citation;
-    const match = allSources.find((s) => s.file_path === c.file_path && c.start_line <= s.end_line && c.end_line >= s.start_line);
+    const match = allSources.find(
+      (s) => s.file_path === c.file_path && c.start_line <= s.end_line && c.end_line >= s.start_line,
+    );
     if (match) {
       setCode({ source: match, hlStart: c.start_line, hlEnd: c.end_line });
       return;
@@ -430,7 +479,9 @@ export default function App() {
   const answers = messages.filter((m): m is Extract<Message, { role: "glyph" }> => m.role === "glyph");
   const session = {
     queries: answers.length,
-    avgLatency: answers.length ? answers.reduce((s, m) => s + (m.meta?.latency_ms ?? 0), 0) / answers.length : 0,
+    avgLatency: answers.length
+      ? answers.reduce((s, m) => s + (m.meta?.latency_ms ?? 0), 0) / answers.length
+      : 0,
     tokens: answers.reduce((s, m) => s + (m.meta?.token_usage.total_tokens ?? 0), 0),
   };
   const latencies = answers.map((m) => m.meta?.latency_ms ?? 0);
@@ -486,7 +537,14 @@ export default function App() {
             onOpenRecent={() => reset()}
           />
 
-          {code && <CodeViewer source={code.source} hlStart={code.hlStart} hlEnd={code.hlEnd} onClose={() => setCode(null)} />}
+          {code && (
+            <CodeViewer
+              source={code.source}
+              hlStart={code.hlStart}
+              hlEnd={code.hlEnd}
+              onClose={() => setCode(null)}
+            />
+          )}
 
           <div className="chat-col">
             <div className="chat-scroll scroll" ref={scrollRef}>
@@ -504,7 +562,18 @@ export default function App() {
                   {pending && streamText === null && <Thinking />}
                   {streamText !== null && (
                     <GlyphAnswer
-                      msg={{ role: "glyph", answer: streamText, citations: [], retrieved_chunk_ids: [], sources: [], meta: { model: "", latency_ms: 0, token_usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } } }}
+                      msg={{
+                        role: "glyph",
+                        answer: streamText,
+                        citations: [],
+                        retrieved_chunk_ids: [],
+                        sources: [],
+                        meta: {
+                          model: "",
+                          latency_ms: 0,
+                          token_usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                        },
+                      }}
                       onOpenCode={openCode}
                       onAsk={ask}
                       streaming
@@ -528,7 +597,16 @@ export default function App() {
           onChangeRepo={reset}
         />
       )}
-      {graphModal && panel && <GraphModal data={panel} onClose={() => setGraphModal(false)} onPick={(label) => { setGraphModal(false); ask(`Explain ${label}.`); }} />}
+      {graphModal && panel && (
+        <GraphModal
+          data={panel}
+          onClose={() => setGraphModal(false)}
+          onPick={(label) => {
+            setGraphModal(false);
+            ask(`Explain ${label}.`);
+          }}
+        />
+      )}
       {logOpen && <QueryLog entries={logEntries} onClose={() => setLogOpen(false)} />}
 
       <div className="toast-zone">

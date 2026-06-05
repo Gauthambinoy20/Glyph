@@ -37,7 +37,10 @@ beforeEach(() => {
     ],
   });
   vi.mocked(api.overview).mockResolvedValue({ overview: "An assistant." });
-  vi.mocked(api.graph).mockResolvedValue({ nodes: [{ id: "a", label: "a.py", language: "python" }], edges: [] });
+  vi.mocked(api.graph).mockResolvedValue({
+    nodes: [{ id: "a", label: "a.py", language: "python" }],
+    edges: [],
+  });
   vi.mocked(api.endpoints).mockResolvedValue([{ method: "POST", path: "/api/ask" }]);
   vi.mocked(api.symbols).mockResolvedValue([
     { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
@@ -77,7 +80,11 @@ describe("App", () => {
         citations: [],
         retrieved_chunk_ids: ["x"],
         sources: [],
-        meta: { model: "m", latency_ms: 100, token_usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } },
+        meta: {
+          model: "m",
+          latency_ms: 100,
+          token_usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        },
       });
     });
     const user = userEvent.setup();

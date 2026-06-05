@@ -102,7 +102,7 @@ export async function fetchWithTimeout(
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("the request timed out — try a smaller repo or a local folder path");
+      throw new Error("the request timed out — try a smaller repo or a local folder path", { cause: err });
     }
     throw err;
   } finally {
@@ -321,7 +321,11 @@ export const api = {
 
   loadHistory: async (
     sessionId: string,
-  ): Promise<{ session_id: string; repo: string; messages: { role: string; content: string; data: unknown }[] }> => {
+  ): Promise<{
+    session_id: string;
+    repo: string;
+    messages: { role: string; content: string; data: unknown }[];
+  }> => {
     const res = await fetch(`/api/history/${sessionId}`);
     if (!res.ok) throw new Error("could not load session");
     return res.json();

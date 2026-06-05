@@ -240,7 +240,11 @@ function CitePeek({ peek }: { peek: Peek }) {
       <pre>
         <code className="mono">
           {lines.slice(0, 8).map((l, idx) => (
-            <span key={idx} className="ln" dangerouslySetInnerHTML={{ __html: highlightLine(l) || "&nbsp;" }} />
+            <span
+              key={idx}
+              className="ln"
+              dangerouslySetInnerHTML={{ __html: highlightLine(l) || "&nbsp;" }}
+            />
           ))}
         </code>
       </pre>

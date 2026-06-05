@@ -96,7 +96,11 @@ export function Landing({ onIngest, busy, recent, progress }: Props) {
         {recent && recent.length > 0 && !progress && (
           <div className="land-recent">
             {recent.slice(0, 4).map((r) => (
-              <button key={r.owner + r.name} className="rr" onClick={() => !busy && onIngest(`${r.owner}/${r.name}`)}>
+              <button
+                key={r.owner + r.name}
+                className="rr"
+                onClick={() => !busy && onIngest(`${r.owner}/${r.name}`)}
+              >
                 <span className="dot-live" />
                 <span className="mono">
                   {r.owner}/{r.name}
