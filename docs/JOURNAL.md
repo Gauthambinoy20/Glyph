@@ -322,4 +322,13 @@ VIBE CODER/
   passes a normal network error through untouched. Seven frontend tests now, build still clean. Next, the
   bigger gap: there are still no tests that click the actual buttons, which needs a UI testing tool added.
 
+- **Real button/feature tests for the website (done, 2026-06-05).** The website had no tests that
+  actually click things, which is how the spinning-button slip got through. I added the standard React
+  testing tools and wrote tests that drive the real screen: typing a path and pressing Ingest moves you
+  into the workspace; a failed ingest shows the error message and brings the button back instead of
+  spinning forever (the exact problem from earlier); and asking a question renders the streamed answer.
+  The network is faked so these run instantly and offline. Ten frontend tests now, all green, and the
+  build still passes. Together with the timeout fix, the stuck-button case is now both fixed and guarded
+  by a test so it cannot quietly come back.
+
 *(Next entries get added here, newest at the bottom, one per step.)*

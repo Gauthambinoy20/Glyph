@@ -263,8 +263,9 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 **Quality / e2e**
 - [ ] T47. Eval script runs on the golden set and reports a hit-rate number
-- [ ] T48. Frontend `api.ts` calls the right URL/shape (mocked fetch)
-- [ ] T49. End-to-end: ingest demo repo → ask a known question → correct file cited
+- [x] T48. Frontend ingest sends the right body (`{local_path}`) and ask calls askStream (mocked api)
+- [ ] T49. End-to-end: ingest demo repo → ask a known question → correct file cited (real servers)
+- [x] T59. App: ingest success → workspace; ingest error → toast + button re-enabled; ask → answer renders
 
 **Performance / robustness (Phase 13-14)**
 - [x] T50. `/api/ask/stream` yields SSE chunks then a final event with citations
