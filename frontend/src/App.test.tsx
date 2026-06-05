@@ -10,6 +10,7 @@ import { api } from "./api";
 vi.mock("./api", () => ({
   api: {
     ingestStream: vi.fn(),
+    setMode: vi.fn(),
     stats: vi.fn(),
     overview: vi.fn(),
     graph: vi.fn(),
@@ -46,6 +47,7 @@ beforeEach(() => {
     { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
   ]);
   vi.mocked(api.saveHistory).mockResolvedValue({ session_id: "s1" });
+  vi.mocked(api.setMode).mockResolvedValue({ mode: "careful", backend: "local" });
   localStorage.clear();
   // Default: the stream walks a few stages, then resolves with the final summary.
   vi.mocked(api.ingestStream).mockImplementation(async (_body, handlers) => {

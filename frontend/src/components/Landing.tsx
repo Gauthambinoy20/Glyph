@@ -12,9 +12,11 @@ interface Props {
   busy: boolean;
   recent?: Recent[];
   progress?: IngestState | null;
+  mode: "fast" | "careful";
+  onMode: (mode: "fast" | "careful") => void;
 }
 
-export function Landing({ onIngest, busy, recent, progress }: Props) {
+export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Props) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +69,34 @@ export function Landing({ onIngest, busy, recent, progress }: Props) {
             )}
           </button>
         </form>
+
+        {!progress && (
+          <div
+            className="mode-pick"
+            role="group"
+            aria-label="Indexing mode"
+            style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 12 }}
+          >
+            <span className="ld-label">Indexing</span>
+            {(["fast", "careful"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                className="rr"
+                onClick={() => onMode(m)}
+                aria-pressed={mode === m}
+                title={
+                  m === "fast"
+                    ? "Fast — files the repo almost instantly (Model2Vec static embeddings). Best for large repos or a quick look."
+                    : "Careful — slightly slower to file, a touch more precise (transformer embeddings)."
+                }
+                style={mode === m ? { outline: "2px solid var(--accent)", opacity: 1 } : { opacity: 0.55 }}
+              >
+                <span className="mono">{m === "fast" ? "⚡ Fast" : "◎ Careful"}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {progress ? (
           <IngestProgress state={progress} />

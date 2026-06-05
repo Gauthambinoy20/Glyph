@@ -138,6 +138,8 @@ export interface AskBody {
   question: string;
   model?: string | null;
   history?: { question: string; answer: string }[];
+  // Per-question reranker switch: false skips the cross-encoder for a slightly faster answer.
+  rerank?: boolean;
 }
 
 export interface StreamHandlers {
@@ -265,6 +267,10 @@ export const api = {
   ask: (body: AskBody) => post<AskResponse>("/api/ask", body),
 
   askStream,
+
+  // Pick how the next repo is indexed: "fast" (Model2Vec, near-instant) or "careful"
+  // (the transformer, slightly more precise). Call this before ingesting.
+  setMode: (mode: "fast" | "careful") => post<{ mode: string; backend: string }>("/api/mode", { mode }),
 
   models: async (): Promise<{ models: ModelInfo[]; default: string }> => {
     const res = await fetch("/api/models");

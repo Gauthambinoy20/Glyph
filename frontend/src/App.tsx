@@ -208,6 +208,10 @@ export default function App() {
   const [streamText, setStreamText] = useState<string | null>(null);
   const [busyIngest, setBusyIngest] = useState(false);
   const [ingestState, setIngestState] = useState<IngestState | null>(null);
+  // How the next repo is filed (fast = Model2Vec, careful = transformer), and whether the
+  // reranker reorders results for each question. Both are user-facing controls.
+  const [embedMode, setEmbedMode] = useState<"fast" | "careful">("careful");
+  const [rerank, setRerank] = useState(true);
   const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
@@ -311,6 +315,9 @@ export default function App() {
     setBusyIngest(true);
     setIngestState(initialIngestState(isUrl));
     try {
+      // Pick how this repo gets filed (fast vs careful) before indexing it. Best-effort:
+      // if it fails we just index with whatever backend is already active.
+      await api.setMode(embedMode).catch(() => {});
       // Stream ingest so the checklist fills in stage by stage; resolve on the done summary.
       const summary = await new Promise<IngestDone>((resolve, reject) => {
         api
@@ -408,7 +415,12 @@ export default function App() {
     let streamed = "";
     api
       .askStream(
-        { question: q, model: models[modelIdx]?.id ?? null, history: history.filter((h) => h.answer) },
+        {
+          question: q,
+          model: models[modelIdx]?.id ?? null,
+          history: history.filter((h) => h.answer),
+          rerank,
+        },
         {
           onToken: (t) => {
             streamed += t;
@@ -505,6 +517,21 @@ export default function App() {
         <div className="nav-right">
           {screen === "workspace" && <ModelPicker models={models} idx={modelIdx} onPick={setModelIdx} />}
           {screen === "workspace" && (
+            <button
+              className="kbar"
+              onClick={() => setRerank((r) => !r)}
+              aria-pressed={rerank}
+              title={
+                rerank
+                  ? "Smart sort is ON — a cross-encoder reorders results so the best code is cited first. Click to turn off (slightly faster)."
+                  : "Smart sort is OFF — answers use the plain hybrid order. Click to turn on for sharper citations."
+              }
+              style={rerank ? { outline: "2px solid var(--accent)" } : { opacity: 0.7 }}
+            >
+              <Icon name="zap" size={14} /> Smart sort {rerank ? "On" : "Off"}
+            </button>
+          )}
+          {screen === "workspace" && (
             <button className="kbar" onClick={() => setPaletteOpen(true)}>
               <Icon name="search" /> Search <span className="kbd">⌘K</span>
             </button>
@@ -525,7 +552,14 @@ export default function App() {
       </nav>
 
       {screen === "landing" || !panel ? (
-        <Landing onIngest={ingest} busy={busyIngest} recent={recent} progress={ingestState} />
+        <Landing
+          onIngest={ingest}
+          busy={busyIngest}
+          recent={recent}
+          progress={ingestState}
+          mode={embedMode}
+          onMode={setEmbedMode}
+        />
       ) : (
         <div className="workspace">
           <ProjectPanel
