@@ -264,7 +264,9 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Quality / e2e**
 - [ ] T47. Eval script runs on the golden set and reports a hit-rate number
 - [x] T48. Frontend ingest sends the right body (`{local_path}`) and ask calls askStream (mocked api)
-- [ ] T49. End-to-end: ingest demo repo → ask a known question → correct file cited (real servers)
+- [x] T49. End-to-end (real pipeline, fake embedder/LLM): ingest → ask → correct file retrieved + cited
+- [x] T60. End-to-end via the GitHub-URL branch (mocked clone) runs the real pipeline
+- [x] T03. Unknown route → 404; ask with no question → 422
 - [x] T59. App: ingest success → workspace; ingest error → toast + button re-enabled; ask → answer renders
 
 **Performance / robustness (Phase 13-14)**

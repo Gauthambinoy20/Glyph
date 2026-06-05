@@ -21,6 +21,8 @@ _GROUP_TITLES = {
     "test_prompt.py": "Prompt  (grounded prompt, citations, query logs)",
     "test_answer.py": "Answer  (the /api/ask and /api/models endpoints)",
     "test_graph.py": "Graph  (dependency graph from internal imports)",
+    "test_app.py": "App  (CORS, request ids, and the global error handler)",
+    "test_e2e.py": "End-to-end  (the whole real pipeline through the endpoints)",
 }
 
 # Terminal colour codes.
