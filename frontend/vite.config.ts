@@ -15,5 +15,6 @@ export default defineConfig({
   // Component tests render real React into a fake browser DOM (jsdom).
   test: {
     environment: "jsdom",
+    setupFiles: ["./src/test-setup.ts"],
   },
 });
