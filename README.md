@@ -1,6 +1,8 @@
 # Glyph — Intelligent Codebase Scanner & Chat
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
+[![Security](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml)
+[![Docker](https://github.com/Gauthambinoy20/Glyph/actions/workflows/docker.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/docker.yml)
 [![CodeQL](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
@@ -57,8 +59,24 @@ index, and ask a question — answers stream in with clickable `file:line` citat
 
 ```bash
 cd backend  && pytest -q && ruff check . && mypy app && bandit -c pyproject.toml -r app
-cd frontend && npm test && npx tsc -b && npm run build
+cd frontend && npm run lint && npm run format:check && npm test && npx tsc -b && npm run build
 ```
+
+## CI/CD pipeline
+Every push and PR runs four GitHub Actions workflows (least-privilege tokens, concurrency-cancel,
+pinned tool versions):
+- **CI** — backend gate (ruff lint + format · mypy · bandit · pip-audit · pytest+coverage) and
+  frontend gate (npm audit · eslint · prettier · tsc · vitest · production build).
+- **Security** — gitleaks secret scan over full history + Trivy dependency/filesystem CVE scan
+  (fails on fixable CRITICAL/HIGH).
+- **CodeQL** — SAST on the Python and TypeScript sources.
+- **Docker** — builds both images, Trivy-scans the backend image, then runs `docker compose up`
+  and smoke-tests `/api/health` and the served frontend end-to-end.
+
+**Dependabot** keeps pip, npm and the actions themselves up to date weekly. **Deployment** is
+continuous: a push to `main` builds and pushes images to GHCR, then rolls the stack on the
+production VM and smoke-tests the live URL (the deploy workflow stays inert until the host is
+configured — see [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
 
 ## Features
 - Ingest a **public GitHub repo** or a **local folder** (sandboxed), with **live progress** (clone → walk → chunk → embed).
