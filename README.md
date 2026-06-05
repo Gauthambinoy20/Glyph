@@ -7,8 +7,8 @@
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)
-![Tests](https://img.shields.io/badge/tests-154%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
+![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-compose%20up-2496ED?logo=docker&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
@@ -149,27 +149,118 @@ would only start to earn its place with many sources, agents, or tool-calling. F
 [TECHNICAL_REPORT §4.1](docs/TECHNICAL_REPORT.md).
 
 ## Productionizing & scaling on a hyperscaler
-<!-- ✍️ YOU WRITE: how you'd deploy/scale on AWS/GCP/Azure/Cloudflare. Notes to expand in your
-voice: managed vector DB (e.g. pgvector/Pinecone) vs self-hosted Chroma; embeddings as a service or
-a GPU worker; object storage for cloned repos; queue for async ingest; per-user isolation/auth;
-autoscaling the API; caching; rate limits; secrets manager. -->
+Today Glyph runs as two containers on a single AWS EC2 box, with Chroma stored on the local disk.
+That is enough for a demo and even a small team, but here is what I would change to make it a real
+product.
+
+Storage comes first. Chroma on a local disk cannot grow past one machine. I would move the vectors
+to a managed store, either Postgres with pgvector on RDS, or a hosted vector service like Pinecone if
+the index gets very large. Once the index lives outside the API, I can run many copies of the API
+without each one carrying its own copy of the data.
+
+Ingest should move out of the web request. Cloning and embedding a large repo takes time, so it does
+not belong inside an HTTP call. I would put each ingest job on a queue such as SQS and run separate
+workers that do the heavy lifting in the background while the UI polls for progress. That also lets me
+scale the slow part on its own and store the cloned repos in S3 instead of on the box.
+
+The models want their own home. The static fast mode is happy on CPU, but bge-small and the reranker
+run better on a small GPU. I would run those as a separate embedding and rerank worker behind an
+internal endpoint so the API stays light.
+
+For the API itself I would put it behind a load balancer, run it on ECS Fargate or a small Kubernetes
+cluster, and let it autoscale on CPU and traffic. The frontend is static, so it could go straight onto
+Cloudflare Pages or a CDN.
+
+Then the things a real product needs: user accounts so one person cannot read another person's private
+repo, a secrets manager for the API keys instead of a .env file, per-user rate limits, and a cache in
+front of repeated questions. None of these are big jobs on their own. I kept the current setup simple
+on purpose, and each of these is a clear next step rather than a rewrite.
 
 ## Key technical decisions & why
-<!-- ✍️ YOU WRITE in your own voice. Draft notes live in docs/JOURNAL.md "Decisions made so far". -->
+A few choices shaped the whole project.
+
+I kept it free to run. Embeddings happen locally with bge-small and the answers come from OpenRouter's
+free tier. I wanted anyone to be able to clone it and use it without paying for a key, and still get
+good answers.
+
+I did not use an orchestration framework. The flow is small: chunk, embed, store, retrieve, prompt,
+call. LangChain or LlamaIndex would have added a lot of code I would need to learn and debug for very
+little gain at this size. Writing it by hand keeps every step readable and easy to test.
+
+I chunk by syntax, not by line count. Tree-sitter splits the code into real functions and classes, so
+a citation points at a whole function with the correct line numbers instead of a random window. That
+is what makes the file and line citations something you can trust.
+
+I made retrieval two stages so speed and accuracy stop fighting each other. A wide, cheap recall step
+(semantic plus BM25, fused with RRF) gathers candidates, then a cross-encoder reranker reads the
+question and each candidate together and reorders them. Recall is broad, the reranker is precise, and
+it only runs on about twenty candidates, so the cost hides behind the LLM call. Measured top-1
+accuracy went from 80% to 90%.
+
+I made speed opt-in rather than forced. The static embedder is roughly a hundred times faster, but I
+left bge-small as the default because it is the safe, well known choice. Fast mode is a flag for when
+ingest speed matters more than anything.
+
+I picked Chroma for the vector store because it is simple, persistent, and runs in the same container.
+The collection is keyed by the model and its dimension, so switching embedding backends never mixes
+vectors that do not belong together.
 
 ## Engineering standards I followed (and skipped)
-<!-- ✍️ YOU WRITE. Kept: pinned deps, type hints, per-slice tests, explicit error handling, no
-secrets. Skipped (and why): auth, exhaustive language support, concurrency hardening, frontend tests. -->
+What I kept. I worked in small slices, one change per commit, each with its own tests and a real
+message that explains why. Every dependency and tool is pinned, so a build today matches a build next
+month. The backend has type hints and docstrings, the frontend has types, and errors are handled
+explicitly with clear messages. Every module I touched got tests, with the slow ones that download
+real models marked so CI stays fast and free. There is a full CI pipeline (lint, format, types,
+security scan, dependency audit, dead-code check, tests) and the infrastructure itself is written as
+Terraform. No secrets live in the repo. The .env is ignored and only an example is committed.
+
+What I skipped, and why. There is no auth or multi-user support yet, because it is a single-user demo,
+so there are no accounts or per-user data isolation. Precise chunking covers Python, JavaScript,
+TypeScript and TSX. Other files fall back to plain text chunks rather than syntax-aware ones. I did not
+harden for heavy concurrency, since it assumes light traffic. Frontend tests are lighter than the
+backend, I covered the important logic and components but did not chase full coverage there. I also
+deferred the Trivy infrastructure scan, because it flags the deliberate public HTTP rule and I could
+not verify it in this environment, so I left it as a documented follow-up instead of shipping a red
+check.
 
 ## How I used AI tools in development
-<!-- ✍️ YOU WRITE. Your do's/don'ts: how you kept the code to your standard, where you trusted AI
-output vs. wrote things yourself, how you made it repeatable (written engineering standards, per-slice approval). -->
+I built this with an AI coding assistant, but on a short leash.
+
+The most important thing I did was write the rules down first. There is a standing instructions file
+the assistant has to follow on every task: work in small slices, write tests with each slice, wait for
+my go before writing code, keep commits clean with no AI traces, and stop and ask before adding a
+dependency or doing anything risky. Putting that in writing is what made the work repeatable instead of
+a different result every session.
+
+My do's. I let the assistant handle the boilerplate, the test scaffolding, the wiring, and the first
+draft of code, because it is fast and good at that. I read every change before it landed. I ran the
+tests after each slice. I made it show its plan before it touched anything.
+
+My don'ts. I did not let it add dependencies or change the architecture without asking first. I did not
+accept code I had not read. And I did not let it write the parts that are meant to be my own judgment,
+like these decision sections, because the point of them is my thinking, not generated text.
+
+Where I trusted it less I checked harder, mainly anything touching security, retrieval quality, and the
+deploy. Where the task was clear and well covered by tests, I trusted it more and moved faster.
 
 ## What I'd do differently with more time
-<!-- ✍️ YOU WRITE. -->
+I would move the vector store to a managed service and run several copies of the API, as described in
+the productionizing notes. I would add accounts and private repo support, since that is the first thing
+a real user would ask for. I would make ingest fully async with a queue and live progress, so a big
+repo never ties up a request. I would grow the quality eval from the small golden set it uses now into
+a larger labelled set and track accuracy on every change. I would teach the chunker more languages
+like Go, Rust and Java so citations stay precise on more repos. I would add a light theme, a few more
+keyboard shortcuts, and a short demo video. And I would finish the Trivy infrastructure scan with a
+documented exception for the public HTTP rule.
 
 ## Edge cases knowingly skipped
-<!-- ✍️ YOU WRITE. e.g. giant repos, binary files, non-UTF8 source, private repos, rate-limit storms. -->
+Very large repos are not a target. There are caps on file count and size, but a huge monorepo would be
+slow and could run into memory limits. Binary and generated files are skipped rather than parsed.
+Source that is not UTF-8 is decoded with replacement, so unusual characters may not come through
+exactly. Private repos are out, because there is no auth yet, so it works on public repos and local
+folders only. The free LLM tier can rate limit under load, and there is no retry queue for that case
+yet. And it does not expect many people ingesting the same repo at once. These are all known and fine
+for the scope here, and most map directly onto the next steps above.
 
 ## License
 
