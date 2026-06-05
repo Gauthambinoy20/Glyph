@@ -301,8 +301,8 @@ def ask(
     chunk_ids = [chunk["id"] for chunk in chunks]
     citations = parse_citations(answer, chunks)
     log_query(request.question, chunk_ids, latency_ms, token_usage, stages=stages)
-    # `sources` carries each retrieved chunk (with its code) so the UI can show the code
-    # behind a citation; `meta` surfaces observability (model, latency, tokens, per-stage) in the UI.
+    # `sources` carries each retrieved chunk (with its code) so the UI can show the code behind
+    # a citation; `meta` surfaces observability (model, latency, tokens, stage_ms) in the UI.
     return {
         "answer": answer,
         "citations": citations,
