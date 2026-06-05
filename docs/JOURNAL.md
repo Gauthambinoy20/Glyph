@@ -371,4 +371,20 @@ VIBE CODER/
   check. Building these now unblocks the redesign without touching the current UI. Starting with the stats
   endpoint.
 
+- **The full UI redesign, implemented (done, 2026-06-05).** I designed the new look in a design tool,
+  exported it, and then rebuilt it for real in the app — not by pasting the mock, but as proper typed
+  React components wired to the live backend. It went in as small tested steps: first the exact design
+  system (colors, fonts, spacing copied verbatim), then the icon set and a small markdown renderer with
+  its own syntax highlighter, then the landing screen, the rich chat answer (grounding badge, metrics,
+  clickable citations with a hover code preview, collapsible sources, follow-ups), the sliding code
+  viewer, the command palette (⌘K), the left project-intelligence panel with eight widgets (repo header,
+  language donut, index stats, overview, a live force-directed architecture graph, most-depended-on files
+  computed from real import counts, API endpoints, session metrics with a latency sparkline, recent
+  repos), and finally the orchestrator that ties it together and streams answers in live. The backend got
+  two new endpoints to feed the panel — repo stats and read-any-file. I dropped the design tool's tweak
+  panel and variant toggles (those were scaffolding) and ship the chosen look. Every component has unit
+  tests; the whole thing type-checks, builds, and the bundle actually got smaller because the redesign
+  uses a tiny in-house markdown/highlighter instead of three heavy libraries. I also added a frontend CI
+  job (types, tests, build) so the pipeline now guards the UI too. Frontend tests went from 10 to 31.
+
 *(Next entries get added here, newest at the bottom, one per step.)*
