@@ -1,11 +1,13 @@
 """Unit tests for the ingest pipeline (walker, cloner, pipeline, and the endpoint)."""
 
+import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from app.ingest import pipeline as pipeline_mod
 from app.ingest.cloner import clone_repo, is_valid_github_url
-from app.ingest.pipeline import ingest_path
+from app.ingest.pipeline import ingest_path, ingest_path_events, ingest_repo_events
 from app.ingest.walker import walk_files
 from app.main import app, get_embedder, get_store
 from app.store.chroma_store import ChromaStore
@@ -110,6 +112,71 @@ def test_pipeline_rejects_folder_with_no_source(tmp_path) -> None:  # T28
     (tmp_path / "readme.md").write_text("# just docs\n")
     with pytest.raises(ValueError):
         ingest_path(str(tmp_path), _fresh_store(tmp_path), FakeEmbedder(dim=8))
+
+
+# ----- Pipeline event stream (live progress) -----
+
+
+def test_ingest_events_yields_stages_in_order(tmp_path) -> None:  # T67
+    store, embedder = _fresh_store(tmp_path), FakeEmbedder(dim=8)
+
+    events = list(ingest_path_events(str(FIXTURES), store, embedder))
+    stages = [event["stage"] for event in events]
+
+    # walk happens before chunk, which happens before embedding, which ends in done.
+    assert stages[0] == "walk"
+    assert stages.index("chunk") < stages.index("embed")
+    assert stages[-1] == "done"
+
+    walk = next(e for e in events if e["stage"] == "walk")
+    done = events[-1]
+    assert walk["files"] == 4  # the four sample fixtures
+    assert done["files"] == 4
+    assert done["added"] > 0
+    assert "python" in done["languages"]
+
+
+def test_ingest_events_embed_progress_reaches_total(tmp_path) -> None:  # T68
+    store, embedder = _fresh_store(tmp_path), FakeEmbedder(dim=8)
+
+    all_events = ingest_path_events(str(FIXTURES), store, embedder)
+    embed_events = [e for e in all_events if e["stage"] == "embed"]
+
+    total = embed_events[-1]["total"]
+    assert total > 0
+    assert embed_events[0]["done"] == 0  # starts at zero
+    assert embed_events[-1]["done"] == total  # and finishes at the total
+    # progress never moves backwards and never overshoots the total
+    dones = [e["done"] for e in embed_events]
+    assert dones == sorted(dones)
+    assert all(d <= total for d in dones)
+
+
+def test_ingest_events_match_blocking_summary(tmp_path) -> None:  # T69
+    # The streaming "done" event must carry exactly what the blocking ingest_path returns.
+    events_store, events_emb = _fresh_store(tmp_path / "a"), FakeEmbedder(dim=8)
+    blocking_store, blocking_emb = _fresh_store(tmp_path / "b"), FakeEmbedder(dim=8)
+
+    done = list(ingest_path_events(str(FIXTURES), events_store, events_emb))[-1]
+    summary = ingest_path(str(FIXTURES), blocking_store, blocking_emb)
+
+    assert {k: v for k, v in done.items() if k != "stage"} == summary
+
+
+def test_ingest_repo_events_clone_then_ingest(tmp_path, monkeypatch) -> None:  # T70
+    # Mock the clone so no network is touched: hand back a copy of the fixtures.
+    clone_dir = tmp_path / "clone"
+    shutil.copytree(FIXTURES, clone_dir)
+    monkeypatch.setattr(pipeline_mod, "clone_repo", lambda url: str(clone_dir))
+
+    store, embedder = _fresh_store(tmp_path), FakeEmbedder(dim=8)
+    events = list(ingest_repo_events("https://github.com/owner/repo", store, embedder))
+    stages = [event["stage"] for event in events]
+
+    assert stages[0] == "clone" and events[0]["status"] == "start"
+    assert stages[1] == "clone" and events[1]["status"] == "done"
+    assert "walk" in stages and stages[-1] == "done"
+    assert not clone_dir.exists()  # the temporary clone is cleaned up afterwards
 
 
 # ----- Endpoint -----
