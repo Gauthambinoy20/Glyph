@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchWithTimeout, parseSSE } from "./api";
+import { fetchWithTimeout, parseIngestSSE, parseSSE } from "./api";
 
 describe("parseSSE", () => {
   it("parses two complete messages and leaves no remainder", () => {
@@ -35,6 +35,43 @@ describe("parseSSE", () => {
 
   it("returns nothing for an empty buffer", () => {
     expect(parseSSE("")).toEqual({ messages: [], rest: "" });
+  });
+});
+
+describe("parseIngestSSE", () => {
+  it("parses ingest stage events and the final summary", () => {
+    const buffer =
+      'data: {"stage":"walk","files":4}\n\n' +
+      'data: {"stage":"embed","done":2,"total":4}\n\n' +
+      'data: {"stage":"done","files":4,"languages":["python"],"added":4,"cached":0}\n\n';
+
+    const { events, rest } = parseIngestSSE(buffer);
+
+    expect(events).toHaveLength(3);
+    expect(events[0]).toEqual({ stage: "walk", files: 4 });
+    expect(events[2]).toEqual({
+      stage: "done",
+      files: 4,
+      languages: ["python"],
+      added: 4,
+      cached: 0,
+    });
+    expect(rest).toBe("");
+  });
+
+  it("holds a half-arrived event back as rest", () => {
+    const buffer = 'data: {"stage":"walk","files":4}\n\n' + 'data: {"stage":"emb';
+
+    const { events, rest } = parseIngestSSE(buffer);
+
+    expect(events).toHaveLength(1);
+    expect(rest).toBe('data: {"stage":"emb');
+  });
+
+  it("surfaces an error event", () => {
+    const { events } = parseIngestSSE('data: {"stage":"error","detail":"bad url"}\n\n');
+
+    expect(events[0]).toEqual({ stage: "error", detail: "bad url" });
   });
 });
 

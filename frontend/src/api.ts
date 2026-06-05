@@ -145,17 +145,48 @@ export interface StreamHandlers {
 }
 
 /**
- * Split a raw SSE buffer into complete JSON messages plus the unfinished remainder.
- * Each SSE message is a `data: {json}` line ended by a blank line. Kept pure (no I/O)
- * and exported so it can be unit tested without a live stream.
+ * Split a raw SSE buffer into its complete `data:` payload strings plus the unfinished
+ * remainder. Each SSE message is a `data: {json}` line ended by a blank line; a trailing
+ * block with no blank line yet is incomplete and handed back as `rest`. Kept pure (no I/O)
+ * so both the answer and the ingest parsers can build on it and unit-test without a stream.
  */
-export function parseSSE(buffer: string): { messages: StreamMessage[]; rest: string } {
+function splitSSE(buffer: string): { payloads: string[]; rest: string } {
   const blocks = buffer.split("\n\n");
-  const rest = blocks.pop() ?? ""; // a trailing block with no blank line yet is incomplete
-  const messages = blocks
+  const rest = blocks.pop() ?? "";
+  const payloads = blocks
     .filter((block) => block.startsWith("data: "))
-    .map((block) => JSON.parse(block.slice("data: ".length)) as StreamMessage);
-  return { messages, rest };
+    .map((block) => block.slice("data: ".length));
+  return { payloads, rest };
+}
+
+/** Parse the answer stream into typed messages plus any unfinished remainder. */
+export function parseSSE(buffer: string): { messages: StreamMessage[]; rest: string } {
+  const { payloads, rest } = splitSSE(buffer);
+  return { messages: payloads.map((p) => JSON.parse(p) as StreamMessage), rest };
+}
+
+// One event off the /api/ingest/stream Server-Sent Events stream. The stage names mirror
+// the backend pipeline (clone -> walk -> chunk -> embed -> done), with error as a terminal.
+export type IngestEvent =
+  | { stage: "clone"; status: "start" | "done" }
+  | { stage: "walk"; files: number }
+  | { stage: "chunk"; chunks: number }
+  | { stage: "embed"; done: number; total: number }
+  | { stage: "done"; files: number; languages: string[]; added: number; cached: number }
+  | { stage: "error"; detail: string };
+
+export type IngestDone = Extract<IngestEvent, { stage: "done" }>;
+
+/** Parse the ingest stream into typed stage events plus any unfinished remainder. */
+export function parseIngestSSE(buffer: string): { events: IngestEvent[]; rest: string } {
+  const { payloads, rest } = splitSSE(buffer);
+  return { events: payloads.map((p) => JSON.parse(p) as IngestEvent), rest };
+}
+
+export interface IngestStreamHandlers {
+  onEvent: (event: IngestEvent) => void; // every progress stage (clone/walk/chunk/embed)
+  onDone: (summary: IngestDone) => void; // the final summary
+  onError: (message: string) => void; // bad input, failed clone, or no chunks
 }
 
 /** Ask with a live stream: tokens arrive as the answer is written, then the final payload. */
@@ -189,9 +220,45 @@ async function askStream(body: AskBody, handlers: StreamHandlers): Promise<void>
   }
 }
 
+/** Ingest with a live stream: a stage event lands as each step starts/progresses. */
+async function ingestStream(
+  body: { repo_url?: string; local_path?: string },
+  handlers: IngestStreamHandlers,
+): Promise<void> {
+  const res = await fetch("/api/ingest/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
+    handlers.onError(data.detail ?? `request failed (${res.status})`);
+    return;
+  }
+
+  // Read the response body chunk by chunk, decode to text, and drain whole SSE events.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const { events, rest } = parseIngestSSE(buffer);
+    buffer = rest;
+    for (const ev of events) {
+      if (ev.stage === "done") handlers.onDone(ev);
+      else if (ev.stage === "error") handlers.onError(ev.detail);
+      else handlers.onEvent(ev);
+    }
+  }
+}
+
 export const api = {
   ingest: (body: { repo_url?: string; local_path?: string }) =>
     post<IngestResponse>("/api/ingest", body, INGEST_TIMEOUT_MS),
+
+  ingestStream,
 
   ask: (body: AskBody) => post<AskResponse>("/api/ask", body),
 
