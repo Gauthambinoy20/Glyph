@@ -1,344 +1,438 @@
-import { useEffect, useRef, useState } from "react";
+// App — orchestrates Glyph: landing ⇄ workspace, navbar, code viewer, ⌘K, live streaming.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "./api";
-import type { AskResponse, Citation, ModelInfo, Source } from "./api";
-import { Answer } from "./components/Answer";
-import { CodePanel } from "./components/CodePanel";
-import { GraphView } from "./components/GraphView";
-import { ModelPicker } from "./components/ModelPicker";
+import type { Citation, ModelInfo, Source } from "./api";
+import type { Message, Recent, Repo, Suggestion } from "./types";
+import { ChatEmpty, Composer, GlyphAnswer, Thinking } from "./components/Chat";
+import type { CodeRef } from "./components/Chat";
+import { CodeViewer } from "./components/CodeViewer";
+import { CommandPalette } from "./components/CommandPalette";
+import { ForceGraph, langColor } from "./components/ForceGraph";
+import { Icon, Logo } from "./components/Icon";
+import { Landing } from "./components/Landing";
+import { ProjectPanel } from "./components/ProjectPanel";
+import type { PanelData } from "./components/ProjectPanel";
 
-interface Message {
-  id: number;
-  role: "user" | "assistant";
-  text?: string;
-  data?: AskResponse;
-  thinking?: boolean;
-}
-
-const SUGGESTIONS = [
-  "What does this codebase do?",
-  "Where are the API endpoints defined?",
-  "How does the retrieval work?",
-  "Walk me through the main data flow.",
+const SUGGESTIONS: Suggestion[] = [
+  { q: "What does this codebase do?", hint: "High-level overview", icon: "compass" },
+  { q: "Where are the API endpoints defined?", hint: "Routing & handlers", icon: "route" },
+  { q: "How does retrieval work?", hint: "Embeddings + ranking", icon: "search" },
+  { q: "Walk me through the main data flow.", hint: "Ingest → ask → answer", icon: "flow" },
 ];
 
-let idSeq = 1;
+/** Parse a GitHub URL or local path into a Repo header. */
+function parseRepo(input: string): Repo {
+  const m = input.match(/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/);
+  if (m) return { owner: m[1], name: m[2], branch: "main", url: `https://github.com/${m[1]}/${m[2]}`, visibility: "Public" };
+  const name = input.split("/").filter(Boolean).pop() || input;
+  return { owner: "local", name, branch: "main", url: input };
+}
+
+const prettyLang = (l: string) => (l ? l.charAt(0).toUpperCase() + l.slice(1) : "Other");
+
+/** Suggest follow-up questions from the symbols Glyph just looked at. */
+function deriveFollowups(sources: Source[]): string[] {
+  const symbols = Array.from(new Set(sources.map((s) => s.symbol_name).filter((s) => s && s !== "<module>")));
+  const qs = symbols.slice(0, 3).map((s) => `How does \`${s}\` work?`);
+  qs.push("What are the main parts of this code?");
+  return qs.slice(0, 4);
+}
+
+function ModelPicker({ models, idx, onPick }: { models: ModelInfo[]; idx: number; onPick: (i: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  if (models.length === 0) return null;
+  const m = models[idx];
+  return (
+    <div className="modelpick" ref={ref}>
+      <button className="modelpick-btn" onClick={() => setOpen((o) => !o)}>
+        <span>{m.label}</span>
+        <span className="tier">{m.tier}</span>
+        <Icon name="chevDown" size={13} />
+      </button>
+      {open && (
+        <div className="menu">
+          {models.map((mm, i) => (
+            <button
+              key={mm.id}
+              className="menu-item"
+              data-active={i === idx ? "1" : "0"}
+              data-avail={mm.available ? "1" : "0"}
+              onClick={() => {
+                onPick(i);
+                setOpen(false);
+              }}
+            >
+              <span style={{ flex: 1 }}>
+                <span className="mi-top">
+                  <span className="mi-label">{mm.label}</span>
+                  <span className={"tag-tier " + mm.tier}>{mm.tier}</span>
+                </span>
+                <span className="mi-note">{mm.note}</span>
+              </span>
+              {i === idx && (
+                <span style={{ color: "var(--accent)" }}>
+                  <Icon name="check" size={16} />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GraphModal({ data, onClose, onPick }: { data: PanelData; onClose: () => void; onPick: (label: string) => void }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [dim, setDim] = useState({ w: 900, h: 560 });
+  useEffect(() => {
+    if (!wrapRef.current) return;
+    const ro = new ResizeObserver(([e]) => setDim({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(wrapRef.current);
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+  const langs = [...new Set(data.graph.nodes.map((n) => n.language))];
+  return (
+    <div className="modal-scrim" onMouseDown={onClose}>
+      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-hd">
+          <span className="card-title" style={{ fontSize: 13 }}>
+            <span className="gd" /> Architecture
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div className="graph-legend" style={{ margin: 0 }}>
+              {langs.map((l) => (
+                <span className="li" key={l}>
+                  <span className="ld" style={{ background: langColor(l) }} />
+                  {l}
+                </span>
+              ))}
+            </div>
+            <button className="iconbtn" onClick={onClose} aria-label="Close" style={{ width: 30, height: 30 }}>
+              <Icon name="close" />
+            </button>
+          </div>
+        </div>
+        <div className="modal-body" ref={wrapRef}>
+          <ForceGraph nodes={data.graph.nodes} edges={data.graph.edges} width={dim.w} height={dim.h} onPick={(n) => onPick(n.label)} big />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface Toast {
+  id: string;
+  msg: string;
+}
 
 export default function App() {
-  const [phase, setPhase] = useState<"landing" | "workspace">("landing");
-  const [repoInput, setRepoInput] = useState("");
-  const [repoLabel, setRepoLabel] = useState("");
-  const [ingesting, setIngesting] = useState(false);
-
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [selectedModel, setSelectedModel] = useState("");
-
+  const [screen, setScreen] = useState<"landing" | "workspace">("landing");
+  const [repo, setRepo] = useState<Repo | null>(null);
+  const [panel, setPanel] = useState<PanelData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [activeSource, setActiveSource] = useState<Source | null>(null);
-  const [error, setError] = useState("");
-  const [view, setView] = useState<"chat" | "graph">("chat");
-  const [overview, setOverview] = useState("");
-
+  const [pending, setPending] = useState(false);
+  const [streamText, setStreamText] = useState<string | null>(null);
+  const [busyIngest, setBusyIngest] = useState(false);
+  const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [graphModal, setGraphModal] = useState(false);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [modelIdx, setModelIdx] = useState(0);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [recent, setRecent] = useState<Recent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const pushToast = useCallback((msg: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((ts) => [...ts, { id, msg }]);
+    setTimeout(() => setToasts((ts) => ts.filter((x) => x.id !== id)), 5000);
+  }, []);
 
   useEffect(() => {
     api
       .models()
-      .then((d) => {
-        setModels(d.models);
-        setSelectedModel(d.default);
-      })
+      .then((d) => setModels(d.models))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (screen === "workspace") setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [screen]);
 
   useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(""), 5000);
-    return () => clearTimeout(timer);
-  }, [error]);
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, pending, streamText]);
+
+  // All sources seen so far, for the code viewer + command palette.
+  const allSources = useMemo(() => {
+    const seen = new Map<string, Source>();
+    for (const m of messages) if (m.role === "glyph") for (const s of m.sources) seen.set(s.id, s);
+    return [...seen.values()];
+  }, [messages]);
 
   async function ingest(value: string) {
-    const target = value.trim();
-    if (!target || ingesting) return;
-    setIngesting(true);
-    setError("");
+    if (busyIngest) return;
+    setBusyIngest(true);
     try {
-      const isUrl = target.startsWith("http");
-      await api.ingest(isUrl ? { repo_url: target } : { local_path: target });
-      setRepoLabel(isUrl ? target.replace(/^https:\/\/github\.com\//, "") : target);
-      setPhase("workspace");
-      setOverview("");
-      api
-        .overview()
-        .then((d) => setOverview(d.overview))
-        .catch(() => {});
+      const isUrl = value.startsWith("http");
+      const ingestResp = await api.ingest(isUrl ? { repo_url: value } : { local_path: value });
+      const parsed = parseRepo(value);
+      const [stats, overview, graph] = await Promise.all([
+        api.stats(),
+        api.overview().then((o) => o.overview).catch(() => ""),
+        api.graph().catch(() => ({ nodes: [], edges: [] })),
+      ]);
+      const total = stats.chunks || 1;
+      const languages = stats.languages.map((l) => ({
+        name: prettyLang(l.language),
+        pct: Math.round((l.chunks / total) * 100),
+        color: langColor(prettyLang(l.language)),
+      }));
+      setRepo(parsed);
+      setPanel({
+        repo: parsed,
+        languages,
+        stats: { files: stats.files, chunks: stats.chunks, cached: ingestResp.cached },
+        overview,
+        stack: languages.map((l) => l.name),
+        graph,
+        endpoints: [],
+        recent: [],
+        latencies: [],
+      });
+      setRecent((r) => [{ owner: parsed.owner, name: parsed.name, when: "now" }, ...r.filter((x) => x.name !== parsed.name)].slice(0, 4));
+      setMessages([]);
+      setCode(null);
+      setScreen("workspace");
     } catch (e) {
-      setError((e as Error).message);
+      pushToast((e as Error).message);
     } finally {
-      setIngesting(false);
+      setBusyIngest(false);
     }
   }
 
-  async function ask(question: string) {
+  function ask(question: string) {
     const q = question.trim();
-    if (!q || busy) return;
-
-    // Build the conversation history (completed question/answer pairs) for follow-ups.
+    if (!q || pending) return;
     const history: { question: string; answer: string }[] = [];
-    for (let i = 0; i < messages.length - 1; i++) {
-      const u = messages[i];
-      const a = messages[i + 1];
-      if (u.role === "user" && u.text && a.role === "assistant" && a.data) {
-        history.push({ question: u.text, answer: a.data.answer });
-      }
+    for (const m of messages) {
+      if (m.role === "user") history.push({ question: m.text, answer: "" });
+      else if (history.length) history[history.length - 1].answer = m.answer;
     }
-
-    const userId = idSeq++;
-    const botId = idSeq++;
-    setMessages((m) => [
-      ...m,
-      { id: userId, role: "user", text: q },
-      { id: botId, role: "assistant", thinking: true },
-    ]);
-    setInput("");
-    setBusy(true);
-    setError("");
-    try {
-      // Stream the answer in: append each token live, then swap to the full Answer on the
-      // final message (which carries citations, sources, and the observability meta).
-      await api.askStream(
-        { question: q, model: selectedModel || null, history },
+    setMessages((m) => [...m, { role: "user", text: q }]);
+    setPending(true);
+    setStreamText(null);
+    setPaletteOpen(false);
+    let streamed = "";
+    api
+      .askStream(
+        { question: q, model: models[modelIdx]?.id ?? null, history: history.filter((h) => h.answer) },
         {
-          onToken: (t) =>
-            setMessages((m) =>
-              m.map((x) =>
-                x.id === botId ? { ...x, thinking: false, text: (x.text ?? "") + t } : x,
-              ),
-            ),
-          onFinal: (res) =>
-            setMessages((m) =>
-              m.map((x) =>
-                x.id === botId ? { ...x, thinking: false, text: undefined, data: res } : x,
-              ),
-            ),
+          onToken: (t) => {
+            streamed += t;
+            setStreamText(streamed);
+          },
+          onFinal: (res) => {
+            setMessages((m) => [...m, { role: "glyph", ...res, followups: deriveFollowups(res.sources) }]);
+            setStreamText(null);
+            setPending(false);
+          },
           onError: (msg) => {
-            setMessages((m) => m.filter((x) => x.id !== botId));
-            setError(msg);
+            pushToast(msg);
+            setStreamText(null);
+            setPending(false);
           },
         },
-      );
-    } catch (e) {
-      setMessages((m) => m.filter((x) => x.id !== botId));
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
+      )
+      .catch((e) => {
+        pushToast((e as Error).message);
+        setStreamText(null);
+        setPending(false);
+      });
+  }
+
+  async function openCode(ref: CodeRef) {
+    const asSource = ref as Source;
+    if (asSource.code) {
+      setCode({ source: asSource, hlStart: asSource.start_line, hlEnd: asSource.end_line });
+      return;
+    }
+    const c = ref as Citation;
+    const match = allSources.find((s) => s.file_path === c.file_path && c.start_line <= s.end_line && c.end_line >= s.start_line);
+    if (match) {
+      setCode({ source: match, hlStart: c.start_line, hlEnd: c.end_line });
+      return;
+    }
+    try {
+      const file = await api.file(c.file_path, c.start_line, c.end_line);
+      const source: Source = {
+        id: file.file_path,
+        file_path: file.file_path,
+        symbol_name: file.chunks[0]?.symbol_name ?? "",
+        type: file.chunks[0]?.type ?? "",
+        start_line: file.start_line,
+        end_line: file.end_line,
+        code: file.code,
+        language: file.language,
+      };
+      setCode({ source, hlStart: c.start_line, hlEnd: c.end_line });
+    } catch {
+      pushToast("No source preview available for that citation.");
     }
   }
 
-  function openCitation(citation: Citation, sources: Source[]) {
-    const match = sources.find(
-      (s) =>
-        s.file_path === citation.file_path &&
-        citation.start_line <= s.end_line &&
-        citation.end_line >= s.start_line,
-    );
-    if (match) setActiveSource(match);
+  function reset() {
+    setScreen("landing");
+    setMessages([]);
+    setCode(null);
+    setPending(false);
+    setStreamText(null);
   }
 
-  if (phase === "landing") {
-    return (
-      <div className="app">
-        <div className="landing">
-          <div className="landing-inner">
-            <div className="badge">
-              <span className="mark" style={{ width: 16, height: 16, borderRadius: 5, fontSize: 10 }}>
-                G
-              </span>{" "}
-              Code intelligence
-            </div>
-            <h1>
-              Ask your <span className="accent">codebase</span>.
-            </h1>
-            <p className="sub">
-              Point Glyph at a GitHub repo or a local folder, then ask questions and get answers
-              grounded in the real code, with file and line citations.
-            </p>
-            <div className="ingest-box">
-              <input
-                autoFocus
-                placeholder="https://github.com/owner/repo   ·   or a local path"
-                value={repoInput}
-                onChange={(e) => setRepoInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && ingest(repoInput)}
-              />
-              <button
-                className="btn btn-primary"
-                disabled={ingesting || !repoInput.trim()}
-                onClick={() => ingest(repoInput)}
-              >
-                {ingesting ? (
-                  <>
-                    <span className="spinner" /> Ingesting
-                  </>
-                ) : (
-                  "Ingest →"
-                )}
-              </button>
-            </div>
-            <div className="hint">
-              Try <b onClick={() => ingest("app")}>app</b> to index Glyph&apos;s own code.
-            </div>
-          </div>
-        </div>
-        {error && <div className="error-toast">{error}</div>}
-      </div>
-    );
-  }
+  // Session metrics from the answers so far.
+  const answers = messages.filter((m): m is Extract<Message, { role: "glyph" }> => m.role === "glyph");
+  const session = {
+    queries: answers.length,
+    avgLatency: answers.length ? answers.reduce((s, m) => s + (m.meta?.latency_ms ?? 0), 0) / answers.length : 0,
+    tokens: answers.reduce((s, m) => s + (m.meta?.token_usage.total_tokens ?? 0), 0),
+  };
+  const latencies = answers.map((m) => m.meta?.latency_ms ?? 0);
 
   return (
     <div className="app">
-      <div className="topbar">
-        <div className="left">
-          <span className="mark">G</span>
-          <span className="wordmark">
-            Glyph<span className="dot">.</span>
-          </span>
-          <span className="repo-chip">
-            <span className="ok" /> {repoLabel}
-          </span>
+      <nav className="nav">
+        <div className="nav-left">
+          {screen === "workspace" && repo && (
+            <span className="repo-chip">
+              <span className="dot-live" />
+              <span className="mono">
+                {repo.owner}/{repo.name}
+              </span>
+            </span>
+          )}
         </div>
-        <div className="topbar-right">
-          <div className="view-toggle">
-            <button className={view === "chat" ? "active" : ""} onClick={() => setView("chat")}>
-              Chat
-            </button>
-            <button className={view === "graph" ? "active" : ""} onClick={() => setView("graph")}>
-              Map
-            </button>
-          </div>
-          <ModelPicker models={models} selected={selectedModel} onSelect={setSelectedModel} />
+        <div className="nav-center">
+          <Logo />
         </div>
-      </div>
+        <div className="nav-right">
+          {screen === "workspace" && <ModelPicker models={models} idx={modelIdx} onPick={setModelIdx} />}
+          {screen === "workspace" && (
+            <button className="kbar" onClick={() => setPaletteOpen(true)}>
+              <Icon name="search" /> Search <span className="kbd">⌘K</span>
+            </button>
+          )}
+          <button
+            className="iconbtn"
+            aria-label="Toggle theme"
+            onClick={() => pushToast("Light theme is on the roadmap — dark is the primary system.")}
+          >
+            <Icon name="moon" size={17} />
+          </button>
+        </div>
+      </nav>
 
-      <div className="workspace">
-        {view === "graph" ? (
-          <GraphView
-            onPickFile={(file) => {
-              setView("chat");
-              ask(`Explain \`${file}\` and what it does.`);
-            }}
+      {screen === "landing" || !panel ? (
+        <Landing onIngest={ingest} busy={busyIngest} recent={recent} />
+      ) : (
+        <div className="workspace">
+          <ProjectPanel
+            data={{ ...panel, latencies }}
+            session={session}
+            onAsk={ask}
+            onExpandGraph={() => setGraphModal(true)}
+            onChangeRepo={reset}
+            onOpenRecent={() => reset()}
           />
-        ) : (
-          <>
-            <div className="chat">
-          <div className="messages" ref={scrollRef}>
-            {messages.length === 0 ? (
-              <div className="suggest">
-                {overview && (
-                  <div className="overview-card">
-                    <div className="ov-title">
-                      <span className="ov-dot" /> Overview
-                    </div>
-                    <p>{overview}</p>
-                  </div>
-                )}
-                <div className="title">Ask anything about this code</div>
-                <div className="grid">
-                  {SUGGESTIONS.map((s) => (
-                    <button key={s} className="suggest-card" onClick={() => ask(s)}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="messages-inner">
-                {messages.map((m) => (
-                  <div key={m.id} className={`msg ${m.role}`}>
-                    <div className="role">
-                      {m.role === "user" ? (
-                        <>
-                          <span className="avatar you">U</span> You
-                        </>
-                      ) : (
-                        <>
-                          <span
-                            className="mark"
-                            style={{ width: 20, height: 20, borderRadius: 6, fontSize: 11 }}
-                          >
-                            G
-                          </span>{" "}
-                          Glyph
-                        </>
-                      )}
-                    </div>
-                    {m.role === "user" ? (
-                      <div className="bubble">{m.text}</div>
-                    ) : m.thinking ? (
-                      <div className="thinking">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    ) : m.data ? (
-                      <Answer
-                        data={m.data}
-                        onOpen={(c) => openCitation(c, m.data!.sources)}
-                        onFollowUp={ask}
-                      />
-                    ) : m.text !== undefined ? (
-                      // Words appearing live, before the final message settles the answer.
-                      <div className="answer streaming">
-                        {m.text}
-                        <span className="stream-cursor">▍</span>
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          <div className="composer-wrap">
-            <div className="composer">
-              <textarea
-                rows={1}
-                placeholder="Ask about the code…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    ask(input);
-                  }
-                }}
-              />
-              <button
-                className="send"
-                disabled={busy || !input.trim()}
-                onClick={() => ask(input)}
-                aria-label="Send"
-              >
-                ↑
-              </button>
+          {code && <CodeViewer source={code.source} hlStart={code.hlStart} hlEnd={code.hlEnd} onClose={() => setCode(null)} />}
+
+          <div className="chat-col">
+            <div className="chat-scroll scroll" ref={scrollRef}>
+              {messages.length === 0 && !pending ? (
+                <ChatEmpty overview={panel.overview} suggestions={SUGGESTIONS} onAsk={ask} />
+              ) : (
+                <div className="chat-inner">
+                  {messages.map((m, i) =>
+                    m.role === "user" ? (
+                      <UserBubble key={i} text={m.text} />
+                    ) : (
+                      <GlyphAnswer key={i} msg={m} onOpenCode={openCode} onAsk={ask} />
+                    ),
+                  )}
+                  {pending && streamText === null && <Thinking />}
+                  {streamText !== null && (
+                    <GlyphAnswer
+                      msg={{ role: "glyph", answer: streamText, citations: [], retrieved_chunk_ids: [], sources: [], meta: { model: "", latency_ms: 0, token_usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } } }}
+                      onOpenCode={openCode}
+                      onAsk={ask}
+                      streaming
+                    />
+                  )}
+                </div>
+              )}
             </div>
+            <Composer onSend={ask} busy={pending} />
           </div>
         </div>
+      )}
 
-            {activeSource && (
-              <CodePanel source={activeSource} onClose={() => setActiveSource(null)} />
-            )}
-          </>
-        )}
+      {paletteOpen && (
+        <CommandPalette
+          endpoints={panel?.endpoints ?? []}
+          sources={allSources}
+          onClose={() => setPaletteOpen(false)}
+          onOpenCode={openCode}
+          onAsk={ask}
+          onChangeRepo={reset}
+        />
+      )}
+      {graphModal && panel && <GraphModal data={panel} onClose={() => setGraphModal(false)} onPick={(label) => { setGraphModal(false); ask(`Explain ${label}.`); }} />}
+
+      <div className="toast-zone">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast">
+            <span className="ti">
+              <Icon name="zap" size={17} />
+            </span>
+            <span>{t.msg}</span>
+          </div>
+        ))}
       </div>
+    </div>
+  );
+}
 
-      {error && <div className="error-toast">{error}</div>}
+function UserBubble({ text }: { text: string }) {
+  return (
+    <div className="msg">
+      <div className="msg-head">
+        <span className="avatar user">U</span>
+        <span className="msg-who">You</span>
+      </div>
+      <div className="user-bubble">{text}</div>
     </div>
   );
 }
