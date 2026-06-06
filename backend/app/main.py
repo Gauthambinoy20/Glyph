@@ -538,6 +538,19 @@ def _not_found_result(
     }
 
 
+def _retrieved_files(chunks: list[dict]) -> list[str]:
+    """Return the de-duplicated file paths behind a set of retrieved chunks, in rank order.
+
+    Logged with each query so an answer that cited the wrong file is visible in the logs.
+    """
+    files: list[str] = []
+    for chunk in chunks:
+        path = chunk.get("file_path", "")
+        if path and path not in files:
+            files.append(path)
+    return files
+
+
 @app.post("/api/ask")
 def ask(
     request: AskRequest,
@@ -581,6 +594,8 @@ def ask(
             result["retrieved_chunk_ids"],
             retrieve_ms,
             result["meta"]["token_usage"],
+            retrieved_files=_retrieved_files(chunks),
+            grounded=False,
         )
         if cacheable:
             answer_cache.put(
@@ -604,7 +619,15 @@ def ask(
     latency_ms = retrieve_ms + llm_ms
     chunk_ids = [chunk["id"] for chunk in chunks]
     citations = parse_citations(answer, chunks)
-    log_query(request.question, chunk_ids, latency_ms, token_usage, stages=stages)
+    log_query(
+        request.question,
+        chunk_ids,
+        latency_ms,
+        token_usage,
+        stages=stages,
+        retrieved_files=_retrieved_files(chunks),
+        grounded=True,
+    )
     # `sources` carries each retrieved chunk (with its code) so the UI can show the code behind
     # a citation; `meta` surfaces observability (model, latency, tokens, stage_ms) in the UI.
     result = {
@@ -619,6 +642,7 @@ def ask(
             "stage_ms": stages,
             "cached": False,
             "reranked": reranked,
+            "grounded": True,
         },
     }
     if cacheable:
@@ -677,7 +701,14 @@ def ask_stream(
         # Same deterministic floor as /api/ask: refuse weak retrievals without calling the model.
         if _below_floor(chunks, reranked):
             result = _not_found_result(chunks, request, reranked, retrieve_ms)
-            log_query(request.question, chunk_ids, retrieve_ms, result["meta"]["token_usage"])
+            log_query(
+                request.question,
+                chunk_ids,
+                retrieve_ms,
+                result["meta"]["token_usage"],
+                retrieved_files=_retrieved_files(chunks),
+                grounded=False,
+            )
             if cacheable:
                 answer_cache.put(
                     chunk_count,
@@ -711,7 +742,15 @@ def ask_stream(
         stages = {"retrieve_ms": retrieve_ms, "llm_ms": llm_ms}
         latency_ms = retrieve_ms + llm_ms
         citations = parse_citations(answer, chunks)
-        log_query(request.question, chunk_ids, latency_ms, usage, stages=stages)
+        log_query(
+            request.question,
+            chunk_ids,
+            latency_ms,
+            usage,
+            stages=stages,
+            retrieved_files=_retrieved_files(chunks),
+            grounded=True,
+        )
         result = {
             "answer": answer,
             "citations": citations,
@@ -724,6 +763,7 @@ def ask_stream(
                 "stage_ms": stages,
                 "cached": False,
                 "reranked": reranked,
+                "grounded": True,
             },
         }
         if cacheable:

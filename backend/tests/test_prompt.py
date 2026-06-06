@@ -90,3 +90,33 @@ def test_log_query_includes_per_stage_timings() -> None:  # T-stage (#108)
     )
 
     assert record["stage_ms"] == {"retrieve_ms": 10, "llm_ms": 20}
+
+
+def test_log_query_records_retrieved_files_and_grounded_flag() -> None:
+    record = log_query(
+        "q?",
+        ["id1"],
+        12,
+        {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        retrieved_files=["auth.py", "math_utils.py"],
+        grounded=True,
+    )
+
+    # The files behind the answer and whether it was grounded are both captured, so a
+    # wrong-file or refused answer is visible in the logs without re-running the query.
+    assert record["retrieved_files"] == ["auth.py", "math_utils.py"]
+    assert record["grounded"] is True
+
+
+def test_log_query_can_record_a_refusal() -> None:
+    record = log_query(
+        "q?",
+        [],
+        5,
+        {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        retrieved_files=[],
+        grounded=False,
+    )
+
+    assert record["grounded"] is False
+    assert record["retrieved_files"] == []

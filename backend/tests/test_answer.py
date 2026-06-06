@@ -26,7 +26,7 @@ def test_models_endpoint_lists_free_and_paid() -> None:  # T38
     assert body["default"]
 
 
-def test_ask_returns_answer_and_citations(tmp_path) -> None:  # T39 + T41
+def test_ask_returns_answer_and_citations(tmp_path, capsys) -> None:  # T39 + T41
     chunk = make_chunk("def login(): ...", name="login", path="auth.py", start=1, end=2)
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
     app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
@@ -39,6 +39,11 @@ def test_ask_returns_answer_and_citations(tmp_path) -> None:  # T39 + T41
     assert body["answer"]
     assert body["retrieved_chunk_ids"]  # a chunk was retrieved
     assert body["citations"] == [{"file_path": "auth.py", "start_line": 1, "end_line": 2}]
+    # A real answer is marked grounded, and the files behind it are written to the query log.
+    assert body["meta"]["grounded"] is True
+    logged = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert logged["retrieved_files"] == ["auth.py"]
+    assert logged["grounded"] is True
 
 
 def test_overview_endpoint_summarises_repo(tmp_path) -> None:

@@ -15,11 +15,16 @@ def log_query(
     latency_ms: int,
     token_usage: dict[str, int],
     stages: dict[str, int] | None = None,
+    retrieved_files: list[str] | None = None,
+    grounded: bool | None = None,
 ) -> dict:
     """Write one JSON log line for a query and return the record (handy for tests).
 
     `stages` (optional) carries per-stage timings like {"retrieve_ms":.., "llm_ms":..} so the
-    total latency can be broken down and the slow part identified.
+    total latency can be broken down and the slow part identified. `retrieved_files` records the
+    files behind the answer (so a wrong-file answer is visible in the logs), and `grounded` flags
+    whether the answer was backed by code or was a refusal — together they make a bad answer
+    spottable in production without re-running the query.
     """
     record: dict = {
         "question": question,
@@ -29,5 +34,9 @@ def log_query(
     }
     if stages:
         record["stage_ms"] = stages
+    if retrieved_files is not None:
+        record["retrieved_files"] = retrieved_files
+    if grounded is not None:
+        record["grounded"] = grounded
     print(json.dumps(record), file=sys.stdout, flush=True)
     return record
