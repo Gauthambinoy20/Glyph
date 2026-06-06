@@ -27,6 +27,12 @@ errors are handled, the docs are updated, and there is a command Gautham can run
 > streaming, CORS + global error handler + request-id, README + screenshots) are **all now closed**.
 > Added phases below — **13 (performance & latency)**, **14 (UI/UX polish)** — and ticked the commit
 > boxes git confirms. Where to start is called out at the very end.
+>
+> **🔎 Coverage close-out (2026-06-06).** Pushed both suites to **100%** and gated them: the backend
+> sits at **174 tests, 100%** (`fail_under=100`) and the frontend at **255 tests, 100%** across
+> statements/branches/functions/lines, now enforced in CI via `npm run test:coverage` (was an
+> ungated `vitest run`). Unreachable defensive guards are marked with justified `/* v8 ignore */`
+> rather than contrived tests. Remaining open items are owner-gated (see ⏭️ Next and the DoD).
 
 ---
 
@@ -132,10 +138,11 @@ errors are handled, the docs are updated, and there is a command Gautham can run
 - [x] 78. Lint + format: `ruff` (lint) and `ruff format` for the backend, pinned `(core)`
 - [x] 79. Type-check: `mypy` on `app/`, pinned, passes clean `(polish)`
 - [x] 80. `pre-commit` hooks: ruff lint + format, so commits stay clean `(polish)`
-- [x] 81. Coverage: `pytest --cov`, report printed, 92% (≥ 80% target met) `(core)`
+- [x] 81. Coverage: `pytest --cov`, **100%** with a `fail_under=100` gate (≥ 80% target far exceeded) `(core)`
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
-- [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
-      *(full mocked-fetch URL-shape test, T48, and component tests still open)*
+- [x] 82. Frontend tests (vitest): **255 tests at 100% coverage**, gated in CI via `test:coverage` `(polish)`
+      *(SSE/ingest parsers, fetch timeout, the mocked-fetch URL-shape test T48, and full component
+      tests for every component — App, Chat, ForceGraph, ProjectPanel, CommandPalette, etc.)*
 - [x] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`  (test_e2e.py, T49)
 - [x] 84. `Makefile`: `make install / test / run / lint / fmt / up / eval` one-liners `(polish)`
 - [x] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`  (committed)
@@ -151,7 +158,8 @@ errors are handled, the docs are updated, and there is a command Gautham can run
       *(CodeQL/Security/License badges intentionally omitted — no codeql.yml/security.yml workflows and no LICENSE file yet)*
 - [x] 91b. CodeQL workflow + MIT LICENSE added; badge row now: CI, CodeQL, Python, FastAPI, React, Coverage, Tests, Docker, License `(polish)`
 - [x] 92. Create the GitHub repo and push (github.com/Gauthambinoy20/Glyph, CI green) `(core)`
-- [ ] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
+- [x] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
+      *(13 screenshots in docs/screenshots + an animated demo.gif, embedded in the README — commits a7c0805, 8ebad58)*
 - [x] 94. Fresh `docker compose up` works from scratch: served UI, ingest, and a streamed answer (smoke-tested) `(core)`
 - [x] 95. Commit: dockerize, CI, finalize docs `(core)`  (committed)
 
@@ -398,22 +406,25 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - **No auth / single-user.** No accounts or per-user data isolation; public repos and local folders only.
 
 ## ⏭️ Next
-- Push backend coverage 92% → 100% and add frontend coverage tooling + tests (target 100%).
-- Land TLS on the demo and lock SSH ingress to a single admin IP.
-- Review/merge the open Dependabot PRs (#2 pip, #5 npm, #6 actions).
-- Wire real continuous deploy (set `DEPLOY_HOST` / `DEPLOY_SSH_KEY`) and add the IaC scan above.
+- ~~Push backend + frontend coverage to 100% and gate it~~ — **done 2026-06-06** (both at 100%,
+  enforced in CI).
+- **Owner action:** write the `✍️` opinion sections in the README in Gautham's own voice.
+- **Owner/infra (needs the demo's AWS account):** land TLS on the demo, lock SSH ingress to a single
+  admin IP, wire real continuous deploy (`DEPLOY_HOST` / `DEPLOY_SSH_KEY`), and add the IaC scan above.
+- **Owner review:** the open Dependabot PRs (#2 pip / openai v1→v2, #5 npm / vitest+vite+react majors,
+  #6 actions) — each bundles a major bump, so they need a human call.
 - Optional polish/stretch: #111 shimmer loading, #118 graph fallbacks, #99 file-tree browser,
   #101 theme toggle, #102 share link, #107 concurrent retrieval, #117 mobile layout.
 
 ---
 
 ## 🏁 Definition of Done (whole project)
-- [ ] Every `(core)` step above is checked.
-- [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (92% backend)
+- [x] Every `(core)` step above is checked.  (last one, #93 screenshots, closed 2026-06-06)
+- [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (**100% backend + 100% frontend, both gated in CI**)
 - [x] `docker compose up` from a clean clone runs the whole app and a demo repo works.  (Docker CI green, #94)
-- [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Gautham's voice.
-- [ ] Screenshots + short demo video are in the repo.
-- [ ] Repo is on GitHub, history is clean, all commits authored by Gautham Binoy.
+- [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Gautham's voice.  *(owner-only: the opinion blanks are left for Gautham)*
+- [x] Screenshots + short demo video are in the repo.  (13 screenshots + demo.gif, embedded in README)
+- [x] Repo is on GitHub, history is clean, all commits authored by Gautham Binoy.  *(clean single-author history; the latest coverage commits are local and await a `push`)*
 - [x] No secrets committed; `.env.example` is complete.
 
 *Core first, then polish, then stretch. We do not start a flashy extra while a core box is empty.*
