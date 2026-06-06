@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     # (verified: it recovers files fast mode missed at 20), while reranking stays cheap.
     rerank_candidates: int = 60
 
+    # Relevance floor: refuse to answer (return "Not found in the provided code." without calling
+    # the LLM) when the best reranked chunk scores below this. Only enforced when the cross-encoder
+    # ran, because its score is a calibrated relevance logit; in single-stage mode the raw cosine
+    # scores are not comparable across backends, so the strict prompt stays the only backstop.
+    # Calibrated on real queries: relevant questions score ~+1.5 to +7.4, off-topic ~-9 to -11, so
+    # -5.0 sits in the empty gap — it short-circuits only clearly off-topic asks, never a real one.
+    # Set to None to disable.
+    relevance_floor: float | None = -5.0
+
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""

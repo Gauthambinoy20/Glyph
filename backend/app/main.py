@@ -18,7 +18,7 @@ from functools import lru_cache
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.analyze.endpoints import detect_endpoints
 from app.analyze.files import read_indexed_file
@@ -304,6 +304,15 @@ class AskRequest(BaseModel):
     # False = skip it for this question (a hair faster); True = use it when one is available.
     rerank: bool | None = None
 
+    @field_validator("question")
+    @classmethod
+    def _question_not_blank(cls, value: str) -> str:
+        """Reject an empty or whitespace-only question (FastAPI returns 422) and trim it."""
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("question must not be empty")
+        return trimmed
+
 
 class ModeRequest(BaseModel):
     """Body for /api/mode: choose the embedding backend for the next ingest and the reads after."""
@@ -485,6 +494,50 @@ def _prepare_answer(
     return chunks, system_prompt, user_prompt
 
 
+NOT_FOUND_ANSWER = "Not found in the provided code."
+
+
+def _below_floor(chunks: list[dict], reranked: bool) -> bool:
+    """Return True when retrieval is too weak to answer, so we refuse before an LLM call.
+
+    No chunks at all is always a refusal. Otherwise the floor is only enforced when the
+    cross-encoder ran (its rerank_score is a calibrated relevance signal); if the chunks carry
+    no scores, or the floor is disabled (None), we let the LLM and its strict prompt decide.
+    """
+    if not chunks:
+        return True
+    floor = get_settings().relevance_floor
+    if floor is None or not reranked:
+        return False
+    scores = [chunk["rerank_score"] for chunk in chunks if "rerank_score" in chunk]
+    return bool(scores) and max(scores) < floor
+
+
+def _not_found_result(
+    chunks: list[dict], request: "AskRequest", reranked: bool, retrieve_ms: int
+) -> dict:
+    """Build the canned grounded-refusal payload, shaped exactly like a real /ask answer.
+
+    sources is empty (nothing cleared the floor, so there is no trustworthy source to show) and
+    meta.grounded is False, which is how the UI knows to render a calm note with no badge.
+    """
+    return {
+        "answer": NOT_FOUND_ANSWER,
+        "citations": [],
+        "retrieved_chunk_ids": [chunk["id"] for chunk in chunks],
+        "sources": [],
+        "meta": {
+            "model": request.model or get_settings().llm_model,
+            "latency_ms": retrieve_ms,
+            "token_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            "stage_ms": {"retrieve_ms": retrieve_ms, "llm_ms": 0},
+            "cached": False,
+            "reranked": reranked,
+            "grounded": False,
+        },
+    }
+
+
 @app.post("/api/ask")
 def ask(
     request: AskRequest,
@@ -518,6 +571,27 @@ def ask(
     retrieve_started = time.perf_counter()
     chunks, system_prompt, user_prompt = _prepare_answer(request, embedder, store, active_reranker)
     retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
+
+    # Deterministic guardrail: if nothing retrieved clears the relevance floor, refuse here rather
+    # than ask the model to answer from off-topic context (and skip the wasted LLM call).
+    if _below_floor(chunks, reranked):
+        result = _not_found_result(chunks, request, reranked, retrieve_ms)
+        log_query(
+            request.question,
+            result["retrieved_chunk_ids"],
+            retrieve_ms,
+            result["meta"]["token_usage"],
+        )
+        if cacheable:
+            answer_cache.put(
+                chunk_count,
+                request.question,
+                request.model,
+                result,
+                rerank=reranked,
+                backend=backend,
+            )
+        return result
 
     llm_started = time.perf_counter()
     try:
@@ -599,6 +673,23 @@ def ask_stream(
         )
         retrieve_ms = int((time.perf_counter() - retrieve_started) * 1000)
         chunk_ids = [chunk["id"] for chunk in chunks]
+
+        # Same deterministic floor as /api/ask: refuse weak retrievals without calling the model.
+        if _below_floor(chunks, reranked):
+            result = _not_found_result(chunks, request, reranked, retrieve_ms)
+            log_query(request.question, chunk_ids, retrieve_ms, result["meta"]["token_usage"])
+            if cacheable:
+                answer_cache.put(
+                    chunk_count,
+                    request.question,
+                    request.model,
+                    result,
+                    rerank=reranked,
+                    backend=backend,
+                )
+            yield _sse({"type": "token", "text": NOT_FOUND_ANSWER})
+            yield _sse({"type": "final", **result})
+            return
 
         parts: list[str] = []
         usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
