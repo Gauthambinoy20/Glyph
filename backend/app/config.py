@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     # load (e.g. offline first run) the app falls back to single-stage retrieval automatically.
     reranker_enabled: bool = True
     reranker_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
-    rerank_candidates: int = 20
+    # A wide first-stage net matters most in fast (static-embedding) mode: the right file can sit
+    # past rank 20, so the reranker never sees it. 60 candidates let the cross-encoder surface it
+    # (verified: it recovers files fast mode missed at 20), while reranking stays cheap.
+    rerank_candidates: int = 60
 
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"
