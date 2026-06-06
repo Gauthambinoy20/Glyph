@@ -108,10 +108,12 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const REP = big ? 7400 : 2600;
-    const SPRING = 0.018;
-    const LINK_LEN = big ? 138 : 64;
-    const GRAV = big ? 0.0092 : 0.012;
+    const REP = big ? 5200 : 2600;
+    const SPRING = big ? 0.02 : 0.018;
+    const LINK_LEN = big ? 118 : 64;
+    // Stronger pull to the centre in the big view so nodes form a readable cluster instead of
+    // sliding out and piling into the corners.
+    const GRAV = big ? 0.024 : 0.012;
     const DAMP = 0.86;
 
     function draw() {
