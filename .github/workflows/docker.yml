@@ -39,10 +39,14 @@ jobs:
       - name: Start the stack
         run: docker compose up -d
 
+      # The frontend nginx 301s plain HTTP to HTTPS unless it sees X-Forwarded-Proto=https —
+      # exactly what the host-level Caddy sets in production. There is no TLS proxy in the compose
+      # stack, so we send that header ourselves to exercise the real production serving path
+      # (behind a TLS terminator) rather than the direct-:80 path the app deliberately redirects.
       - name: Wait for the backend to be healthy (via the nginx proxy)
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:5173/api/health | grep -q '"status":"ok"'; then
+            if curl -fsS -H "X-Forwarded-Proto: https" http://localhost:5173/api/health | grep -q '"status":"ok"'; then
               echo "backend healthy after ${i} tries"; exit 0
             fi
             echo "waiting for backend... (${i}/30)"; sleep 3
@@ -50,7 +54,8 @@ jobs:
           echo "::error::backend did not become healthy"; docker compose logs; exit 1
 
       - name: Smoke test the frontend
-        run: curl -fsS http://localhost:5173 | grep -qi "glyph"
+        run: |
+          curl -fsS -H "X-Forwarded-Proto: https" http://localhost:5173 | grep -qi "glyph"
 
       - name: Tear down
         if: always()
