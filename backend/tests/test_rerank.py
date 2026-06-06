@@ -36,6 +36,32 @@ def test_cross_encoder_orders_by_score_and_keeps_top_k(monkeypatch) -> None:  # 
     assert len(top) == 2  # cut to top_k
 
 
+def test_cross_encoder_trims_long_chunks_before_scoring(monkeypatch) -> None:
+    """Long chunks are trimmed to the model's window before scoring.
+
+    A giant chunk can't blow up inference cost — this is the optimization that keeps reranking
+    fast on a 2-CPU box.
+    """
+    seen: dict = {}
+
+    class _Capture:
+        def __init__(self, model_name, cache_dir=None) -> None:
+            pass
+
+        def rerank(self, query, documents):
+            seen["docs"] = list(documents)
+            return [1.0 for _ in documents]
+
+    monkeypatch.setattr("app.rerank.cross_encoder.TextCrossEncoder", _Capture)
+    from app.rerank.cross_encoder import _MAX_DOC_CHARS, CrossEncoderReranker
+
+    reranker = CrossEncoderReranker(model_name="x")
+    reranker.rerank("q", [{"id": "a", "code": "x" * 5000}], top_k=1)
+
+    assert len(seen["docs"][0]) == _MAX_DOC_CHARS  # the 5000-char chunk was trimmed to the window
+    assert _MAX_DOC_CHARS < 5000  # and the window really is smaller than the chunk
+
+
 def test_cross_encoder_empty_candidates(monkeypatch) -> None:  # T78
     """No candidates in means an empty list out (and the model is never called)."""
     monkeypatch.setattr(

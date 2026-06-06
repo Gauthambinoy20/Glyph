@@ -14,6 +14,14 @@ from collections.abc import Sequence
 
 from fastembed.rerank.cross_encoder import TextCrossEncoder
 
+# The cross-encoder only attends to the first ~512 tokens of each (query, code) pair. Feeding it
+# the full code of a long chunk is wasted work — it tokenizes thousands of characters only to
+# truncate them. Trimming each candidate to roughly that window first cuts the per-pair inference
+# cost dramatically (the relevance signal — the signature and the first lines of a function/file —
+# lives at the start), with no measurable loss in ranking quality. This is what keeps reranking
+# fast on a small CPU box instead of pegging it for ten-plus seconds.
+_MAX_DOC_CHARS = 1200
+
 
 class CrossEncoderReranker:
     """Reorder retrieved chunks with a local ONNX cross-encoder."""
@@ -26,11 +34,12 @@ class CrossEncoderReranker:
         """Score each chunk's code against the query and return the top_k most relevant.
 
         Each returned row is the original chunk dict plus a ``rerank_score``. An empty
-        candidate list returns an empty list (nothing to reorder).
+        candidate list returns an empty list (nothing to reorder). Each chunk's code is trimmed to
+        the model's effective attention window first, so long chunks don't blow up inference cost.
         """
         if not results:
             return []
-        documents = [str(row.get("code", "")) for row in results]
+        documents = [str(row.get("code", ""))[:_MAX_DOC_CHARS] for row in results]
         scores = list(self._model.rerank(query, documents))
         ranked = sorted(zip(results, scores, strict=False), key=lambda pair: pair[1], reverse=True)
         top: list[dict] = []

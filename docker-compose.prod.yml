@@ -14,6 +14,13 @@ services:
       # Public box hardening: confine local ingestion + cap requests per client IP.
       - INGEST_BASE_DIR=/app
       - RATE_LIMIT_PER_MINUTE=120
+      # Small-box performance tuning. The 2-vCPU host was pegging for ~14s per question because
+      # it reranked 60 full-length chunks across both cores. Rerank a tighter pool (24) of trimmed
+      # chunks, and cap the ONNX math to a single core so a question can never freeze the whole
+      # box — the other core stays free to answer the next one (so follow-ups don't time out).
+      - RERANK_CANDIDATES=24
+      - EMBED_THREADS=1
+      - OMP_NUM_THREADS=1
     volumes:
       - glyph-data:/data
     expose:
