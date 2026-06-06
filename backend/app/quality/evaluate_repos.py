@@ -87,7 +87,7 @@ def _overall(results: list[dict], mode: str) -> float:
 
 
 def _passes_threshold(report: dict, floor: float) -> bool:
-    """True when every mode's overall hit-rate is at least ``floor``."""
+    """Return True when every mode's overall hit-rate is at least ``floor``."""
     return all(_overall(report["repos"], mode) >= floor for mode in report["modes"])
 
 
