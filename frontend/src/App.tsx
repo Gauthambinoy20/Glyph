@@ -11,7 +11,8 @@ import { buildSuggestions } from "./suggestions";
 import type { CodeRef } from "./components/Chat";
 import { CodeViewer } from "./components/CodeViewer";
 import { CommandPalette } from "./components/CommandPalette";
-import { ForceGraph, langColor } from "./components/ForceGraph";
+import { D3Graph } from "./components/D3Graph";
+import { langColor } from "./components/ForceGraph";
 import { Icon, Logo } from "./components/Icon";
 import { Landing } from "./components/Landing";
 import { ProjectPanel } from "./components/ProjectPanel";
@@ -131,57 +132,20 @@ function GraphModal({
   onClose: () => void;
   onPick: (label: string) => void;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [dim, setDim] = useState({ w: 900, h: 560 });
-  useEffect(() => {
-    /* v8 ignore next -- the wrapper ref is always attached once this effect runs */
-    if (!wrapRef.current) return;
-    const ro = new ResizeObserver(([e]) => setDim({ w: e.contentRect.width, h: e.contentRect.height }));
-    ro.observe(wrapRef.current);
-    return () => ro.disconnect();
-  }, []);
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
-  const langs = [...new Set(data.graph.nodes.map((n) => n.language))];
   return (
     <div className="modal-scrim" onMouseDown={onClose}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-hd">
-          <span className="card-title" style={{ fontSize: 13 }}>
-            <span className="gd" /> Architecture
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div className="graph-legend" style={{ margin: 0 }}>
-              {langs.map((l) => (
-                <span className="li" key={l}>
-                  <span className="ld" style={{ background: langColor(l) }} />
-                  {l}
-                </span>
-              ))}
-            </div>
-            <button
-              className="iconbtn"
-              onClick={onClose}
-              aria-label="Close"
-              style={{ width: 30, height: 30 }}
-            >
-              <Icon name="close" />
-            </button>
-          </div>
-        </div>
-        <div className="modal-body" ref={wrapRef}>
-          <ForceGraph
-            nodes={data.graph.nodes}
-            edges={data.graph.edges}
-            width={dim.w}
-            height={dim.h}
-            onPick={(n) => onPick(n.label)}
-            big
-          />
-        </div>
+      <div className="modal modal-arch" onMouseDown={(e) => e.stopPropagation()}>
+        <D3Graph
+          nodes={data.graph.nodes}
+          edges={data.graph.edges}
+          onPick={(n) => onPick(n.label)}
+          onClose={onClose}
+        />
       </div>
     </div>
   );
