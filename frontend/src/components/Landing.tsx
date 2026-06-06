@@ -44,9 +44,7 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
       <div className="hero" data-variant="editorial">
         <div className="brand-hero">
           <LogoMark large />
-          <span className="brand-word">
-            Glyph<span className="dot">.</span>
-          </span>
+          <span className="brand-word">Glyph</span>
         </div>
 
         <span className="badge">
@@ -54,7 +52,7 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
         </span>
 
         <h1 className="h1">
-          Ask your <span className="accent">codebase</span>.
+          Ask your <span className="accent">codebase</span>
         </h1>
 
         <p className="subtitle">
