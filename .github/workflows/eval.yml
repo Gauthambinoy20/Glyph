@@ -49,7 +49,14 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run the real cross-language eval
-        run: python -m app.quality.evaluate_repos | tee eval_output.txt
+        # The floor turns a retrieval regression into a red build (measured overall is ~76% in
+        # both modes, so 65% leaves headroom for minor model/version variance). pipefail makes the
+        # runner's non-zero exit survive the `tee` pipe instead of being swallowed.
+        env:
+          EVAL_MIN_HIT_RATE: "0.65"
+        run: |
+          set -o pipefail
+          python -m app.quality.evaluate_repos | tee eval_output.txt
 
       - name: Publish the hit-rate table to the run summary
         if: always()

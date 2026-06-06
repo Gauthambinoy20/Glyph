@@ -15,6 +15,7 @@ docs always come from a real run, never from those fakes.)
 """
 
 import json
+import os
 import shutil
 import tempfile
 
@@ -85,6 +86,28 @@ def _overall(results: list[dict], mode: str) -> float:
     return hits / total if total else 0.0
 
 
+def _passes_threshold(report: dict, floor: float) -> bool:
+    """True when every mode's overall hit-rate is at least ``floor``."""
+    return all(_overall(report["repos"], mode) >= floor for mode in report["modes"])
+
+
+def _enforce_threshold(report: dict) -> None:
+    """Fail the run (SystemExit) if ``EVAL_MIN_HIT_RATE`` is set and a mode falls below it.
+
+    Off by default (no env var) so a local run just reports the numbers; the CI workflow sets the
+    floor, so a retrieval regression turns the build red instead of slipping by as a quietly lower
+    number on a dashboard nobody reads.
+    """
+    floor = os.environ.get("EVAL_MIN_HIT_RATE")
+    if floor is None:
+        return
+    floor_value = float(floor)
+    if _passes_threshold(report, floor_value):
+        print(f"  OK: every mode clears the {floor_value:.0%} hit-rate floor\n")
+    else:
+        raise SystemExit(f"retrieval hit-rate fell below the {floor_value:.0%} floor")
+
+
 def main() -> None:
     """Run the full real evaluation, print a per-repo table, and write the JSON report."""
     report = run()
@@ -103,6 +126,7 @@ def main() -> None:
     with open(REPORT_PATH, "w") as handle:
         json.dump(report, handle, indent=2)
     print(f"\n  wrote {REPORT_PATH}\n")
+    _enforce_threshold(report)
 
 
 if __name__ == "__main__":

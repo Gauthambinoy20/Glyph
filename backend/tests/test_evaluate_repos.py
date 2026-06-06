@@ -17,6 +17,7 @@ import app.quality.evaluate_repos as evaluate_repos
 import app.rerank.cross_encoder as cross_encoder
 import app.retrieve.hybrid as hybrid
 import app.store.chroma_store as chroma_store
+import pytest
 
 from tests.helpers import FakeEmbedder, FakeReranker
 
@@ -56,6 +57,39 @@ def test_overall_aggregates_hits_across_repos() -> None:
     ]
     assert evaluate_repos._overall(results, "fast") == 0.7  # 7 hits of 10 questions
     assert evaluate_repos._overall([], "fast") == 0.0  # an empty set never divides by zero
+
+
+def test_passes_threshold_checks_every_mode() -> None:
+    report = {
+        "repos": [
+            {"modes": {"fast": {"hits": 8, "total": 10}, "careful": {"hits": 9, "total": 10}}}
+        ],
+        "modes": ["fast", "careful"],
+    }
+    assert evaluate_repos._passes_threshold(report, 0.75) is True  # 0.8 and 0.9 both clear
+    assert evaluate_repos._passes_threshold(report, 0.85) is False  # fast (0.8) is below
+
+
+def test_enforce_threshold_is_a_noop_without_the_env_var(monkeypatch) -> None:
+    monkeypatch.delenv("EVAL_MIN_HIT_RATE", raising=False)
+    evaluate_repos._enforce_threshold({"repos": [], "modes": []})  # must not raise
+
+
+def test_enforce_threshold_passes_above_the_floor(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("EVAL_MIN_HIT_RATE", "0.5")
+    report = {"repos": [{"modes": {"fast": {"hits": 6, "total": 10}}}], "modes": ["fast"]}
+
+    evaluate_repos._enforce_threshold(report)  # 0.6 >= 0.5 → no error
+
+    assert "clears" in capsys.readouterr().out
+
+
+def test_enforce_threshold_fails_below_the_floor(monkeypatch) -> None:
+    monkeypatch.setenv("EVAL_MIN_HIT_RATE", "0.9")
+    report = {"repos": [{"modes": {"fast": {"hits": 6, "total": 10}}}], "modes": ["fast"]}
+
+    with pytest.raises(SystemExit):  # 0.6 < 0.9 → fails the build
+        evaluate_repos._enforce_threshold(report)
 
 
 def test_run_scores_every_repo_in_every_mode(monkeypatch) -> None:
