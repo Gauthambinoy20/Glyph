@@ -45,8 +45,11 @@ class ChromaStore:
         self._collection = self._make_collection()
 
     def _make_collection(self) -> Any:
-        """Get or create the collection with cosine space. Newer Chroma uses the
-        `configuration` form; fall back to the older `metadata` form if needed."""
+        """Get or create the collection with cosine space.
+
+        Newer Chroma uses the `configuration` form; fall back to the older `metadata` form
+        if needed.
+        """
         try:
             return self._client.get_or_create_collection(
                 name=self._name, configuration={"hnsw": {"space": "cosine"}}
@@ -57,8 +60,10 @@ class ChromaStore:
             )
 
     def reset(self) -> None:
-        """Drop every stored chunk (delete + recreate the collection), so a freshly ingested
-        repo never mixes with a previously ingested one."""
+        """Drop every stored chunk by deleting and recreating the collection.
+
+        This keeps a freshly ingested repo from ever mixing with a previously ingested one.
+        """
         self._client.delete_collection(self._name)
         self._collection = self._make_collection()
 
