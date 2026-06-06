@@ -40,6 +40,7 @@ from app.ingest.walker import ensure_path_allowed
 from app.llm.catalog import is_known_model, list_models
 from app.llm.client import LLMClient, LLMError
 from app.obs.logging import log_query
+from app.obs.metrics import snapshot as metrics_snapshot
 from app.rag.cache import answer_cache
 from app.rag.overview import build_overview
 from app.rag.prompt import build_messages, parse_citations
@@ -466,6 +467,16 @@ def models() -> dict:
     settings = get_settings()
     has_paid_key = bool(settings.openai_api_key)
     return {"models": list_models(has_paid_key), "default": settings.llm_model}
+
+
+@app.get("/api/metrics")
+def metrics() -> dict:
+    """Return live query observability: total count, refusal rate, avg latency, recent queries.
+
+    Reads the in-memory ring buffer fed by every answered question, so the UI can show how the
+    app is actually behaving (which files answers used, how often it refused) without re-running.
+    """
+    return metrics_snapshot()
 
 
 def _sse(payload: dict) -> str:

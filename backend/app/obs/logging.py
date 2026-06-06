@@ -8,6 +8,8 @@ is logged. One JSON line per query is easy to grep or ship to a log system later
 import json
 import sys
 
+from app.obs import metrics
+
 
 def log_query(
     question: str,
@@ -39,4 +41,6 @@ def log_query(
     if grounded is not None:
         record["grounded"] = grounded
     print(json.dumps(record), file=sys.stdout, flush=True)
+    # Also keep it in the in-memory ring buffer that /api/metrics aggregates.
+    metrics.record(record)
     return record

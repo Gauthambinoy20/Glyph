@@ -19,6 +19,15 @@ def _isolate_answer_cache():
 
 
 @pytest.fixture(autouse=True)
+def _reset_metrics():
+    """Clear the process-wide query-metrics ring buffer before each test (kept independent)."""
+    from app.obs import metrics
+
+    metrics.reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _reset_active_backend():
     """Reset the global embedding backend before each test, so mode-switch tests stay isolated."""
     import app.main as main
