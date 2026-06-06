@@ -8,7 +8,7 @@ name: Deploy
 #
 #   Variables:  DEPLOY_HOST  (public IP / DNS of the box)
 #               DEPLOY_USER  (ssh user, e.g. ubuntu)
-#               DEPLOY_URL   (public URL, e.g. http://<ip>  — used for the smoke test)
+#               DEPLOY_URL   (public HTTPS URL, e.g. https://<host>  — used for the smoke test)
 #   Secrets:    DEPLOY_SSH_KEY  (private key authorised on the box)
 #
 # One-time on the box: install Docker + the compose plugin, and drop a .env with
@@ -105,7 +105,7 @@ jobs:
       - name: Smoke test the live site
         run: |
           for i in $(seq 1 20); do
-            if curl -fsS "${{ vars.DEPLOY_URL }}/api/health" | grep -q '"status":"ok"'; then
+            if curl -fsSL "${{ vars.DEPLOY_URL }}/api/health" | grep -q '"status":"ok"'; then
               echo "live and healthy after ${i} tries"; exit 0
             fi
             echo "waiting for the live site... (${i}/20)"; sleep 5
