@@ -410,7 +410,7 @@ describe("App", () => {
 
       // Expand the architecture graph into the modal.
       await user.click(screen.getByRole("button", { name: /expand graph/i }));
-      const modal = await screen.findByText("Architecture", { selector: ".modal-scrim .card-title" });
+      const modal = await screen.findByText(/architecture/i, { selector: ".modal-scrim .arch-title" });
       expect(modal).toBeTruthy();
 
       // The modal legend lists both languages from the graph nodes.
@@ -424,7 +424,7 @@ describe("App", () => {
 
       // Re-open and close via the explicit close button.
       await user.click(screen.getByRole("button", { name: /expand graph/i }));
-      await screen.findByText("Architecture", { selector: ".modal-scrim .card-title" });
+      await screen.findByText(/architecture/i, { selector: ".modal-scrim .arch-title" });
       const closeBtn = within(document.querySelector(".modal-scrim") as HTMLElement).getByRole("button", {
         name: /close/i,
       });
@@ -433,7 +433,7 @@ describe("App", () => {
 
       // Re-open then close by clicking the scrim backdrop.
       await user.click(screen.getByRole("button", { name: /expand graph/i }));
-      await screen.findByText("Architecture", { selector: ".modal-scrim .card-title" });
+      await screen.findByText(/architecture/i, { selector: ".modal-scrim .arch-title" });
       fireEvent.mouseDown(document.querySelector(".modal-scrim") as HTMLElement);
       await waitFor(() => expect(document.querySelector(".modal-scrim")).toBeNull());
     } finally {
@@ -463,14 +463,13 @@ describe("App", () => {
       const user = userEvent.setup();
       await intoWorkspace(user);
       await user.click(screen.getByRole("button", { name: /expand graph/i }));
-      await screen.findByText("Architecture", { selector: ".modal-scrim .card-title" });
+      await screen.findByText(/architecture/i, { selector: ".modal-scrim .arch-title" });
 
-      // ForceGraph seeds node i at (cx + cos(a)·rad + (i%5−2), cy + sin(a)·rad + (i%3−1)) with
-      // a = i/N·2π. For the 2-node fixture in an 800×500 modal (cx=400, cy=250, rad=150), node
-      // "a" (i=0) seats at (548, 249). A mousedown→mouseup there with no move registers a pick.
-      const canvas = document.querySelector(".modal-scrim canvas") as HTMLCanvasElement;
-      fireEvent.mouseDown(canvas, { clientX: 548, clientY: 249 });
-      fireEvent.mouseUp(canvas, { clientX: 548, clientY: 249 });
+      // The D3 panel renders each file as an <svg> <g class="node"> in data order, so the first
+      // node group is "a" (a.py). Clicking it (no drag) fires the component's node click handler.
+      const firstNode = document.querySelector(".modal-scrim svg.arch-svg g.node") as Element;
+      expect(firstNode).toBeTruthy();
+      fireEvent.click(firstNode);
 
       // onPick closes the modal and dispatches "Explain <label>." for the picked node ("a.py").
       await waitFor(() => expect(document.querySelector(".modal-scrim")).toBeNull());
