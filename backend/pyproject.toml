@@ -69,6 +69,12 @@ markers = [
 # Measure coverage of the application code, not the tests themselves.
 source = ["app"]
 
+[tool.coverage.report]
+# The suite covers every line of app/ (the integration-only model paths are also
+# exercised offline via fakes), so hold the line: a drop below 100% fails the run.
+fail_under = 100
+show_missing = true
+
 [tool.bandit]
 # Bandit should scan the app, not the test fixtures (which contain sample code
 # on purpose and would trip false positives).
