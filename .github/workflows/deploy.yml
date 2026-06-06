@@ -98,9 +98,13 @@ jobs:
             cd ~/glyph
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export IMAGE_TAG=${{ needs.build-push.outputs.tag }}
+            # Reclaim space BEFORE pulling so a tight disk can't fail mid-extract (the running
+            # containers' images are kept; only old, unused images are removed).
+            docker image prune -af
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
+            # --wait blocks until the new containers are up/healthy before the step finishes.
+            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 120
+            docker image prune -af
 
       - name: Smoke test the live site
         run: |
