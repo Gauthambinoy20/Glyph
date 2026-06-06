@@ -759,14 +759,6 @@ button {
   font-size: 12px;
 }
 
-/* indexing-time estimate under the ingest button */
-.ingest-eta {
-  margin-top: 11px;
-  font-size: 12.5px;
-  color: var(--text-2);
-  letter-spacing: 0.01em;
-}
-
 /* spinner */
 .spinner {
   width: 16px;
@@ -2708,20 +2700,22 @@ button {
 
 /* ---- Landing: fast / careful indexing-mode toggle ---- */
 .mode-pick {
-  margin-top: 16px;
+  margin-top: 18px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  gap: 12px;
+  align-items: stretch;
   justify-content: center;
 }
+/* Each mode is a two-line card: the name on top, its approximate index time below. */
 .mode-pick .rr {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 14px;
-  border-radius: 999px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 160px;
+  padding: 10px 16px;
+  border-radius: 14px;
   cursor: pointer;
   color: var(--text-2);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
@@ -2730,15 +2724,25 @@ button {
     border-color 0.16s var(--ease),
     color 0.16s var(--ease),
     background 0.16s var(--ease),
+    transform 0.16s var(--ease),
     box-shadow 0.16s var(--ease);
 }
 .mode-pick .rr .mono {
   color: inherit;
-  font-size: 12px;
+  font-size: 13px;
+}
+.mode-pick .rr .mode-eta {
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--faint);
 }
 .mode-pick .rr:hover {
+  transform: translateY(-2px);
   border-color: var(--border-strong);
   color: var(--text);
+}
+.mode-pick .rr[aria-pressed="true"] .mode-eta {
+  color: var(--text-2);
 }
 /* Selected mode: accent-tinted pill, driven by aria-pressed (no inline styles). */
 .mode-pick .rr[aria-pressed="true"] {
@@ -2853,26 +2857,24 @@ button {
   font-size: 12.5px;
   color: var(--text);
 }
-/* Language colour dot — the brand colour of each repo's primary language. */
-.land-demos .rr .lang-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: 0 0 9px;
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, currentColor 0%, transparent),
-    0 0 8px color-mix(in srgb, currentColor 0%, transparent);
+/* GitHub mark leading each chip — the visual cue that these open a repo. */
+.land-demos .rr svg {
+  color: var(--muted);
+  transition: color 0.16s var(--ease);
 }
-/* Small language pill tucked to the right of the repo name. */
+.land-demos .rr:hover svg {
+  color: var(--accent);
+}
+/* Language pill, tinted with the repo's language colour (set inline as `color`). */
 .land-demos .rr .lang-tag {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   padding: 2px 7px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
-  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
 }
 .land-demos .rr:hover {
   transform: translateY(-2px);
@@ -2881,10 +2883,6 @@ button {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 10px 26px var(--accent-glow);
-}
-.land-demos .rr:hover .lang-tag {
-  border-color: var(--accent-line);
-  color: var(--text);
 }
 .land-demos .rr:active {
   transform: translateY(0);

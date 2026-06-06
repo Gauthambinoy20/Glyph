@@ -86,21 +86,13 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
         </form>
 
         {!progress && (
-          <p className="ingest-eta">
-            {mode === "fast"
-              ? "⚡ Fast mode — most repos index in a few seconds."
-              : "◎ Careful mode — slower; roughly a minute per ~200 code chunks on CPU."}
-          </p>
-        )}
-
-        {!progress && (
           <div className="mode-pick" role="group" aria-label="Indexing mode">
             <span className="ld-label">Indexing</span>
             {(["fast", "careful"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
-                className="rr"
+                className="rr mode-btn"
                 onClick={() => onMode(m)}
                 aria-pressed={mode === m}
                 aria-label={m === "fast" ? "Fast indexing" : "Careful indexing"}
@@ -111,6 +103,7 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
                 }
               >
                 <span className="mono">{m === "fast" ? "⚡ Fast" : "◎ Careful"}</span>
+                <span className="mode-eta">{m === "fast" ? "≈ a few seconds" : "≈ 1 min / 200 chunks"}</span>
               </button>
             ))}
           </div>
@@ -143,13 +136,15 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
             {DEMO_REPOS.map((r) => (
               <button
                 key={r.repo}
-                className="rr"
+                className="rr demo-chip"
                 onClick={() => !busy && onIngest(`https://github.com/${r.repo}`)}
                 title={`Ingest github.com/${r.repo}`}
               >
-                <span className="lang-dot" style={{ background: r.color }} aria-hidden="true" />
+                <Icon name="github" size={14} />
                 <span className="mono">{r.repo}</span>
-                <span className="lang-tag">{r.lang}</span>
+                <span className="lang-tag" style={{ color: r.color }}>
+                  {r.lang}
+                </span>
               </button>
             ))}
           </div>
