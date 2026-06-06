@@ -300,6 +300,8 @@ export default function App() {
           llm_ms: a.meta.stage_ms?.llm_ms ?? 0,
           tokens: a.meta.token_usage.total_tokens,
           cached: a.meta.cached ?? false,
+          files: Array.from(new Set(a.sources.map((s) => s.file_path))),
+          grounded: a.meta.grounded ?? true,
         });
       }
     }

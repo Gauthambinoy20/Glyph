@@ -32,6 +32,7 @@ export interface AnswerMeta {
   stage_ms?: { retrieve_ms: number; llm_ms: number };
   cached?: boolean;
   reranked?: boolean; // whether the cross-encoder reranker actually ran for this answer
+  grounded?: boolean; // false when the answer was a "not found in the code" refusal
 }
 
 export interface AskResponse {

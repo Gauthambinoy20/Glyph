@@ -12,6 +12,8 @@ export interface QueryLogEntry {
   llm_ms: number;
   tokens: number;
   cached: boolean;
+  files: string[]; // the de-duplicated files the answer was built from
+  grounded: boolean; // false when the answer was a "not found" refusal
 }
 
 export function QueryLog({ entries, onClose }: { entries: QueryLogEntry[]; onClose: () => void }) {
@@ -48,6 +50,7 @@ export function QueryLog({ entries, onClose }: { entries: QueryLogEntry[]; onClo
                 <tr>
                   <th>#</th>
                   <th>Question</th>
+                  <th>Files used</th>
                   <th>Model</th>
                   <th>Retrieve</th>
                   <th>LLM</th>
@@ -61,12 +64,18 @@ export function QueryLog({ entries, onClose }: { entries: QueryLogEntry[]; onClo
                   <tr key={i}>
                     <td className="mono">{i + 1}</td>
                     <td className="qlog-q">{e.question}</td>
+                    <td className="qlog-files">
+                      {e.grounded ? e.files.join(", ") : <span className="qlog-refused">no match</span>}
+                    </td>
                     <td className="mono">{e.model.split("/").pop()}</td>
                     <td className="mono">{e.retrieve_ms}ms</td>
                     <td className="mono">{(e.llm_ms / 1000).toFixed(1)}s</td>
                     <td className="mono">{(e.latency_ms / 1000).toFixed(1)}s</td>
                     <td className="mono">{e.tokens.toLocaleString()}</td>
-                    <td>{e.cached && <span className="tier">cached</span>}</td>
+                    <td>
+                      {!e.grounded && <span className="qlog-refused">refused</span>}
+                      {e.cached && <span className="tier">cached</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

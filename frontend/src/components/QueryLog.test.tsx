@@ -15,6 +15,8 @@ const entries: QueryLogEntry[] = [
     llm_ms: 9760,
     tokens: 1639,
     cached: false,
+    files: ["retrieve/hybrid.py", "retrieve/tokenize.py"],
+    grounded: true,
   },
   {
     question: "what does this do?",
@@ -24,8 +26,22 @@ const entries: QueryLogEntry[] = [
     llm_ms: 10,
     tokens: 1441,
     cached: true,
+    files: ["app.py"],
+    grounded: true,
   },
 ];
+
+const refusedEntry: QueryLogEntry = {
+  question: "where is the kubernetes operator?",
+  model: "meta/llama",
+  latency_ms: 30,
+  retrieve_ms: 30,
+  llm_ms: 0,
+  tokens: 0,
+  cached: false,
+  files: [],
+  grounded: false,
+};
 
 describe("QueryLog", () => {
   it("renders a row per query with model, totals, and a cached badge", () => {
@@ -35,6 +51,14 @@ describe("QueryLog", () => {
     expect(screen.getByText("1,639")).toBeTruthy(); // token count formatted
     expect(screen.getAllByText("llama").length).toBe(2); // model shown (after the slash)
     expect(screen.getByText("cached")).toBeTruthy(); // the cached query is badged
+    expect(screen.getByText("retrieve/hybrid.py, retrieve/tokenize.py")).toBeTruthy(); // files used
+  });
+
+  it("flags a refusal with a badge and 'no match' instead of files", () => {
+    render(<QueryLog entries={[refusedEntry]} onClose={() => {}} />);
+
+    expect(screen.getByText("refused")).toBeTruthy(); // the refusal is badged
+    expect(screen.getByText("no match")).toBeTruthy(); // and shows no files were used
   });
 
   it("shows an empty state when there are no queries", () => {

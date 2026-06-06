@@ -2709,6 +2709,23 @@ button {
   white-space: normal;
   max-width: 280px;
 }
+.qlog .qlog-files {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: normal;
+  max-width: 220px;
+}
+.qlog-refused {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--danger, #e5484d);
+  background: color-mix(in srgb, var(--danger, #e5484d) 14%, transparent);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
 .qlog tbody tr:hover {
   background: var(--panel-3);
 }
