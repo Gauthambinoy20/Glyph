@@ -46,6 +46,18 @@ def test_citations_handle_bracket_styles() -> None:
     assert {"file_path": "main.py", "start_line": 85, "end_line": 85} in citations
 
 
+def test_citations_handle_unicode_dashes() -> None:
+    # Some models (e.g. gpt-oss) emit a Unicode dash between line numbers instead of an ASCII
+    # hyphen. An ASCII-only pattern would silently drop these real citations, so the range must
+    # accept the hyphen/non-breaking-hyphen/figure/en/em dashes too.
+    chunks = [
+        {"file_path": "p.py", "start_line": 51, "end_line": 70, "symbol_name": "g", "code": "x"}
+    ]
+    for dash in ("‐", "‑", "‒", "–", "—"):
+        citations = parse_citations(f"see [p.py:55{dash}60]", chunks)
+        assert citations == [{"file_path": "p.py", "start_line": 55, "end_line": 60}], dash
+
+
 def test_prompt_includes_conversation_history() -> None:  # T43
     chunks = [
         {"file_path": "a.py", "start_line": 1, "end_line": 2, "symbol_name": "f", "code": "x"}

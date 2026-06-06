@@ -16,10 +16,12 @@ SYSTEM_PROMPT = (
     "'Not found in the provided code.' Never invent code or file names."
 )
 
-# Matches a citation like [app/main.py:10-20].
-# Matches a citation, allowing ASCII, full-width, or round brackets, since models vary:
-# [app/main.py:10-20], 【app/main.py:10-20】, (app/main.py:10-20).
-_CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):(\d+)-(\d+)\s*[\])】]")
+# Matches a citation like [app/main.py:10-20], tolerating the variants different models emit:
+# ASCII, full-width 【】 or round () brackets; and any Unicode dash between the line numbers
+# (‐-― covers hyphen, non-breaking hyphen, figure/en/em dashes — gpt-oss emits U+2011,
+# which an ASCII-only "-" would silently drop, losing a real citation). Spaces around the dash and
+# numbers are allowed too.
+_CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):\s*(\d+)\s*[-‐-―]\s*(\d+)\s*[\])】]")
 
 
 def build_messages(
