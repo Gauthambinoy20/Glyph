@@ -41,7 +41,7 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
   **in-memory & stateless** → rebuild from Chroma on startup (no stale pickle).
 - **Fusion:** Reciprocal Rank Fusion (k=60, rank-based, no score normalization) → robust across
   cosine + BM25. Exact `symbol_name` match → small boost. This is the wide first-stage **recall**.
-- **Rerank (precise second stage):** with `RERANKER_ENABLED` (on by default), the fused top-N (≈20) is
+- **Rerank (precise second stage):** with `RERANKER_ENABLED` (on by default), the fused top-N (≈60) is
   reordered by a local cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`, fastembed `TextCrossEncoder`) that
   scores (question, code) pairs *together* — far better than comparing two independent embeddings — then
   cut to **top_k=5**. It runs on only those candidates per question (tens of ms, hidden behind the LLM)
@@ -53,6 +53,32 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
   (not file) means editing one function doesn't invalidate siblings.
 - **Dimension lock-in:** bge 384 vs OpenAI 1536; a collection fixes its dim at first write → encode
   model+dim in the collection name; swap requires re-index. Fail fast with a clear error on mismatch.
+
+### 1.2b Measured retrieval quality (real cross-language eval)
+
+`python -m app.quality.evaluate_repos` (and the weekly **Eval** CI workflow) clones five real repos
+at pinned commits and measures top-5 hit-rate **on real models, in both shipped modes** — nothing is
+mocked, so these are the numbers a user actually gets. Latest run (top-5, reranked):
+
+| repo | language | fast (Model2Vec) | careful (bge-small) |
+|------|----------|-----------------:|--------------------:|
+| glyph-backend | Python | 100% | 100% |
+| pallets/click | Python | 100% | 100% |
+| expressjs/express | JavaScript | 40% | 40% |
+| axios/axios | JavaScript | 40% | 40% |
+| pmndrs/zustand | TypeScript | 75% | 75% |
+| **overall (29 questions)** | | **76%** | **76%** |
+
+Two things this measures honestly:
+- **Fast == careful on every repo.** The static-embedding default loses no retrieval accuracy versus
+  the transformer — BM25 + the cross-encoder recover it. This is the evidence behind shipping fast mode
+  by default, not an assumption.
+- **A real weakness it surfaced (diagnosed, not guessed):** JS retrieval (40%) lags Python (100%). The
+  tree-sitter chunker captures `function`/`class`/`method` *declarations*, but a JS library's public API
+  is usually prototype/object *assignments* (`res.json = function …`, `app.use = …`) — not named symbols,
+  so they fall into generic module chunks and retrieve less precisely. Python, where the API is `def`/
+  `class`, hits 100%. Capturing member-assignment functions for JS/TS is tracked as future work — the
+  point of the eval is that this gap is now a measured number on a dashboard, not a surprise in a demo.
 
 ### 1.3 LLM (OpenRouter)
 - OpenAI-compatible chat at `https://openrouter.ai/api/v1`; use `openai==1.109.1` SDK with

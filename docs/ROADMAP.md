@@ -388,7 +388,28 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 ---
 
+## ✅ Phase 14 — Test depth, real eval & observability (2026-06-06)
+Closing the gap that 100% line coverage never proved: that the system *answers well*, and that we
+can *watch it* in production.
+- [x] One shared two-stage retrieval so the eval scores the exact path `/ask` runs (fixed a real
+  divergence where the quality script reranked a narrower pool than production).
+- [x] **Real eval harness** — `evaluate_repos` clones 5 pinned repos (Python/JS/TS) and measures
+  top-5 hit-rate on real models in both modes; weekly `Eval` workflow + `make eval-repos`.
+  Measured: **76% overall, fast == careful** (see TECHNICAL_REPORT §1.2b).
+- [x] **Scenario tests** — mode-switch isolation, empty repo, large repo, full ingest→ask→file chain
+  (real pipeline, offline).
+- [x] **Observability** — log the files behind every answer + a `grounded` flag (fixed a real
+  inconsistency where good answers looked ungrounded); `GET /api/metrics`; the query log shows files
+  used + a "refused" badge in the UI.
+
+---
+
 ## ⚠️ Known issues
+- **JS/TS retrieval lags Python (measured: 40–75% vs 100%).** The eval surfaced this honestly: the
+  tree-sitter chunker captures `function`/`class`/`method` declarations but not a JS library's
+  prototype/object-assignment API (`res.json = function …`), so those methods land in generic module
+  chunks and retrieve less precisely. To close: extend the JS/TS chunker to capture member-assignment
+  functions as named symbols, then re-run `make eval-repos` to confirm the lift.
 - **chromadb `CVE-2026-45829` (HIGH, no upstream fix yet).** Pre-auth code injection via
   `trust_remote_code` on Chroma's *server* `/collections` endpoint. Glyph uses Chroma only as a local
   **embedded** store (`PersistentClient`), never the HTTP server, so the vulnerable path is not reachable
