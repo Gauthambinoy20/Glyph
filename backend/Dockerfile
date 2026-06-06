@@ -19,14 +19,25 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download bge-small into the image (into MODEL_CACHE_DIR, where the app reads it).
-RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5', cache_dir='/models')"
+# Pre-bake the models so the first request is not slowed by a cold download. Best-effort:
+# HuggingFace rate-limits shared CI runners, so each download is retried a few times and, if it
+# still fails, the build proceeds (the trailing echo keeps the layer non-fatal) and the model
+# downloads lazily on first use instead of breaking the image.
 
-# Pre-download the cross-encoder reranker too, so turning on two-stage retrieval is instant.
-RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder('Xenova/ms-marco-MiniLM-L-6-v2', cache_dir='/models')"
+# bge-small: the default local embedder, into MODEL_CACHE_DIR where the app reads it.
+RUN for i in 1 2 3; do \
+      python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5', cache_dir='/models')" && break || sleep 20; \
+    done; echo "bge-small: pre-baked or will download on first use"
 
-# Pre-download the Model2Vec static embedder used by fast mode (EMBED_BACKEND=static).
-RUN python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-8M')"
+# The cross-encoder reranker, so turning on two-stage retrieval is instant.
+RUN for i in 1 2 3; do \
+      python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder('Xenova/ms-marco-MiniLM-L-6-v2', cache_dir='/models')" && break || sleep 20; \
+    done; echo "reranker: pre-baked or will download on first use"
+
+# The Model2Vec static embedder used by fast mode (EMBED_BACKEND=static).
+RUN for i in 1 2 3; do \
+      python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-8M')" && break || sleep 20; \
+    done; echo "model2vec: pre-baked or will download on first use"
 
 # Copy the application code last (changes most often).
 COPY app ./app
