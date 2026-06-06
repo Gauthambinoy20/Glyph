@@ -26,6 +26,7 @@ chroma_db/
 *.log
 .idea/
 .vscode/
+.claude/
 
 # Coverage data
 .coverage
