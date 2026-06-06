@@ -216,6 +216,20 @@ def get_store() -> ChromaStore:
         return _stores[settings.embed_backend]
 
 
+# The repo currently loaded into each backend's store. Ingesting a *different* repo wipes the
+# store first, so every answer is grounded only in the repo on screen (no cross-repo bleed);
+# re-ingesting the same repo skips the reset and keeps its content-hash cache.
+_loaded_source: dict[str, str] = {}
+
+
+def _switch_repo(store: ChromaStore, source: str) -> None:
+    """Reset the store before ingesting a different repo than the one it currently holds."""
+    backend = _active_settings().embed_backend
+    if _loaded_source.get(backend) != source:
+        store.reset()
+        _loaded_source[backend] = source
+
+
 @lru_cache
 def get_llm() -> LLMClient:
     """Build the chat client once, pointed at OpenRouter by the settings."""
@@ -347,9 +361,11 @@ def ingest(
     """
     try:
         if request.repo_url:
+            _switch_repo(store, request.repo_url)
             return ingest_repo(request.repo_url, store, embedder)
         if request.local_path:
             ensure_path_allowed(request.local_path, get_settings().ingest_base_dir)
+            _switch_repo(store, request.local_path)
             return ingest_path(request.local_path, store, embedder)
     except ValueError as exc:
         # Bad URL, failed/timed-out clone, no supported files, or no chunks.
@@ -383,8 +399,10 @@ def ingest_stream(
         """Drive the ingest event stream and translate each step into an SSE message."""
         try:
             if request.repo_url:
+                _switch_repo(store, request.repo_url)
                 stream = ingest_repo_events(request.repo_url, store, embedder)
             elif request.local_path:
+                _switch_repo(store, request.local_path)
                 stream = ingest_path_events(request.local_path, store, embedder)
             else:  # pragma: no cover - guarded by the 400 check above
                 return

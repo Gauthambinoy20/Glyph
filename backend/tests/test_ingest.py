@@ -240,15 +240,42 @@ def test_ingest_endpoint_requires_input() -> None:
     assert response.status_code == 400
 
 
-def test_ingest_endpoint_rejects_bad_repo_url() -> None:
+def test_ingest_endpoint_rejects_bad_repo_url(tmp_path) -> None:
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
-    app.dependency_overrides[get_store] = lambda: None  # not reached; URL fails first
+    app.dependency_overrides[get_store] = lambda: _fresh_store(tmp_path)
     try:
         response = TestClient(app).post("/api/ingest", json={"repo_url": "not-a-github-url"})
     finally:
         app.dependency_overrides.clear()
 
     assert response.status_code == 400
+
+
+def test_ingesting_a_different_repo_replaces_the_previous_one(tmp_path) -> None:
+    """The store holds only the repo on screen: ingesting B after A drops A's chunks (no
+    cross-repo bleed), while re-ingesting the same repo keeps its content-hash cache."""
+    store = _fresh_store(tmp_path)
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: store
+    repo_a, repo_b = tmp_path / "a", tmp_path / "b"
+    repo_a.mkdir()
+    repo_b.mkdir()
+    (repo_a / "a.py").write_text("def alpha():\n    return 1\n")
+    (repo_b / "b.py").write_text("def bravo():\n    return 2\n")
+    try:
+        client = TestClient(app)
+        client.post("/api/ingest", json={"local_path": str(repo_a)})  # loads A
+        client.post("/api/ingest", json={"local_path": str(repo_b)})  # different repo -> reset
+        again = client.post(
+            "/api/ingest", json={"local_path": str(repo_b)}
+        ).json()  # same -> cached
+    finally:
+        app.dependency_overrides.clear()
+
+    docs = store.all_chunks()["documents"]
+    assert any("def bravo" in d for d in docs)  # B is present
+    assert not any("def alpha" in d for d in docs)  # A was wiped, not mixed in
+    assert again["added"] == 0  # re-ingesting the same repo is fully cached (no reset)
 
 
 # ----- Streaming endpoint -----

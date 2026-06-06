@@ -40,18 +40,27 @@ class ChromaStore:
 
     def __init__(self, path: str, embed_model: str, dim: int) -> None:
         self._dim = dim
-        client = chromadb.PersistentClient(path=path)
-        name = collection_name(embed_model, dim)
-        # Cosine space must be set when the collection is created. Newer Chroma uses the
-        # `configuration` form; fall back to the older `metadata` form if needed.
+        self._client = chromadb.PersistentClient(path=path)
+        self._name = collection_name(embed_model, dim)
+        self._collection = self._make_collection()
+
+    def _make_collection(self) -> Any:
+        """Get or create the collection with cosine space. Newer Chroma uses the
+        `configuration` form; fall back to the older `metadata` form if needed."""
         try:
-            self._collection = client.get_or_create_collection(
-                name=name, configuration={"hnsw": {"space": "cosine"}}
+            return self._client.get_or_create_collection(
+                name=self._name, configuration={"hnsw": {"space": "cosine"}}
             )
         except TypeError:
-            self._collection = client.get_or_create_collection(
-                name=name, metadata={"hnsw:space": "cosine"}
+            return self._client.get_or_create_collection(
+                name=self._name, metadata={"hnsw:space": "cosine"}
             )
+
+    def reset(self) -> None:
+        """Drop every stored chunk (delete + recreate the collection), so a freshly ingested
+        repo never mixes with a previously ingested one."""
+        self._client.delete_collection(self._name)
+        self._collection = self._make_collection()
 
     def existing_ids(self, ids: Sequence[str]) -> set[str]:
         """Return which of the given ids are already stored (for the cache check)."""

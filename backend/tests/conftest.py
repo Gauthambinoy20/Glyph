@@ -24,8 +24,10 @@ def _reset_active_backend():
     import app.main as main
 
     main._active_backend = None
+    main._loaded_source.clear()
     yield
     main._active_backend = None
+    main._loaded_source.clear()
 
 
 @pytest.fixture(autouse=True)
