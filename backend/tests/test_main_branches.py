@@ -78,7 +78,9 @@ def test_ask_rejects_unknown_model(tmp_path) -> None:
 
 def test_ask_returns_502_on_llm_error(tmp_path) -> None:
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
-    app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [make_chunk("def f(): ...")])
+    app.dependency_overrides[get_store] = lambda: _store_with(
+        tmp_path, [make_chunk("def f(): ...")]
+    )
     app.dependency_overrides[get_llm] = lambda: _RaisingLLM()
     try:
         resp = TestClient(app).post("/api/ask", json={"question": "q"})
