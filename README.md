@@ -19,6 +19,8 @@ citations**. Ingest a public GitHub repo (or local files), then ask *"where are 
 
 **Runs 100% free** (local embeddings + OpenRouter free LLM tier).
 
+![Glyph demo: pick fast indexing, ingest a codebase, ask a question, get a grounded answer with citations](docs/demo.gif)
+
 > 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
 > 🔬 Technical deep-dive: [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md) ·
 > 🗺️ Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
