@@ -18,25 +18,27 @@ from app.quality.golden import GOLDEN
 from app.rerank.base import Reranker
 from app.rerank.cross_encoder import CrossEncoderReranker
 from app.retrieve.hybrid import HybridRetriever
+from app.retrieve.two_stage import two_stage_search
 
 
 class _RerankedRetriever:
     """Adapt (retriever + reranker) to the .search() interface that evaluate expects.
 
-    Mirrors the two-stage path in main._retrieve: wide recall, then rerank to top_k.
+    Delegates to the shared two_stage_search so it scores the exact pipeline main._retrieve runs:
+    widen recall to ``candidates`` chunks, then rerank down to top_k. ``candidates`` is passed in
+    (from settings.rerank_candidates) rather than hardcoded, so the comparison never measures a
+    narrower pool than production.
     """
 
-    def __init__(
-        self, retriever: HybridRetriever, reranker: Reranker, candidates: int = 20
-    ) -> None:
+    def __init__(self, retriever: HybridRetriever, reranker: Reranker, candidates: int) -> None:
         self._retriever = retriever
         self._reranker = reranker
         self._candidates = candidates
 
     def search(self, question: str, top_k: int = 5) -> list[dict]:
-        pool = max(self._candidates, top_k)
-        candidates = self._retriever.search(question, top_k=pool, pool=max(20, pool))
-        return self._reranker.rerank(question, candidates, top_k=top_k)
+        return two_stage_search(
+            self._retriever, self._reranker, question, question, top_k, self._candidates
+        )
 
 
 def _score_backend(embed_backend: str, reranker: Reranker) -> tuple[float, float]:
@@ -51,7 +53,8 @@ def _score_backend(embed_backend: str, reranker: Reranker) -> tuple[float, float
         ingest_path("app", store, embedder)
         base = HybridRetriever(store, embedder)
         plain = evaluate(base, GOLDEN)["hit_rate"]
-        reranked = evaluate(_RerankedRetriever(base, reranker), GOLDEN)["hit_rate"]
+        reranked_retriever = _RerankedRetriever(base, reranker, settings.rerank_candidates)
+        reranked = evaluate(reranked_retriever, GOLDEN)["hit_rate"]
     return plain, reranked
 
 

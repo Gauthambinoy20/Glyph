@@ -46,6 +46,7 @@ from app.rag.prompt import build_messages, parse_citations
 from app.rerank.base import Reranker
 from app.rerank.factory import make_reranker
 from app.retrieve.hybrid import HybridRetriever
+from app.retrieve.two_stage import two_stage_search
 from app.store.chroma_store import ChromaStore
 
 logger = logging.getLogger("glyph")
@@ -425,17 +426,15 @@ def _retrieve(
 ) -> list[dict]:
     """Find the grounding chunks: hybrid recall, then optional cross-encoder rerank.
 
-    With no reranker this is just the hybrid top_k. With one, the retriever casts a wider net
-    (rerank_candidates) and the cross-encoder reorders that pool down to the top_k by true
-    relevance. `retrieval_query` may carry follow-up context; `rerank_query` is the bare
-    question, which is what the cross-encoder scores against.
+    Delegates to the shared two_stage_search so the live answer path and the offline quality
+    harness score the identical pipeline; the candidate-pool width comes from settings
+    (rerank_candidates). `retrieval_query` may carry follow-up context; `rerank_query` is the
+    bare question, which is what the cross-encoder scores against.
     """
     retriever = HybridRetriever(store, embedder)
-    if reranker is None:
-        return retriever.search(retrieval_query, top_k=top_k)
-    pool = max(get_settings().rerank_candidates, top_k)
-    candidates = retriever.search(retrieval_query, top_k=pool, pool=max(20, pool))
-    return reranker.rerank(rerank_query, candidates, top_k=top_k)
+    return two_stage_search(
+        retriever, reranker, retrieval_query, rerank_query, top_k, get_settings().rerank_candidates
+    )
 
 
 @app.post("/api/search")
