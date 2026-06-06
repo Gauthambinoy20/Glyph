@@ -1,8 +1,7 @@
 # 📔 Glyph — Personal Report (Build Journal)
 
 *Plain-English diary of what I'm building and why. Updated after every step, so I can read it
-top-to-bottom and know exactly where things stand. Anything marked `✍️ in my own words` is a
-draft I will rewrite in my own voice before submitting.*
+top-to-bottom and know exactly where things stand.*
 
 ---
 

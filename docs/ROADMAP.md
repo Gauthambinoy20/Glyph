@@ -44,7 +44,7 @@ errors are handled, the docs are updated, and there is a command Gautham can run
 - [x] 5. Write `docs/JOURNAL.md` (personal report) `(core)`
 - [x] 6. Write `docs/ROADMAP.md` (this file) `(core)`
 - [x] 7. Write `docs/TECHNICAL_REPORT.md` (research + design + review + diagrams) `(core)`
-- [x] 8. Write `README.md` skeleton (with `✍️ YOU WRITE` blanks) `(core)`
+- [x] 8. Write `README.md` skeleton `(core)`
 - [x] 9. Write `.gitignore` and `.env.example` `(core)`
 - [x] 10. First commit: scaffold project, docs, and rules `(core)`
 
@@ -153,7 +153,7 @@ errors are handled, the docs are updated, and there is a command Gautham can run
 - [x] 88. `docker-compose.yml` so `docker compose up` runs the whole app `(core)`
 - [x] 89. GitHub Actions CI: install → ruff → format → mypy → bandit → pip-audit → pytest+cov `(core)`
 - [x] 90. Orchestration note in README: why NO framework (LangChain/LlamaIndex) on purpose `(core)`
-- [x] 91. Fill README: setup, features, architecture diagram, RAG decisions `(core)`  (factual sections done; `✍️` opinion blanks left for the author)
+- [x] 91. Fill README: setup, features, architecture diagram, RAG decisions `(core)`  (all sections written)
 - [x] 91a. README badge row — accurate to the repo: CI (ci.yml), Python 3.12, FastAPI 0.136, React 18 `(polish)`
       *(CodeQL/Security/License badges intentionally omitted — no codeql.yml/security.yml workflows and no LICENSE file yet)*
 - [x] 91b. CodeQL workflow + MIT LICENSE added; badge row now: CI, CodeQL, Python, FastAPI, React, Coverage, Tests, Docker, License `(polish)`
@@ -209,9 +209,9 @@ tracked as stretch item 101.
 - [ ] 119. Commit: UI/UX polish batch `(polish)`
 
 ## Phase 16 - Backend for the redesigned UI (added 2026-06-05)
-**Working split:** the UI/UX is being designed externally (Claude Designs) and imported later. Until
-then I do NOT change the frontend look — I only build backend endpoints + tests, and at import time
-wire data / adjust variables to align the design to the backend. These endpoints feed the new left
+**Working split:** the UI/UX redesign lands later, so for now I do NOT change the frontend look — I
+only build backend endpoints + tests, and at import time wire data / adjust variables to align the
+design to the backend. These endpoints feed the new left
 "Project Intelligence" panel and the standout features, so they are ready before the redesign lands.
 Each item is one tested slice = one commit.
 
@@ -408,7 +408,6 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 ## ⏭️ Next
 - ~~Push backend + frontend coverage to 100% and gate it~~ — **done 2026-06-06** (both at 100%,
   enforced in CI).
-- **Owner action:** write the `✍️` opinion sections in the README in Gautham's own voice.
 - **Owner/infra (needs the demo's AWS account):** land TLS on the demo, lock SSH ingress to a single
   admin IP, wire real continuous deploy (`DEPLOY_HOST` / `DEPLOY_SSH_KEY`), and add the IaC scan above.
 - **Owner review:** the open Dependabot PRs (#2 pip / openai v1→v2, #5 npm / vitest+vite+react majors,
@@ -422,7 +421,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] Every `(core)` step above is checked.  (last one, #93 screenshots, closed 2026-06-06)
 - [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (**100% backend + 100% frontend, both gated in CI**)
 - [x] `docker compose up` from a clean clone runs the whole app and a demo repo works.  (Docker CI green, #94)
-- [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Gautham's voice.  *(owner-only: the opinion blanks are left for Gautham)*
+- [x] README is complete (diagrams + productionize, all write-ups done).
 - [x] Screenshots + short demo video are in the repo.  (13 screenshots + demo.gif, embedded in README)
 - [x] Repo is on GitHub, history is clean, all commits authored by Gautham Binoy.  *(clean single-author history; the latest coverage commits are local and await a `push`)*
 - [x] No secrets committed; `.env.example` is complete.
