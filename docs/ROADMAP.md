@@ -114,8 +114,8 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 64. `GET /api/endpoints` auto-detect API routes (FastAPI/Express) `(polish)`  (done; see #122)
 - [x] 65. SQLite chat history (sessions + messages) + endpoints; auto-save and restore per repo `(polish)`
 - [x] 66. Suggested starter questions after ingest (in the web UI) `(polish)`
-- [ ] 67. Tests: follow-up keeps context, snippet returns right lines, endpoints found, history roundtrip `(core)`
-- [ ] 68. Commit: conversation, overview, snippets, endpoint detection, history `(core)`
+- [x] 67. Tests: follow-up keeps context, snippet returns right lines, endpoints found, history roundtrip `(core)`  (test_files.py, test_history.py, test_endpoints.py)
+- [x] 68. Commit: conversation, overview, snippets, endpoint detection, history `(core)`  (committed)
 
 ## Phase 8 - Frontend
 - [x] 69. Vite + React + TS shell, premium dark theme, `api.ts` typed wrappers `(core)`
@@ -132,13 +132,13 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 78. Lint + format: `ruff` (lint) and `ruff format` for the backend, pinned `(core)`
 - [x] 79. Type-check: `mypy` on `app/`, pinned, passes clean `(polish)`
 - [x] 80. `pre-commit` hooks: ruff lint + format, so commits stay clean `(polish)`
-- [x] 81. Coverage: `pytest --cov`, report printed, 91% (≥ 80% target met) `(core)`
+- [x] 81. Coverage: `pytest --cov`, report printed, 92% (≥ 80% target met) `(core)`
 - [x] 81b. Security: `bandit` (code) + `pip-audit` (deps); fixed 5/6 CVEs, 1 has no fix `(polish)`
 - [x] 82. Frontend unit test (vitest): test runner wired; covers the SSE parser + request timeout `(polish)`
       *(full mocked-fetch URL-shape test, T48, and component tests still open)*
 - [x] 83. End-to-end smoke test: ingest demo repo → ask → assert correct file cited `(core)`  (test_e2e.py, T49)
 - [x] 84. `Makefile`: `make install / test / run / lint / fmt / up / eval` one-liners `(polish)`
-- [ ] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`
+- [x] 85. Commit: lint, types, coverage, e2e smoke, Makefile `(core)`  (committed)
 
 ## Phase 10 - Ship it
 - [x] 86. Backend Dockerfile (pre-downloads bge-small) + `.dockerignore` `(core)`
@@ -153,12 +153,12 @@ errors are handled, the docs are updated, and there is a command Dave can run to
 - [x] 92. Create the GitHub repo and push (github.com/Gauthambinoy20/Glyph, CI green) `(core)`
 - [ ] 93. Capture screenshots + short demo video; add screenshots to README `(core)`
 - [x] 94. Fresh `docker compose up` works from scratch: served UI, ingest, and a streamed answer (smoke-tested) `(core)`
-- [ ] 95. Commit: dockerize, CI, finalize docs `(core)`
+- [x] 95. Commit: dockerize, CI, finalize docs `(core)`  (committed)
 
 ## Phase 11 - Standout features (graded extras)
 - [x] 96. Quality eval set: 10 golden questions + `python -m app.quality.evaluate` hit-rate (100%) `(polish)`
 - [x] 97. Observability dashboard: session query log (retrieve/llm split, tokens, cache hits) `(polish)`
-- [ ] 98. Commit: quality eval set + observability dashboard `(polish)`
+- [x] 98. Commit: quality eval set + observability dashboard `(polish)`  (committed)
 
 ## Phase 12 - Stretch (only if everything above is green)
 - [ ] 99. File-tree browser: click a file/function and ask about it `(stretch)`
@@ -178,7 +178,7 @@ See TECHNICAL_REPORT §7 for the measured breakdown and the reasoning behind eac
 - [x] 106. Answer cache keyed on (chunk-count + question + model); repeat questions return instantly `(polish)`
 - [ ] 107. Run semantic search and BM25 concurrently instead of one after the other `(stretch)`
 - [x] 108. Per-stage timing (retrieve_ms / llm_ms) in the JSON log and answer meta `(polish)`
-- [ ] 109. Commit: streaming, per-repo BM25 cache, embedder warmup, answer cache, stage timings `(core)`
+- [x] 109. Commit: streaming, per-repo BM25 cache, embedder warmup, answer cache, stage timings `(core)`  (committed)
 
 ## Phase 14 - UI/UX polish (added after the 2026-06-05 audit)
 The shell is already premium (dark, one accent, graph view). These are the high-value touches on top.
@@ -217,7 +217,7 @@ Each item is one tested slice = one commit.
       *(feeds ⌘K search and a future file browser)*
 - [x] 124. Per-file import in-degree for "most depended-on files" `(polish)`  (done client-side in computeTopFiles; no backend change needed)
 - [x] 125. `GET /api/ready` readiness probe (model + store loaded) `(polish)` (#15a)
-- [ ] 126. Commit each of the above as its own slice, with tests
+- [x] 126. Commit each of the above as its own slice, with tests  (committed)
 
 ## Phase 17 - Landing & ingest polish (added 2026-06-05)
 A speed + premium-landing pass, in 6 tested slices. Picks: refined gradient logo, tagline
@@ -308,7 +308,7 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 **Conversation / extra endpoints**
 - [x] T43. Follow-up question carries prior turns into the prompt
 - [x] T44. `/api/file` returns the exact requested line range  (test_files.py)
-- [ ] T45. Endpoint detector finds routes in a sample file
+- [x] T45. Endpoint detector finds routes in a sample file  (test_endpoints.py)
 - [x] T46. Chat history save → load roundtrip (store + endpoints)
 
 **Quality / e2e**
@@ -340,15 +340,15 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [x] T62. `/api/file` returns a file's code; a line range slices it; unknown path → 404
 - [x] T63. `/api/endpoints` finds routes in sample FastAPI, Flask and Express code
 - [x] T64. `/api/symbols` lists files with their symbols, sorted; empty index → []
-- [ ] T65. `/api/graph` reports import in-degree per file (most depended-on first)
-- [ ] T66. `/api/ready` is not-ready until model + store are loaded, then ready
+- [x] T65. `/api/graph` reports import in-degree per file (most depended-on first)  (test_graph.py)
+- [x] T66. `/api/ready` is not-ready until model + store are loaded, then ready  (test_health.py)
 - [x] T51. Per-repo BM25 cache: second ask on same repo does NOT rebuild the index (+ rebuilds on change)
 - [x] T52. Answer cache: identical (chunk-count, question, model) returns the cached answer, no LLM call
-- [ ] T53. Embedder is warm after startup (first query has no cold-load penalty)
-- [ ] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)
+- [x] T53. Embedder is warm after startup (first query has no cold-load penalty)  (test_app.py)
+- [x] T54. JSON log carries per-stage timings (embed_ms, retrieve_ms, llm_ms)  (test_prompt.py)
 - [x] T55. CORS allows the frontend origin; an unknown origin gets no allow header
 - [x] T56. Global error handler returns a clean generic 500, internals never leak; + request-id on every response
-- [ ] T57. `/api/ready` reports not-ready until model + store are loaded
+- [x] T57. `/api/ready` reports not-ready until model + store are loaded  (test_health.py)
 
 ---
 
@@ -371,10 +371,10 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 | CI on push | core | ✅ |
 | Dependency graph | stretch | ✅ |
 | Streaming answers | polish | ✅ |
-| List API endpoints | polish | ☐ (Phase 7 #64) |
-| Chat history | polish | ☐ (Phase 7 #65) |
-| Quality eval (hit-rate) | polish | ☐ (Phase 11 #96) |
-| Observability dashboard | polish | ☐ (Phase 11 #97) |
+| List API endpoints | polish | ✅ |
+| Chat history | polish | ✅ |
+| Quality eval (hit-rate) | polish | ✅ |
+| Observability dashboard | polish | ✅ |
 | One-command Docker run | core | ✅ |
 | File-tree browser | stretch | ☐ (Phase 12 #99) |
 
@@ -382,11 +382,11 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 ## 🏁 Definition of Done (whole project)
 - [ ] Every `(core)` step above is checked.
-- [ ] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.
-- [ ] `docker compose up` from a clean clone runs the whole app and a demo repo works.
+- [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (92% backend)
+- [x] `docker compose up` from a clean clone runs the whole app and a demo repo works.  (Docker CI green, #94)
 - [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Dave's voice.
 - [ ] Screenshots + short demo video are in the repo.
 - [ ] Repo is on GitHub, history is clean, all commits authored by Dave.
-- [ ] No secrets committed; `.env.example` is complete.
+- [x] No secrets committed; `.env.example` is complete.
 
 *Core first, then polish, then stretch. We do not start a flashy extra while a core box is empty.*
