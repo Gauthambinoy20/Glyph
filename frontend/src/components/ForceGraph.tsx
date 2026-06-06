@@ -4,23 +4,33 @@ import { useEffect, useRef, useState } from "react";
 
 import type { GraphNode, GraphData } from "../api";
 
+// Keyed by the lowercased language name so "TypeScript", "Typescript" and "typescript" all
+// resolve — prettyLang only capitalises the first letter, which used to miss these.
 const LANG_COLOR: Record<string, string> = {
-  TypeScript: "#4c9eff",
   typescript: "#4c9eff",
-  Python: "#ffd866",
-  python: "#ffd866",
-  CSS: "#c792ea",
-  css: "#c792ea",
-  Markdown: "#9aa0aa",
-  markdown: "#9aa0aa",
-  JSON: "#7ee787",
-  javascript: "#f7df1e",
-  JavaScript: "#f7df1e",
   tsx: "#4c9eff",
+  javascript: "#f7df1e",
+  jsx: "#f7df1e",
+  python: "#ffd866",
+  css: "#c792ea",
+  html: "#e9682c",
+  json: "#7ee787",
+  markdown: "#9aa0aa",
+  go: "#00add8",
+  rust: "#ff7043",
+  java: "#e76f00",
+  ruby: "#e0455f",
+  c: "#8d9bb0",
+  cpp: "#f070a0",
+  "c++": "#f070a0",
+  "c#": "#9b6cff",
+  php: "#8a91d6",
+  shell: "#89e051",
+  yaml: "#cb8f3a",
 };
 
 export function langColor(l: string): string {
-  return LANG_COLOR[l] || "#9aa0aa";
+  return LANG_COLOR[l.toLowerCase()] || "#9aa0aa";
 }
 
 interface SimNode extends GraphNode {
