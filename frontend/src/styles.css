@@ -2816,6 +2816,10 @@ button {
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
+  /* Break out wider than the 720px hero so all five repo chips sit on one centred line. */
+  width: min(960px, 94vw);
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
 /* Label takes the whole row so the chips below stay on one tidy, centred line. */
 .ld-label {
