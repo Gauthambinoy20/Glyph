@@ -1,0 +1,21 @@
+# Accepted Terraform misconfiguration findings, each with a documented reason. Anything NOT
+# listed here is a real failure that turns the Infra workflow red. Review this list whenever the
+# infra changes — an accepted risk should never quietly outlive the reason it was accepted.
+
+# AVD-AWS-0107 — security group allows ingress from 0.0.0.0/0.
+#   HTTP (80) and HTTPS (443) are world-open ON PURPOSE: this is a public demo site.
+#   SSH (22) is world-open because continuous deployment connects over SSH from GitHub-hosted
+#   runners, whose IPs are dynamic, so it cannot be pinned to a single CIDR. The real fix is
+#   moving CD to AWS SSM (no inbound SSH at all); tracked as future work in docs/ROADMAP.md.
+AVD-AWS-0107
+
+# AVD-AWS-0104 — egress open to 0.0.0.0/0.
+#   The box must reach the public internet to function: pull images from GHCR, clone repos from
+#   GitHub, and call the OpenRouter model API (all HTTPS). Outbound is intentionally open.
+AVD-AWS-0104
+
+# AVD-AWS-0131 — root EBS volume is not encrypted.
+#   This is a throwaway single-box demo with no sensitive data at rest (only public repos it
+#   re-ingests on demand). Enabling encryption can't be done in place — it would force a full
+#   instance replacement (downtime + cert re-issue) for no real benefit here.
+AVD-AWS-0131

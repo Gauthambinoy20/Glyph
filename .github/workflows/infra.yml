@@ -46,15 +46,16 @@ jobs:
           tflint --init
           tflint --format compact
 
-      # Surface IaC misconfigurations (over-open security-group rules, missing instance hardening)
-      # in the Terraform. Report-only for now (exit-code 0): it is being introduced on a live,
-      # already-applied stack, so the first runs let us triage the findings and document the
-      # intentionally-public demo rules (port 80/443) before flipping it to a hard gate.
-      - name: IaC misconfig scan (Trivy, report-only)
+      # Scan the Terraform for security misconfigurations and FAIL on any unaccepted CRITICAL/HIGH
+      # finding. The intentionally-public demo rules and the throwaway-box trade-offs are listed,
+      # each with a documented reason, in infra/.trivyignore — so a NEW misconfiguration (e.g. a
+      # database suddenly opened to the world) turns this red, while the known, accepted ones don't.
+      - name: IaC misconfig scan (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
           scan-ref: infra
+          trivyignores: infra/.trivyignore
           severity: CRITICAL,HIGH
-          exit-code: "0"
+          exit-code: "1"
           format: table

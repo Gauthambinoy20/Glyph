@@ -35,15 +35,26 @@ resource "local_sensitive_file" "private_key" {
   file_permission = "0600"
 }
 
-# Security group: HTTP open to the world, SSH locked to ssh_cidr.
+# Security group: HTTP + HTTPS open to the world (public demo), SSH from ssh_cidr.
 resource "aws_security_group" "glyph" {
   name        = "${var.project}-sg"
-  description = "Glyph: allow HTTP from anywhere, SSH from ssh_cidr"
+  description = "Glyph: allow HTTP/HTTPS from anywhere, SSH from ssh_cidr"
 
   ingress {
     description = "HTTP"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS: the host-level Caddy terminates TLS on :443. World-open on purpose (public demo);
+  # this rule lives on the running box but was missing from code, so pin it here to stop a future
+  # apply from reverting it and breaking HTTPS.
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -77,6 +88,13 @@ resource "aws_instance" "glyph" {
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
+  }
+
+  # Enforce IMDSv2 (token-required) so the instance metadata service can't be reached via SSRF
+  # from a compromised container. The running box already has this; pin it in code to match.
+  metadata_options {
+    http_tokens   = "required"
+    http_endpoint = "enabled"
   }
 
   tags = { Name = var.project }
