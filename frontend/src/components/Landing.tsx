@@ -86,6 +86,14 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
         </form>
 
         {!progress && (
+          <p className="ingest-eta">
+            {mode === "fast"
+              ? "⚡ Fast mode — most repos index in a few seconds."
+              : "◎ Careful mode — slower; roughly a minute per ~200 code chunks on CPU."}
+          </p>
+        )}
+
+        {!progress && (
           <div className="mode-pick" role="group" aria-label="Indexing mode">
             <span className="ld-label">Indexing</span>
             {(["fast", "careful"] as const).map((m) => (

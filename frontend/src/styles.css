@@ -759,6 +759,14 @@ button {
   font-size: 12px;
 }
 
+/* indexing-time estimate under the ingest button */
+.ingest-eta {
+  margin-top: 11px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  letter-spacing: 0.01em;
+}
+
 /* spinner */
 .spinner {
   width: 16px;

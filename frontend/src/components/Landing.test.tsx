@@ -110,13 +110,15 @@ describe("Landing", () => {
     const carefulBtn = screen.getByRole("button", { name: /careful indexing/i });
     expect(carefulBtn.getAttribute("aria-pressed")).toBe("true");
     expect(fastBtn.getAttribute("aria-pressed")).toBe("false");
-    // Careful mode shows the transformer-embeddings note.
+    // Careful mode shows the transformer-embeddings note and the slower time estimate.
     expect(screen.getByText(/Transformer embeddings/i)).toBeTruthy();
+    expect(screen.getByText(/per ~200 code chunks/i)).toBeTruthy();
 
     rerender(<Landing onIngest={() => {}} {...base} mode="fast" />);
     expect(screen.getByRole("button", { name: /fast indexing/i }).getAttribute("aria-pressed")).toBe("true");
-    // Fast mode shows the static-embeddings note.
+    // Fast mode shows the static-embeddings note and the "few seconds" estimate.
     expect(screen.getByText(/Static embeddings/i)).toBeTruthy();
+    expect(screen.getByText(/index in a few seconds/i)).toBeTruthy();
   });
 
   it("shows the 'try app' hint when there is no progress", () => {
