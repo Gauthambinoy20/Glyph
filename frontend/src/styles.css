@@ -2785,7 +2785,7 @@ button {
   position: relative;
   overflow: hidden;
   margin: 14px auto 0;
-  max-width: 460px;
+  max-width: min(720px, 92vw);
   text-align: left;
   padding: 13px 15px;
   border-radius: var(--r-md);
@@ -2818,9 +2818,10 @@ button {
 }
 .mode-note ul {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  /* Two columns so the points read wider and shorter, leaving the demo repos in view. */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 26px;
 }
 .mode-note li {
   position: relative;
