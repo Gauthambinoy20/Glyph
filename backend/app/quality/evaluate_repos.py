@@ -36,7 +36,9 @@ _MODES = [("fast", "static"), ("careful", "local")]
 REPORT_PATH = "eval_report.json"
 
 
-def _score(repo_dir: str, questions: list[dict], settings: Settings, reranker) -> dict:
+def _score(
+    repo_dir: str, questions: list[dict], settings: Settings, reranker: CrossEncoderReranker
+) -> dict:
     """Ingest one checked-out repo and return its golden-set report (reranked, like production)."""
     embedder = make_embedder(settings)
     with tempfile.TemporaryDirectory() as tmp:
@@ -47,7 +49,7 @@ def _score(repo_dir: str, questions: list[dict], settings: Settings, reranker) -
         return evaluate(retriever, questions)
 
 
-def evaluate_repo(repo: dict, backend: str, reranker) -> dict:
+def evaluate_repo(repo: dict, backend: str, reranker: CrossEncoderReranker) -> dict:
     """Check out one golden repo (local folder or pinned clone) and score it in one mode."""
     settings = Settings(embed_backend=backend)
     local = repo.get("local_path")
