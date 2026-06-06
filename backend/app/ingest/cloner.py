@@ -47,6 +47,38 @@ def clone_repo(url: str, timeout: int = 120) -> str:
     return dest
 
 
+def clone_at_commit(url: str, commit: str, timeout: int = 180) -> str:
+    """Clone exactly one pinned commit of a public GitHub repo into a fresh temp dir.
+
+    Unlike ``clone_repo`` (which shallow-clones the default branch's moving HEAD), this fetches
+    the single named commit, so an evaluation that pins a SHA always sees the same files — the
+    result is reproducible and cannot drift when upstream changes. Returns the path; the caller
+    deletes the temp dir. Raises ValueError for an invalid URL, a missing git, or any failed step.
+    """
+    if not is_valid_github_url(url):
+        raise ValueError(f"not a valid public GitHub URL: {url}")
+
+    dest = tempfile.mkdtemp(prefix="glyph_pin_")
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    # Fetch only the one commit (depth 1) rather than the whole history, then check it out.
+    steps = [
+        ["git", "init", "--quiet", dest],
+        ["git", "-C", dest, "remote", "add", "origin", url.strip()],
+        ["git", "-C", dest, "fetch", "--depth", "1", "--quiet", "origin", commit],
+        ["git", "-C", dest, "checkout", "--quiet", "FETCH_HEAD"],
+    ]
+    try:
+        for step in steps:
+            subprocess.run(step, check=True, capture_output=True, timeout=timeout, env=env)
+    except FileNotFoundError as exc:
+        shutil.rmtree(dest, ignore_errors=True)
+        raise ValueError("git is not installed, so repositories cannot be cloned") from exc
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        shutil.rmtree(dest, ignore_errors=True)
+        raise ValueError(f"could not clone {url} at {commit}") from exc
+    return dest
+
+
 def read_default_branch(repo_dir: str, timeout: int = 10) -> str | None:
     """Return the checked-out branch name of a clone (e.g. "main", "master"), or None.
 

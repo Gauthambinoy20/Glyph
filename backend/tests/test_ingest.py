@@ -2,11 +2,12 @@
 
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
 from app.ingest import pipeline as pipeline_mod
-from app.ingest.cloner import clone_repo, is_valid_github_url
+from app.ingest.cloner import clone_at_commit, clone_repo, is_valid_github_url
 from app.ingest.pipeline import ingest_path, ingest_path_events, ingest_repo_events
 from app.ingest.walker import walk_files
 from app.main import app, get_embedder, get_store
@@ -79,6 +80,55 @@ def test_cloner_reports_missing_git(monkeypatch) -> None:  # T25 (git not instal
     monkeypatch.setattr(subprocess, "run", no_git)
     with pytest.raises(ValueError, match="git is not installed"):
         clone_repo("https://github.com/owner/repo")
+
+
+def test_clone_at_commit_rejects_invalid_url() -> None:
+    with pytest.raises(ValueError):
+        clone_at_commit("https://gitlab.com/a/b", "abc123")
+
+
+def test_clone_at_commit_fetches_only_the_pinned_commit(monkeypatch) -> None:
+    # The pinned-clone recipe must init, add the remote, fetch only the one commit, then check
+    # it out — that is what makes an eval reproducible. Record the git commands to prove it.
+    calls: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda cmd, **kwargs: calls.append(cmd))
+
+    dest = clone_at_commit("https://github.com/owner/repo", "abc123")
+    try:
+        assert Path(dest).is_dir()
+        assert any(cmd[:2] == ["git", "init"] for cmd in calls)
+        assert ["git", "-C", dest, "fetch", "--depth", "1", "--quiet", "origin", "abc123"] in calls
+        assert ["git", "-C", dest, "checkout", "--quiet", "FETCH_HEAD"] in calls
+    finally:
+        shutil.rmtree(dest, ignore_errors=True)
+
+
+def test_clone_at_commit_cleans_up_the_temp_dir_on_failure(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+    real_mkdtemp = tempfile.mkdtemp
+
+    def capture(*args, **kwargs):
+        captured["dir"] = real_mkdtemp(*args, **kwargs)
+        return captured["dir"]
+
+    def boom(*args, **kwargs):
+        raise subprocess.CalledProcessError(1, "git fetch")
+
+    monkeypatch.setattr(tempfile, "mkdtemp", capture)
+    monkeypatch.setattr(subprocess, "run", boom)
+
+    with pytest.raises(ValueError, match="could not clone"):
+        clone_at_commit("https://github.com/owner/repo", "abc123")
+    assert not Path(captured["dir"]).exists()  # no leaked temp dir on a failed clone
+
+
+def test_clone_at_commit_reports_missing_git(monkeypatch) -> None:
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "git")
+
+    monkeypatch.setattr(subprocess, "run", no_git)
+    with pytest.raises(ValueError, match="git is not installed"):
+        clone_at_commit("https://github.com/owner/repo", "abc123")
 
 
 # ----- Pipeline -----
@@ -252,8 +302,11 @@ def test_ingest_endpoint_rejects_bad_repo_url(tmp_path) -> None:
 
 
 def test_ingesting_a_different_repo_replaces_the_previous_one(tmp_path) -> None:
-    """The store holds only the repo on screen: ingesting B after A drops A's chunks (no
-    cross-repo bleed), while re-ingesting the same repo keeps its content-hash cache."""
+    """Ingesting a different repo replaces the previous one.
+
+    The store holds only the repo on screen: ingesting B after A drops A's chunks (no cross-repo
+    bleed), while re-ingesting the same repo keeps its content-hash cache.
+    """
     store = _fresh_store(tmp_path)
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
     app.dependency_overrides[get_store] = lambda: store
