@@ -106,6 +106,7 @@ export async function fetchWithTimeout(
       throw new Error("the request timed out — try a smaller repo or a local folder path", { cause: err });
     }
     throw err;
+    /* v8 ignore next -- the finally always completes normally; clearTimeout never throws */
   } finally {
     clearTimeout(timer);
   }
@@ -157,6 +158,8 @@ export interface StreamHandlers {
  */
 function splitSSE(buffer: string): { payloads: string[]; rest: string } {
   const blocks = buffer.split("\n\n");
+  // String.split always returns a non-empty array, so pop() is never undefined here.
+  /* v8 ignore next */
   const rest = blocks.pop() ?? "";
   const payloads = blocks
     .filter((block) => block.startsWith("data: "))

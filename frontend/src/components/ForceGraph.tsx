@@ -87,6 +87,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    /* v8 ignore next -- the canvas ref is always attached once this effect runs */
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = width * dpr;
@@ -105,6 +106,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
 
     function draw() {
       const S = stateRef.current;
+      /* v8 ignore next -- state and context are always set before the raf loop runs */
       if (!S || !ctx) return;
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1;
@@ -146,6 +148,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
 
     function step() {
       const S = stateRef.current;
+      /* v8 ignore next -- state is always set before the raf loop runs */
       if (!S) return;
       const { nodes, cx, cy } = S;
       for (let i = 0; i < nodes.length; i++) {
@@ -206,6 +209,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
 
   function nodeAt(mx: number, my: number): SimNode | null {
     const S = stateRef.current;
+    /* v8 ignore next -- nodeAt only fires from pointer handlers, after state is built */
     if (!S) return null;
     for (let i = S.nodes.length - 1; i >= 0; i--) {
       const n = S.nodes[i];

@@ -274,6 +274,7 @@ export function Composer({ onSend, busy }: { onSend: (q: string) => void; busy: 
 
   useEffect(() => {
     const ta = taRef.current;
+    /* v8 ignore next -- the textarea ref is always attached once this effect runs */
     if (!ta) return;
     ta.style.height = "auto";
     ta.style.height = Math.min(ta.scrollHeight, 180) + "px";

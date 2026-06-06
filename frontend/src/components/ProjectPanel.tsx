@@ -126,6 +126,8 @@ function Sparkline({
   width?: number;
   height?: number;
 }) {
+  // Defensive: the only caller (SessionMetrics) already gates on latencies.length >= 2.
+  /* v8 ignore next */
   if (!values || values.length < 2) return <div style={{ height }} />;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -383,6 +385,7 @@ function GraphCard({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(280);
   useEffect(() => {
+    /* v8 ignore next -- the wrapper ref is always attached once this effect runs */
     if (!wrapRef.current) return;
     const ro = new ResizeObserver(([e]) => setW(Math.max(160, e.contentRect.width)));
     ro.observe(wrapRef.current);

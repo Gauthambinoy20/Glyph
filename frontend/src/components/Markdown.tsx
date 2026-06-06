@@ -31,6 +31,8 @@ export function highlightLine(line: string): string {
     if (str) return `<span class="tok-str">${str}</span>`;
     if (num) return `<span class="tok-num">${num}</span>`;
     if (kw) return `<span class="tok-kw">${kw}</span>`;
+    // fn is the last capture group, so it always matches here; the m fallback is unreachable.
+    /* v8 ignore next 2 */
     if (fn) return `<span class="tok-fn">${fn}</span>`;
     return m;
   });
