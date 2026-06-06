@@ -17,7 +17,7 @@ run the test green → update JOURNAL + tick the box here → commit (human mess
 - `(stretch)` optional wow. Only after all core + polish are green.
 
 **Definition of done for a single step:** the code does exactly what the step says, its test passes,
-errors are handled, the docs are updated, and there is a command Dave can run to see it.
+errors are handled, the docs are updated, and there is a command Gautham can run to see it.
 
 **Definition of done for the whole project:** see the final section.
 
@@ -411,9 +411,9 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 - [ ] Every `(core)` step above is checked.
 - [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (92% backend)
 - [x] `docker compose up` from a clean clone runs the whole app and a demo repo works.  (Docker CI green, #94)
-- [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Dave's voice.
+- [ ] README is complete (diagrams + productionize), with the `✍️` sections written in Gautham's voice.
 - [ ] Screenshots + short demo video are in the repo.
-- [ ] Repo is on GitHub, history is clean, all commits authored by Dave.
+- [ ] Repo is on GitHub, history is clean, all commits authored by Gautham Binoy.
 - [x] No secrets committed; `.env.example` is complete.
 
 *Core first, then polish, then stretch. We do not start a flashy extra while a core box is empty.*
