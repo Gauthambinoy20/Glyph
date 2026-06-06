@@ -98,8 +98,10 @@ jobs:
       - name: Types (tsc)
         run: npx tsc -b
 
-      - name: Unit tests (vitest)
-        run: npm test
+      - name: Unit tests + coverage (vitest)
+        # Enforces the 100% statements/branches/functions/lines threshold in vite.config.ts,
+        # mirroring the backend's fail_under=100 gate.
+        run: npm run test:coverage
 
       - name: Production build
         run: npm run build
