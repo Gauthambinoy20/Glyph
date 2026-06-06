@@ -7,7 +7,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GraphNode } from "../api";
-import { D3Graph, gemStops } from "./D3Graph";
+import { D3Graph } from "./D3Graph";
 
 const NODES: GraphNode[] = [
   { id: "a", label: "a.ts", language: "typescript" },
@@ -18,21 +18,6 @@ const EDGES = [
   { source: "a", target: "b" },
   { source: "c", target: "a" },
 ];
-
-describe("gemStops", () => {
-  it("uses the mockup palette for the core languages", () => {
-    expect(gemStops("typescript")).toEqual(["#ffffff", "#2dd4bf", "#0d5f55"]);
-    expect(gemStops("PYTHON")).toEqual(["#ffffff", "#e8a93c", "#74520f"]); // case-insensitive
-  });
-
-  it("falls back to langColor + a derived dark stop for other languages", () => {
-    const [light, mid, dark] = gemStops("go");
-    expect(light).toBe("#ffffff");
-    expect(mid).toBe("#00add8"); // langColor("go")
-    expect(dark).toMatch(/^#[0-9a-f]{6}$/i); // darkened, valid hex
-    expect(dark).not.toBe(mid);
-  });
-});
 
 describe("D3Graph", () => {
   beforeEach(() => {

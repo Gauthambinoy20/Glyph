@@ -12,7 +12,7 @@ import type { CodeRef } from "./components/Chat";
 import { CodeViewer } from "./components/CodeViewer";
 import { CommandPalette } from "./components/CommandPalette";
 import { D3Graph } from "./components/D3Graph";
-import { langColor } from "./components/ForceGraph";
+import { langColor } from "./palette";
 import { Icon, Logo } from "./components/Icon";
 import { Landing } from "./components/Landing";
 import { ProjectPanel } from "./components/ProjectPanel";

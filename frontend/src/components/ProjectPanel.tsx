@@ -6,8 +6,9 @@ import type { ReactNode } from "react";
 
 import type { GraphData, GraphNode } from "../api";
 import type { Endpoint, Recent, Repo } from "../types";
-import { ForceGraph, langColor } from "./ForceGraph";
+import { ForceGraph } from "./ForceGraph";
 import { Icon } from "./Icon";
+import { gemStops, langColor } from "../palette";
 
 interface LangSegment {
   name: string;
@@ -416,7 +417,7 @@ function GraphCard({
       <div className="graph-legend">
         {langs.map((l) => (
           <span className="li" key={l}>
-            <span className="ld" style={{ background: langColor(l) }} />
+            <span className="ld" style={{ background: gemStops(l)[1] }} />
             {l}
           </span>
         ))}

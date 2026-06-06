@@ -8,16 +8,7 @@ import * as d3 from "d3";
 
 import type { GraphData, GraphNode } from "../api";
 import { Icon } from "./Icon";
-import { langColor } from "./ForceGraph";
-
-// The mockup palette (mid, dark) for the languages Glyph parses precisely. Any other language
-// falls back to langColor() for the mid stop and a derived dark stop, so the look generalises.
-const GEM: Record<string, [string, string]> = {
-  javascript: ["#f4d35e", "#7a6612"],
-  python: ["#e8a93c", "#74520f"],
-  tsx: ["#5aa8ff", "#1c4a82"],
-  typescript: ["#2dd4bf", "#0d5f55"],
-};
+import { gemStops } from "../palette";
 
 // Fixed quadrant anchors so the four core languages land exactly where the mockup places them.
 const FIXED: Record<string, [number, number]> = {
@@ -26,26 +17,6 @@ const FIXED: Record<string, [number, number]> = {
   tsx: [0.72, 0.68],
   javascript: [0.28, 0.68],
 };
-
-/** Darken a #rrggbb colour toward black by factor f (0..1) for the gradient's outer stop. */
-function darken(hex: string, f: number): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  /* v8 ignore next -- defensive: langColor() always yields a valid #rrggbb */
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const r = Math.round(((n >> 16) & 255) * (1 - f));
-  const g = Math.round(((n >> 8) & 255) * (1 - f));
-  const b = Math.round((n & 255) * (1 - f));
-  return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
-}
-
-/** [light, mid, dark] stops for a language's gem gradient. */
-export function gemStops(lang: string): [string, string, string] {
-  const key = lang.toLowerCase();
-  const mid = GEM[key]?.[0] ?? langColor(key);
-  const dark = GEM[key]?.[1] ?? darken(mid, 0.55);
-  return ["#ffffff", mid, dark];
-}
 
 interface SimNode extends GraphNode, d3.SimulationNodeDatum {
   x: number;

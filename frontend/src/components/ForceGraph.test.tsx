@@ -4,9 +4,10 @@
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
-import { ForceGraph, langColor } from "./ForceGraph";
+import { ForceGraph } from "./ForceGraph";
 
-// A minimal 2D context that records nothing but satisfies every call draw() makes.
+// A minimal 2D context that records nothing but satisfies every call draw() makes, including the
+// gem gradients (createRadialGradient / createLinearGradient) and the glow shadow properties.
 function makeCtx() {
   return {
     setTransform: vi.fn(),
@@ -21,22 +22,19 @@ function makeCtx() {
     measureText: vi.fn(() => ({ width: 0 })),
     save: vi.fn(),
     restore: vi.fn(),
+    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
     lineWidth: 0,
     strokeStyle: "",
     fillStyle: "",
+    globalAlpha: 1,
+    shadowColor: "",
+    shadowBlur: 0,
     font: "",
     textAlign: "",
     textBaseline: "",
   };
 }
-
-describe("langColor", () => {
-  it("maps known languages and falls back for unknown ones", () => {
-    expect(langColor("Python")).toBe("#ffd866");
-    expect(langColor("TypeScript")).toBe("#4c9eff");
-    expect(langColor("brainfuck")).toBe("#9aa0aa"); // fallback grey
-  });
-});
 
 describe("ForceGraph (degraded: null 2d context)", () => {
   // test-setup stubs getContext -> null, so the draw/step effect bails at `if (!ctx)`.
