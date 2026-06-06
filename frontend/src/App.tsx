@@ -203,7 +203,7 @@ export default function App() {
   const [ingestState, setIngestState] = useState<IngestState | null>(null);
   // How the next repo is filed (fast = Model2Vec, careful = transformer), and whether the
   // reranker reorders results for each question. Both are user-facing controls.
-  const [embedMode, setEmbedMode] = useState<"fast" | "careful">("careful");
+  const [embedMode, setEmbedMode] = useState<"fast" | "careful">("fast");
   const [rerank, setRerank] = useState(true);
   // Starter questions, tailored to the repo once it is indexed (a generic four until then).
   const [suggestions, setSuggestions] = useState<Suggestion[]>(() => buildSuggestions({}));
