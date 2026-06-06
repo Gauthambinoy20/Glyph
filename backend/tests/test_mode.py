@@ -25,9 +25,10 @@ def test_set_active_backend_maps_friendly_names() -> None:  # T86
 
 
 def test_default_backend_is_the_configured_one() -> None:  # T86
-    # With nothing set, the active backend falls back to the configured default.
+    # With nothing set, the active backend falls back to the configured default — now the
+    # "static" fast-mode embedder.
     assert main._active_backend is None
-    assert _active_settings().embed_backend == "local"
+    assert _active_settings().embed_backend == "static"
 
 
 def test_mode_endpoint_switches_backend() -> None:  # T87
