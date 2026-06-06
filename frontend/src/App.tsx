@@ -345,7 +345,7 @@ export default function App() {
       const repoMeta: Repo = {
         ...parsed,
         branch: summary.branch,
-        description: overview ? overview.split(/(?<=[.!?])\s/)[0].slice(0, 140) : undefined,
+        description: overview ? overview.split(/(?<=[.!?])\s/)[0] : undefined,
       };
       const symbolRows = await api.symbols().catch(() => []);
       // Real "code intelligence" counts from the index — no estimates.

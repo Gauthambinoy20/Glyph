@@ -345,7 +345,15 @@ function Overview({ text, stack }: { text: string; stack: string[] }) {
         </div>
       ) : (
         <>
-          <p className="overview-body" dangerouslySetInnerHTML={{ __html: inline(text) }} />
+          <ul className="ov-points">
+            {text
+              .split(/(?<=[.!?])\s+/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map((point, i) => (
+                <li key={i} dangerouslySetInnerHTML={{ __html: inline(point) }} />
+              ))}
+          </ul>
           {stack.length > 0 && (
             <div className="ov-stack">
               <div className="ov-stack-label">Detected stack</div>

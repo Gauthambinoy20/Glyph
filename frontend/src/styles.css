@@ -998,6 +998,12 @@ button {
   color: var(--text-2);
   margin-top: 13px;
   text-wrap: pretty;
+  /* Clamp cleanly at a line boundary (with ellipsis) instead of cutting mid-word. */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .repo-link {
   display: flex;
@@ -1156,13 +1162,36 @@ button {
 }
 
 /* overview */
-.overview-body {
-  font-size: 13.5px;
-  line-height: 1.62;
+/* Overview rendered as scannable points instead of one block of prose. */
+.ov-points {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.ov-points li {
+  position: relative;
+  padding-left: 17px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--text-2);
   text-wrap: pretty;
 }
-.overview-body strong {
+.ov-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.85;
+}
+.ov-points li strong,
+.ov-points li code {
   color: var(--text);
   font-weight: 600;
 }

@@ -29,7 +29,15 @@ export function ChatEmpty({
             <span className="gd" />
             <b>Overview</b>
           </div>
-          <p dangerouslySetInnerHTML={{ __html: mdInlineSafe(overview) }} />
+          <ul className="ov-points">
+            {overview
+              .split(/(?<=[.!?])\s+/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map((point, i) => (
+                <li key={i} dangerouslySetInnerHTML={{ __html: mdInlineSafe(point) }} />
+              ))}
+          </ul>
         </div>
       )}
       <h2>Ask anything about this code</h2>
