@@ -380,6 +380,33 @@ Backend unit tests live in `backend/tests/`. Tick a box when its test exists and
 
 ---
 
+## ⚠️ Known issues
+- **chromadb `CVE-2026-45829` (HIGH, no upstream fix yet).** Pre-auth code injection via
+  `trust_remote_code` on Chroma's *server* `/collections` endpoint. Glyph uses Chroma only as a local
+  **embedded** store (`PersistentClient`), never the HTTP server, so the vulnerable path is not reachable
+  in this architecture. `pip-audit` allowlists it (`--ignore-vuln CVE-2026-45829` in `ci.yml`); remove
+  the ignore the moment a fixed chromadb release ships.
+- **vitest / vite dev-only advisories (CRITICAL + HIGH).** `vitest <= 4.1.0-beta.6` RCE
+  (GHSA-9crc-q9x8-hgqq) and a vite/esbuild HIGH. These are **dev/test tooling only**, never shipped to
+  production, so CI scopes them out with `npm audit --omit=dev`. The real fix is the vitest 2→4 / vite
+  5→8 bump in Dependabot PR #5.
+- **No IaC security scan yet.** `infra.yml` runs `terraform fmt`/`validate` + `tflint` but no Trivy/tfsec
+  config scan, deferred because it flags the deliberate public-HTTP (port 80, `0.0.0.0/0`) demo rule.
+  To close: add a Trivy `config` scan with a documented `.trivyignore` for that single rule.
+- **Live demo is plain HTTP (no TLS).** Port 443 is not served, so traffic is cleartext. TLS
+  (Caddy/nginx + Let's Encrypt, or an ALB + ACM cert) is the planned hardening step.
+- **No auth / single-user.** No accounts or per-user data isolation; public repos and local folders only.
+
+## ⏭️ Next
+- Push backend coverage 92% → 100% and add frontend coverage tooling + tests (target 100%).
+- Land TLS on the demo and lock SSH ingress to a single admin IP.
+- Review/merge the open Dependabot PRs (#2 pip, #5 npm, #6 actions).
+- Wire real continuous deploy (set `DEPLOY_HOST` / `DEPLOY_SSH_KEY`) and add the IaC scan above.
+- Optional polish/stretch: #111 shimmer loading, #118 graph fallbacks, #99 file-tree browser,
+  #101 theme toggle, #102 share link, #107 concurrent retrieval, #117 mobile layout.
+
+---
+
 ## 🏁 Definition of Done (whole project)
 - [ ] Every `(core)` step above is checked.
 - [x] Every `(core)` test in the inventory passes; coverage ≥ 80% on logic.  (92% backend)
