@@ -16,5 +16,14 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      // Exclude tests, the jsdom setup, the bootstrap, and type-only declarations
+      // (main.tsx only mounts React; types.ts has no runtime statements).
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test-setup.ts", "src/main.tsx", "src/types.ts"],
+      reporter: ["text", "html", "json-summary"],
+      thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 },
+    },
   },
 });

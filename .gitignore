@@ -30,6 +30,7 @@ chroma_db/
 # Coverage data
 .coverage
 htmlcov/
+coverage/
 
 # Frontend build artifacts (emitted by tsc -b)
 *.tsbuildinfo
