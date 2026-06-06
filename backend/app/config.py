@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # >0 to pin an exact count. A bigger batch reduces per-call overhead during ingest.
     embed_threads: int = 0
     embed_batch_size: int = 256
+    # Opt-in GPU for the "local" (bge-small) transformer embedder. Off by default and only worth
+    # enabling on a CUDA host with onnxruntime-gpu installed; it falls back to CPU if unavailable.
+    # No effect in the default "static" fast mode, which has no neural inference to accelerate.
+    embed_use_gpu: bool = False
 
     # Two-stage retrieval. With reranker_enabled on, the hybrid retriever casts a wider net
     # (rerank_candidates chunks) and a cross-encoder reorders them by true relevance before the

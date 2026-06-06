@@ -17,7 +17,7 @@ def test_embedder_passes_threads_and_batch_to_fastembed(
     captured: dict = {}
 
     class _FakeModel:
-        def __init__(self, model_name: str, cache_dir=None, threads=None) -> None:
+        def __init__(self, model_name: str, cache_dir=None, threads=None, cuda=False) -> None:
             captured["threads"] = threads
 
         def embed(self, texts, batch_size=256):
@@ -44,7 +44,9 @@ def test_embedder_threads_zero_is_auto_capped(monkeypatch) -> None:  # T67
     captured: dict = {}
     monkeypatch.setattr(
         "app.embed.fastembed_embedder.TextEmbedding",
-        lambda model_name, cache_dir=None, threads=None: captured.setdefault("threads", threads),
+        lambda model_name, cache_dir=None, threads=None, cuda=False: captured.setdefault(
+            "threads", threads
+        ),
     )
     FastEmbedEmbedder(threads=0)
     # 0 → auto: use the cores, but capped at 8 so a many-core box does not oversubscribe ONNX.
@@ -55,13 +57,41 @@ def test_make_embedder_builds_the_local_fastembed_backend(monkeypatch) -> None: 
     """make_embedder's default ("local") branch constructs the fastembed embedder, no download."""
     monkeypatch.setattr(
         "app.embed.fastembed_embedder.TextEmbedding",
-        lambda model_name, cache_dir=None, threads=None: object(),
+        lambda model_name, cache_dir=None, threads=None, cuda=False: object(),
     )
     from app.config import Settings
     from app.embed.factory import make_embedder
 
     embedder = make_embedder(Settings(embed_backend="local"))
     assert isinstance(embedder, FastEmbedEmbedder)
+
+
+def test_embedder_requests_gpu_when_enabled(monkeypatch) -> None:  # GPU opt-in
+    """use_gpu=True passes cuda=True through to fastembed."""
+    captured: dict = {}
+    monkeypatch.setattr(
+        "app.embed.fastembed_embedder.TextEmbedding",
+        lambda model_name, cache_dir=None, threads=None, cuda=False: captured.setdefault(
+            "cuda", cuda
+        ),
+    )
+    FastEmbedEmbedder(use_gpu=True)
+    assert captured["cuda"] is True
+
+
+def test_embedder_falls_back_to_cpu_when_gpu_unavailable(monkeypatch) -> None:  # GPU fallback
+    """If the CUDA build raises (no onnxruntime-gpu / no device), it retries on CPU."""
+    seen: list[bool] = []
+
+    def fake(model_name, cache_dir=None, threads=None, cuda=False):
+        seen.append(cuda)
+        if cuda:
+            raise RuntimeError("no CUDA execution provider")
+        return object()
+
+    monkeypatch.setattr("app.embed.fastembed_embedder.TextEmbedding", fake)
+    FastEmbedEmbedder(use_gpu=True)
+    assert seen == [True, False]  # tried GPU, then fell back to CPU
 
 
 @pytest.mark.integration
