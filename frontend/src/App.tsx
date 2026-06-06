@@ -205,8 +205,10 @@ export default function App() {
   // reranker reorders results for each question. Both are user-facing controls.
   const [embedMode, setEmbedMode] = useState<"fast" | "careful">("fast");
   const [rerank, setRerank] = useState(true);
-  // Starter questions, tailored to the repo once it is indexed (a generic four until then).
+  // Starter questions, tailored to the repo once it is indexed (a generic set until then).
   const [suggestions, setSuggestions] = useState<Suggestion[]>(() => buildSuggestions({}));
+  // Bumped on every successful ingest so the starter questions rotate to fresh prompts.
+  const ingestSeed = useRef(0);
   const [code, setCode] = useState<{ source: Source; hlStart: number; hlEnd: number } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
@@ -353,13 +355,17 @@ export default function App() {
         endpoints: endpoints.length,
         frameworks: stack.length,
       };
-      // Tailor the starter questions to this repo: a real endpoint, a real symbol, and whether
-      // there is a dependency graph to ask about.
+      // Tailor the starter questions to this repo: a real endpoint, a real symbol, a detected
+      // framework, and whether there is a dependency graph to ask about. The bumped seed rotates
+      // the picks so re-indexing the same repo surfaces fresh prompts.
+      ingestSeed.current += 1;
       setSuggestions(
         buildSuggestions({
           endpoints,
           symbols: symbolRows,
           hasDeps: graph.edges.length > 0,
+          frameworks: stack.map((s) => s.name),
+          rotate: ingestSeed.current,
         }),
       );
       setSymbols(
