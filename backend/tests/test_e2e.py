@@ -146,9 +146,19 @@ def test_streaming_ask_end_to_end_cites_the_right_file(tmp_path) -> None:
     assert any(source["file_path"] == "auth.py" for source in final["sources"])
 
 
-def test_ask_without_a_question_is_a_422() -> None:  # T03 (validation)
-    response = TestClient(app).post("/api/ask", json={})
-    assert response.status_code == 422
+def test_ask_without_a_question_is_a_422(tmp_path) -> None:  # T03 (validation)
+    # Override the heavy deps with fakes so resolving the endpoint never loads the real model
+    # (CI has no model cache); the empty body still fails validation before they matter.
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: ChromaStore(
+        path=str(tmp_path / "c"), embed_model="fake", dim=8
+    )
+    app.dependency_overrides[get_llm] = lambda: FakeLLM("unused")
+    try:
+        response = TestClient(app).post("/api/ask", json={})
+        assert response.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_unknown_route_is_a_clean_404() -> None:  # T03 (routing)

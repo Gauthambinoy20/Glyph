@@ -51,6 +51,19 @@ def test_embedder_threads_zero_is_auto_capped(monkeypatch) -> None:  # T67
     assert captured["threads"] == min(8, os.cpu_count() or 1)
 
 
+def test_make_embedder_builds_the_local_fastembed_backend(monkeypatch) -> None:  # factory default
+    """make_embedder's default ("local") branch constructs the fastembed embedder, no download."""
+    monkeypatch.setattr(
+        "app.embed.fastembed_embedder.TextEmbedding",
+        lambda model_name, cache_dir=None, threads=None: object(),
+    )
+    from app.config import Settings
+    from app.embed.factory import make_embedder
+
+    embedder = make_embedder(Settings(embed_backend="local"))
+    assert isinstance(embedder, FastEmbedEmbedder)
+
+
 @pytest.mark.integration
 def test_local_embedder_returns_384_dim_vector() -> None:  # T14
     embedder = FastEmbedEmbedder(cache_dir=".model_cache")
