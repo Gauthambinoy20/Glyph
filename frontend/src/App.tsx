@@ -597,7 +597,7 @@ export default function App() {
           onMode={setEmbedMode}
         />
       ) : (
-        <div className="workspace">
+        <div className={"workspace" + (code ? " has-code" : "")}>
           <ProjectPanel
             data={{ ...panel, latencies }}
             session={session}
@@ -606,15 +606,6 @@ export default function App() {
             onChangeRepo={reset}
             onOpenRecent={reset}
           />
-
-          {code && (
-            <CodeViewer
-              source={code.source}
-              hlStart={code.hlStart}
-              hlEnd={code.hlEnd}
-              onClose={() => setCode(null)}
-            />
-          )}
 
           <div className="chat-col">
             <div className="chat-scroll scroll" ref={scrollRef}>
@@ -654,6 +645,15 @@ export default function App() {
             </div>
             <Composer onSend={ask} busy={pending} />
           </div>
+
+          {code && (
+            <CodeViewer
+              source={code.source}
+              hlStart={code.hlStart}
+              hlEnd={code.hlEnd}
+              onClose={() => setCode(null)}
+            />
+          )}
         </div>
       )}
 

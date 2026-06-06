@@ -59,8 +59,6 @@
 
   /* Layout (overridable) */
   --nav-h: 56px;
-  --panel-w: 332px;
-  --code-w: 460px;
   --maxw: 1700px;
 
   /* Landing grid texture intensity (overridable) */
@@ -818,16 +816,18 @@ button {
 
 /* ---- Left project panel ---- */
 .panel-col {
-  flex: 0 0 var(--panel-w);
-  width: var(--panel-w);
+  flex: 0 0 40%;
+  min-width: 0;
   min-height: 0;
   border-right: 1px solid var(--border);
   background: var(--panel);
   overflow-y: auto;
   overflow-x: hidden;
-  transition:
-    flex-basis 0.28s var(--ease),
-    width 0.28s var(--ease);
+  transition: flex-basis 0.28s var(--ease);
+}
+/* With the code viewer open the panel narrows so the columns read 20% / 60% / 20%. */
+.workspace.has-code .panel-col {
+  flex-basis: 20%;
 }
 .panel-inner {
   display: flex;
@@ -1552,7 +1552,7 @@ button {
    CHAT
    ============================================================================ */
 .chat-col {
-  flex: 1;
+  flex: 0 0 60%;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -2238,18 +2238,18 @@ button {
    CODE VIEWER (middle column)
    ============================================================================ */
 .code-col {
-  flex: 0 0 var(--code-w);
-  width: var(--code-w);
+  flex: 0 0 20%;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   background: var(--panel);
   animation: slidein 0.3s var(--ease);
 }
 @keyframes slidein {
   from {
-    transform: translateX(-18px);
+    transform: translateX(18px);
     opacity: 0;
   }
 }
@@ -2532,12 +2532,6 @@ button {
   display: none;
 }
 
-@media (max-width: 1200px) {
-  :root {
-    --panel-w: 288px;
-    --code-w: 50%;
-  }
-}
 @media (max-width: 900px) {
   .panel-col {
     position: fixed;
