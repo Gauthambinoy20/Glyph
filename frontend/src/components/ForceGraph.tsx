@@ -3,35 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { GraphNode, GraphData } from "../api";
-
-// Keyed by the lowercased language name so "TypeScript", "Typescript" and "typescript" all
-// resolve — prettyLang only capitalises the first letter, which used to miss these.
-const LANG_COLOR: Record<string, string> = {
-  typescript: "#4c9eff",
-  tsx: "#4c9eff",
-  javascript: "#f7df1e",
-  jsx: "#f7df1e",
-  python: "#ffd866",
-  css: "#c792ea",
-  html: "#e9682c",
-  json: "#7ee787",
-  markdown: "#9aa0aa",
-  go: "#00add8",
-  rust: "#ff7043",
-  java: "#e76f00",
-  ruby: "#e0455f",
-  c: "#8d9bb0",
-  cpp: "#f070a0",
-  "c++": "#f070a0",
-  "c#": "#9b6cff",
-  php: "#8a91d6",
-  shell: "#89e051",
-  yaml: "#cb8f3a",
-};
-
-export function langColor(l: string): string {
-  return LANG_COLOR[l.toLowerCase()] || "#9aa0aa";
-}
+import { gemStops } from "../palette";
 
 interface SimNode extends GraphNode {
   x: number;
@@ -49,6 +21,8 @@ interface SimState {
   cx: number;
   cy: number;
   alpha: number;
+  // animation phase (0..1) of the particle travelling along each edge, by edge index
+  phases: number[];
 }
 
 interface Props {
@@ -92,7 +66,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
     });
     const byId: Record<string, SimNode> = {};
     nodes.forEach((n) => (byId[n.id] = n));
-    stateRef.current = { nodes, byId, edges, cx, cy, alpha: 1 };
+    stateRef.current = { nodes, byId, edges, cx, cy, alpha: 1, phases: edges.map((_, i) => (i % 10) / 10) };
   }, [rawNodes, edges, width, height]);
 
   useEffect(() => {
@@ -122,32 +96,53 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
       if (!S || !ctx) return;
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1;
-      S.edges.forEach((e) => {
+      S.edges.forEach((e, i) => {
         const a = S.byId[e.source];
         const b = S.byId[e.target];
         if (!a || !b) return;
         const lit = hoverRef.current && (e.source === hoverRef.current || e.target === hoverRef.current);
-        ctx.strokeStyle = lit ? "rgba(126,231,135,0.45)" : "rgba(255,255,255,0.07)";
+        // Tint each wire by its endpoints' languages, brighter when one end is hovered.
+        const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+        grad.addColorStop(0, gemStops(a.language)[1]);
+        grad.addColorStop(1, gemStops(b.language)[1]);
+        ctx.strokeStyle = grad;
+        ctx.globalAlpha = lit ? 0.95 : 0.4;
+        ctx.lineWidth = lit ? 1.8 : 1.1;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
+        // A particle flowing source → target makes the import direction feel alive.
+        const t = S.phases[i];
+        ctx.globalAlpha = lit ? 1 : 0.75;
+        ctx.beginPath();
+        ctx.arc(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 1.3, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
       });
+      ctx.globalAlpha = 1;
       S.nodes.forEach((n) => {
         const isHover = hoverRef.current === n.id;
+        const [c0, c1, c2] = gemStops(n.language);
         if (isHover) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(126,231,135,0.12)";
+          ctx.fillStyle = "rgba(255,255,255,0.1)";
           ctx.fill();
         }
+        // A glow plus a top-lit radial gradient turns the flat dot into a little gem.
+        ctx.save();
+        ctx.shadowColor = c1;
+        ctx.shadowBlur = isHover ? 16 : 9;
+        const g = ctx.createRadialGradient(n.x - n.r * 0.35, n.y - n.r * 0.35, n.r * 0.1, n.x, n.y, n.r);
+        g.addColorStop(0, c0);
+        g.addColorStop(0.4, c1);
+        g.addColorStop(1, c2);
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = langColor(n.language);
+        ctx.fillStyle = g;
         ctx.fill();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = "rgba(8,9,11,0.9)";
-        ctx.stroke();
+        ctx.restore();
         // In the big view, label only the hub nodes (bigger radius = more depended-on) plus
         // whatever is hovered, so the graph reads cleanly instead of a wall of overlapping names.
         if (isHover || (big && n.r >= 6.6)) {
@@ -213,6 +208,7 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
         n.x = Math.max(pad, Math.min(width - pad, n.x));
         n.y = Math.max(pad, Math.min(height - pad, n.y));
       });
+      for (let i = 0; i < S.phases.length; i++) S.phases[i] = (S.phases[i] + 0.012) % 1;
       draw();
       rafRef.current = requestAnimationFrame(step);
     }
