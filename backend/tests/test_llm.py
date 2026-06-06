@@ -121,3 +121,38 @@ def test_llm_raises_when_both_models_are_down() -> None:  # both fail → clear 
     client = _client_with(lambda model: _http_error(APIStatusError, 500))
     with pytest.raises(LLMError):
         client.complete("system", "user")
+
+
+def test_llm_complete_raises_on_other_status() -> None:  # non-402/5xx status → clear error
+    client = _client_with(lambda model: _http_error(APIStatusError, 400))
+    with pytest.raises(LLMError):
+        client.complete("system", "user")
+
+
+def test_llm_stream_raises_clear_error_on_402() -> None:  # streaming 402 → clear error
+    client = _client_with(lambda model: _http_error(APIStatusError, 402))
+    with pytest.raises(LLMError):
+        list(client.stream("system", "user"))
+
+
+def test_llm_stream_retries_on_5xx_then_succeeds() -> None:  # streaming 5xx → fallback model
+    def behavior(model: str):
+        if model == "primary":
+            return _http_error(APIStatusError, 503)
+        return _stream_chunks(["recovered"], None)
+
+    events = list(_client_with(behavior).stream("system", "user"))
+
+    assert "".join(event["text"] for event in events if event["type"] == "delta") == "recovered"
+
+
+def test_llm_stream_raises_on_other_status() -> None:  # streaming non-402/5xx → clear error
+    client = _client_with(lambda model: _http_error(APIStatusError, 400))
+    with pytest.raises(LLMError):
+        list(client.stream("system", "user"))
+
+
+def test_llm_stream_raises_when_both_models_are_down() -> None:  # both 5xx → clear LLMError
+    client = _client_with(lambda model: _http_error(APIStatusError, 500))
+    with pytest.raises(LLMError):
+        list(client.stream("system", "user"))
