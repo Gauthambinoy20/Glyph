@@ -7,8 +7,8 @@
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
-![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+![Tests](https://img.shields.io/badge/tests-429%20passing-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Ask questions about any codebase and get answers grounded in the actual code, with **file + line
@@ -62,14 +62,14 @@ index, and ask a question, answers stream in with clickable `file:line` citation
 
 ```bash
 cd backend  && pytest -q && ruff check . && mypy app && bandit -c pyproject.toml -r app
-cd frontend && npm run lint && npm run format:check && npm test && npx tsc -b && npm run build
+cd frontend && npm run lint && npm run format:check && npm run test:coverage && npx tsc -b && npm run build
 ```
 
 ## CI/CD pipeline
 Every push and pull request runs five GitHub Actions workflows (least-privilege tokens,
 concurrency-cancel, pinned tool versions), and a sixth deploys on push to `main`:
-- **CI**: backend gate (ruff lint + format · mypy · bandit · pip-audit · pytest+coverage) and
-  frontend gate (npm audit · eslint · prettier · tsc · vitest · production build).
+- **CI**: backend gate (ruff lint + format · mypy · bandit · pip-audit · pytest at 100% coverage) and
+  frontend gate (npm audit · eslint · prettier · knip · tsc · vitest at 100% coverage · production build).
 - **Security**: gitleaks secret scan over full history + Trivy dependency/filesystem CVE scan
   (fails on fixable CRITICAL/HIGH).
 - **CodeQL**: SAST on the Python and TypeScript sources.
