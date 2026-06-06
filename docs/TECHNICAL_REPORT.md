@@ -88,7 +88,7 @@ graph TD
       RET --> PB[Grounded Prompt] --> LLM[OpenRouter free model]
       LLM --> API
     end
-    API --> DB[(SQLite history · planned)]
+    API --> DB[(SQLite history)]
     API --> LOG[JSON logs]
 ```
 
@@ -158,43 +158,26 @@ grounded answer + model picker + logging → extra endpoints → UI → docker/C
 [ROADMAP.md](./ROADMAP.md).
 
 ### 2.4 Data model
-Chunk vectors + metadata live in **Chroma** (built). The repo / chat-session / message tables below are
-the **planned** SQLite persistence layer (ROADMAP Phase 7 #65) — designed here but **not yet built**;
-conversation history is currently in-memory in the client only.
+Chunk vectors + metadata live in **Chroma** (built). Conversation history is persisted in **SQLite**
+(`app/db/history.py`, built — ROADMAP Phase 7 #65), exposed through the `/api/history` endpoints and
+covered by `tests/test_history.py`. The two real tables are shown below; chunks themselves live in
+Chroma, not SQLite.
 
 ```mermaid
 erDiagram
-    REPO ||--o{ CHUNK : contains
-    REPO ||--o{ CHATSESSION : has
-    CHATSESSION ||--o{ MESSAGE : contains
-    REPO {
+    SESSIONS ||--o{ MESSAGES : contains
+    SESSIONS {
       string id PK
-      string url
-      string name
-      string status
-      int chunk_count
+      string repo
+      real created_at
     }
-    CHUNK {
-      string id PK
-      string repo_id FK
-      string file_path
-      string language
-      string symbol_name
-      string type
-      int start_line
-      int end_line
-      string code
-    }
-    CHATSESSION {
-      string id PK
-      string repo_id FK
-    }
-    MESSAGE {
+    MESSAGES {
       string id PK
       string session_id FK
+      int ord
       string role
       string content
-      string citations_json
+      string data
     }
 ```
 
@@ -202,9 +185,10 @@ erDiagram
 Everything from the user is treated as untrusted and passes a guard before it reaches the server.
 Ingested code is only ever read as text, never executed.
 
-**Built today:** V1, V2, V3 (ingest guards), V6 (CORS), the temp-clone cleanup, secrets-in-`.env`,
-a request-id on every response, and the generic-error handler. **Planned, not yet built:** V4 (question
-length cap) and V5 (per-IP rate limit on `/ask`) — both are marked `· planned` in the diagram below.
+**Built today:** V1, V2, V3 (ingest guards), V5 (per-IP rate limit, a 60/min rolling window — see
+`tests/test_rate_limit.py`), V6 (CORS), the temp-clone cleanup, secrets-in-`.env`, a request-id on
+every response, and the generic-error handler. **Planned, not yet built:** V4 (question length cap),
+marked `· planned` in the diagram below.
 
 ```mermaid
 flowchart TD
@@ -217,7 +201,7 @@ flowchart TD
       V2[local path confined, no traversal]
       V3[size + count caps, extension allowlist]
       V4[question length limit · planned]
-      V5[per-IP rate limit on /ask · planned]
+      V5[per-IP rate limit on /ask (60/min)]
       V6[CORS locked to the frontend origin]
     end
     subgraph Trusted[Server side]
@@ -304,7 +288,7 @@ flowchart LR
 | mypy `2.1.0` | type checking (every function typed) | clean |
 | bandit `1.9.4` | code security scan | clean |
 | pip-audit `2.10.0` | dependency CVE scan | 5/6 fixed |
-| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 78 passed (+2 integration, local-only), 91% |
+| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 135 passed (+4 integration, local-only), 92% |
 
 **Security decisions:**
 - Bumped pytest → 9.0.3 and FastAPI → 0.136.3 (pulls patched Starlette 1.2.1), re-ran the full
@@ -333,7 +317,7 @@ Measured/estimated on a small repo, local backend, free OpenRouter model:
 | Stage | Typical time | Notes |
 |---|---|---|
 | **LLM completion (OpenRouter free)** | **2-10+ s** | Dominant cost. Free tier queues and is slow; this is ~90% of the wait. |
-| **BM25 rebuild** | 50 ms - 2 s | ⚠️ Rebuilt from Chroma on **every request** (`retrieve/hybrid.py`). Scales with repo size. |
+| **BM25 build** | 50 ms - 2 s | ✅ Now built once per repo and cached (Phase 13 #104); the first ask pays it, later asks reuse it. Rebuilds only when the chunk set changes. |
 | Query embedding (bge-small ONNX, CPU) | 10-50 ms | First call after boot is a cold-model hit (slower). |
 | Chroma vector search (HNSW, cosine) | 5-30 ms | Fast. |
 | RRF fusion + exact-symbol boost | < 5 ms | Negligible. |
@@ -341,7 +325,7 @@ Measured/estimated on a small repo, local backend, free OpenRouter model:
 Takeaway: the model call dominates, so the highest-leverage work is **perceived** latency (stream it)
 plus removing the one piece of genuinely wasted work (the per-request BM25 rebuild).
 
-### 7.2 Optimizations (planned — ROADMAP Phase 13)
+### 7.2 Optimizations (ROADMAP Phase 13 — shipped, except #5)
 1. **Stream answers over SSE** (`/api/ask/stream`). Same total time, but words appear in ~1 s instead
    of a multi-second spinner. Biggest felt-speed win; the citations ride in the final SSE event.
 2. **Per-repo BM25 cache.** Build the keyword index once at ingest and keep it in memory keyed by repo;
@@ -350,9 +334,9 @@ plus removing the one piece of genuinely wasted work (the per-request BM25 rebui
    call).
 3. **Warm the embedder at startup.** Load bge-small on app boot so the first question pays no cold-load.
 4. **Answer cache** keyed on `(repo_id, question, model)` — identical repeats return instantly, no LLM call.
-5. **Concurrent retrieval** — run semantic and BM25 lookups in parallel (minor; they are already fast).
+5. **Concurrent retrieval** — run semantic and BM25 lookups in parallel (minor; they are already fast). *(still open — the one Phase 13 item not yet shipped.)*
 6. **Per-stage timings** in the JSON log (`embed_ms`, `retrieve_ms`, `llm_ms`) so latency is observable,
-   not guessed — this also feeds the planned observability dashboard.
+   not guessed — this also feeds the observability dashboard (built, #97).
 
 ### 7.3 What we deliberately do NOT do
 - No premature micro-optimization of the embedder (ONNX bge-small is already light and fast on CPU).
