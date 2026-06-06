@@ -160,10 +160,20 @@ describe("ForceGraph (live: mocked 2d context + raf)", () => {
     expect(ctx.moveTo).toHaveBeenCalled();
   });
 
-  it("draws labels and bigger physics when big is set", () => {
-    renderGraph({ big: true });
-    // big => labels drawn for every node even without hover.
-    expect(ctx.fillText).toHaveBeenCalled();
+  it("labels hub nodes (and uses bigger physics) when big is set", () => {
+    // A hub depended on by two files has a big enough radius to be labelled in the big view;
+    // the two leaf nodes stay below the threshold, covering both sides of the label branch.
+    const nodes = [
+      { id: "hub", label: "hub.ts", language: "TypeScript" },
+      { id: "a", label: "a.ts", language: "TypeScript" },
+      { id: "b", label: "b.ts", language: "TypeScript" },
+    ];
+    const edges = [
+      { source: "a", target: "hub" },
+      { source: "b", target: "hub" },
+    ];
+    renderGraph({ big: true, nodes, edges });
+    expect(ctx.fillText).toHaveBeenCalled(); // the hub (indeg 2) is labelled
   });
 
   it("skips edges whose endpoints are missing", () => {

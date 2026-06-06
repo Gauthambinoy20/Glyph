@@ -108,10 +108,10 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const REP = big ? 5200 : 2600;
+    const REP = big ? 7400 : 2600;
     const SPRING = 0.018;
-    const LINK_LEN = big ? 110 : 64;
-    const GRAV = 0.012;
+    const LINK_LEN = big ? 138 : 64;
+    const GRAV = big ? 0.0092 : 0.012;
     const DAMP = 0.86;
 
     function draw() {
@@ -146,9 +146,11 @@ export function ForceGraph({ nodes: rawNodes, edges, width, height, onPick, big 
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = "rgba(8,9,11,0.9)";
         ctx.stroke();
-        if (isHover || big) {
+        // In the big view, label only the hub nodes (bigger radius = more depended-on) plus
+        // whatever is hovered, so the graph reads cleanly instead of a wall of overlapping names.
+        if (isHover || (big && n.r >= 6.6)) {
           ctx.font = `${big ? 12 : 10}px 'JetBrains Mono', monospace`;
-          ctx.fillStyle = isHover ? "#e9eaec" : "rgba(182,185,192,0.75)";
+          ctx.fillStyle = isHover ? "#e9eaec" : "rgba(182,185,192,0.78)";
           ctx.textAlign = "center";
           ctx.textBaseline = "top";
           ctx.fillText(n.label, n.x, n.y + n.r + 4);
