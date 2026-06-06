@@ -91,3 +91,6 @@ paths = ["app"]
 exclude = ["tests/fixtures"]
 # 80 keeps it high-signal: report only confident finds, not maybe-dynamic guesses.
 min_confidence = 80
+# `cls` is the conventional first parameter of a pydantic @field_validator classmethod; it is
+# part of the required signature even when the validator does not use the class, so never flag it.
+ignore_names = ["cls"]
