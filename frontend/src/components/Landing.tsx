@@ -134,13 +134,14 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
             <span className="ld-label">Try a public repo</span>
             {DEMO_REPOS.map((r) => (
               <button
-                key={r}
+                key={r.repo}
                 className="rr"
-                onClick={() => !busy && onIngest(`https://github.com/${r}`)}
-                title={`Ingest github.com/${r}`}
+                onClick={() => !busy && onIngest(`https://github.com/${r.repo}`)}
+                title={`Ingest github.com/${r.repo}`}
               >
-                <Icon name="github" size={12} />
-                <span className="mono">{r}</span>
+                <span className="lang-dot" style={{ background: r.color }} aria-hidden="true" />
+                <span className="mono">{r.repo}</span>
+                <span className="lang-tag">{r.lang}</span>
               </button>
             ))}
           </div>
@@ -168,13 +169,14 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
 }
 
 // Recognizable, fast-to-ingest repos for one-click demos — a spread of TypeScript, Python and
-// JavaScript (the languages the chunker parses), each small enough to index in seconds.
-const DEMO_REPOS = [
-  "pmndrs/zustand",
-  "colinhacks/zod",
-  "fastapi/typer",
-  "pallets/flask",
-  "expressjs/express",
+// JavaScript (the languages the chunker parses), each small enough to index in seconds. The
+// language + brand colour drive the little dot/tag on each chip.
+const DEMO_REPOS: { repo: string; lang: string; color: string }[] = [
+  { repo: "pmndrs/zustand", lang: "TS", color: "#3178c6" },
+  { repo: "colinhacks/zod", lang: "TS", color: "#3178c6" },
+  { repo: "fastapi/typer", lang: "Python", color: "#ffd43b" },
+  { repo: "pallets/flask", lang: "Python", color: "#ffd43b" },
+  { repo: "expressjs/express", lang: "JS", color: "#f7df1e" },
 ];
 
 // The core engineering difference between the two indexing modes, shown under the toggle

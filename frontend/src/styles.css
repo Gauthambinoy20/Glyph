@@ -2804,9 +2804,9 @@ button {
 
 /* ---- Landing: quick-add demo repo chips ---- */
 .land-demos {
-  margin-top: 24px;
+  margin-top: 30px;
   display: flex;
-  gap: 9px;
+  gap: 11px;
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
@@ -2819,19 +2819,21 @@ button {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--faint);
-  margin: 0 0 9px;
+  margin: 0 0 13px;
 }
 .land-demos .rr {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 31px;
-  padding: 0 13px;
-  border-radius: 999px;
+  gap: 9px;
+  height: 38px;
+  padding: 0 9px 0 13px;
+  border-radius: 12px;
   color: var(--text-2);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.18);
   cursor: pointer;
   transition:
     border-color 0.16s var(--ease),
@@ -2840,23 +2842,41 @@ button {
     color 0.16s var(--ease);
 }
 .land-demos .rr .mono {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text);
 }
-.land-demos .rr svg {
-  color: var(--muted);
-  transition: color 0.16s var(--ease);
+/* Language colour dot — the brand colour of each repo's primary language. */
+.land-demos .rr .lang-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, currentColor 0%, transparent),
+    0 0 8px color-mix(in srgb, currentColor 0%, transparent);
+}
+/* Small language pill tucked to the right of the repo name. */
+.land-demos .rr .lang-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  border: 1px solid var(--border);
 }
 .land-demos .rr:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: var(--accent-line);
   color: var(--text);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 6px 18px var(--accent-glow);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 26px var(--accent-glow);
 }
-.land-demos .rr:hover svg {
-  color: var(--accent);
+.land-demos .rr:hover .lang-tag {
+  border-color: var(--accent-line);
+  color: var(--text);
 }
 .land-demos .rr:active {
   transform: translateY(0);
