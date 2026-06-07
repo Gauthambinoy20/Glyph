@@ -11,9 +11,9 @@ variable "profile" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type. t3.large gives 2 vCPU / 8 GB — the extra RAM keeps the bge-small embedder and Chroma off swap. Careful-mode (transformer) ingest is CPU-bound, so bump to t3.xlarge (4 vCPU) or a GPU box if you need it fast; Fast mode is light enough for any of these."
+  description = "EC2 instance type. t3.xlarge gives 4 vCPU / 16 GB — the 4 vCPU speed up Careful-mode (transformer) ingest, which is CPU-bound, and 16 GB keeps the embedder and Chroma well off swap. For genuinely fast Careful ingest on large repos use a GPU box; Fast mode (static embeddings) is light on anything."
   type        = string
-  default     = "t3.large"
+  default     = "t3.xlarge"
 }
 
 variable "ssh_cidr" {
