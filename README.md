@@ -21,7 +21,7 @@
 
 ![Glyph's live architecture graph of its own codebase: every file as a gem node, clustered by language and wired by its real imports](docs/demo.gif)
 
-**🎬 Full walkthrough video** (silent, ~2½ min): paste a GitHub repo → live ingest → tour the project panel → three real questions answered with `file:line` citations → click a citation into the exact code → the live architecture graph → ⌘K palette, model picker, query log → and a question it **refuses** because the answer isn't in the code. [docs/walkthrough.mp4](docs/walkthrough.mp4)
+**🎬 Full walkthrough video** (silent, ~2 min): paste a GitHub repo → live ingest → a grounded answer with `file:line` citations → click a citation into the exact code → a second and third question → the project-intelligence panel → the live architecture graph → ⌘K palette, model picker, query log → and a question it **refuses** because the answer isn't in the code. [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
 > 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
 > 🔬 Technical deep-dive: [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md) ·
