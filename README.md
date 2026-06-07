@@ -34,7 +34,7 @@
 
 **▶ Full walkthrough (2 min):** [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
-> **More:** [Build journal](docs/JOURNAL.md) · [Technical report](docs/TECHNICAL_REPORT.md) · [Roadmap](docs/ROADMAP.md)
+> **Technical deep-dive:** [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md)
 
 ---
 
