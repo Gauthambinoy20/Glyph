@@ -26,13 +26,11 @@
 
 [**Live demo**](https://52-215-125-206.sslip.io) · [**Technical report**](docs/TECHNICAL_REPORT.md) · [**Report a bug**](https://github.com/Gauthambinoy20/Glyph/issues)
 
-</div>
-
-![Glyph in action — ingest a repo, ask, get answers grounded in the real code with file:line citations, and explore the live architecture graph](docs/demo-fast.gif)
+<img src="docs/demo-fast.gif" width="820" alt="Glyph in action — ingest a repo, ask, get answers grounded in the real code with file:line citations, and explore the live architecture graph" />
 
 **▶ Full walkthrough (2 min):** [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
-> **Technical deep-dive:** [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md)
+</div>
 
 ---
 
