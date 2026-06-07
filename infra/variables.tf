@@ -11,9 +11,9 @@ variable "profile" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type. t3.medium gives 2 vCPU / 4 GB — comfortable for the embedder + Chroma."
+  description = "EC2 instance type. t3.large gives 2 vCPU / 8 GB — the extra RAM keeps the bge-small embedder and Chroma off swap. Careful-mode (transformer) ingest is CPU-bound, so bump to t3.xlarge (4 vCPU) or a GPU box if you need it fast; Fast mode is light enough for any of these."
   type        = string
-  default     = "t3.medium"
+  default     = "t3.large"
 }
 
 variable "ssh_cidr" {
