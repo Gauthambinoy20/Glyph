@@ -41,12 +41,25 @@ class _CountingLLM(FakeLLM):
         return super().complete(system_prompt, user_prompt, model)
 
 
-def test_blank_question_is_rejected() -> None:
-    """An empty or whitespace-only question fails validation with 422 before any work runs."""
-    client = TestClient(app)
-    for blank in ("", "   ", "\n\t "):
-        resp = client.post("/api/ask", json={"question": blank})
-        assert resp.status_code == 422, blank
+def test_blank_question_is_rejected(tmp_path) -> None:
+    """An empty or whitespace-only question fails validation with 422 before any work runs.
+
+    FastAPI resolves the endpoint's dependencies while validating the body, so even a request
+    that 422s would otherwise construct the real embedder and reranker — which download models
+    from Hugging Face and flake CI on a rate limit. Override them with fakes so this test never
+    touches the network, the same way the relevance-floor tests below do.
+    """
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [])
+    app.dependency_overrides[get_reranker] = lambda: None
+    app.dependency_overrides[get_llm] = lambda: FakeLLM()
+    try:
+        client = TestClient(app)
+        for blank in ("", "   ", "\n\t "):
+            resp = client.post("/api/ask", json={"question": blank})
+            assert resp.status_code == 422, blank
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_low_relevance_refuses_without_calling_the_llm(tmp_path) -> None:
