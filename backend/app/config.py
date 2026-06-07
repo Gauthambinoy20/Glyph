@@ -61,10 +61,12 @@ class Settings(BaseSettings):
     # the LLM) when the best reranked chunk scores below this. Only enforced when the cross-encoder
     # ran, because its score is a calibrated relevance logit; in single-stage mode the raw cosine
     # scores are not comparable across backends, so the strict prompt stays the only backstop.
-    # Calibrated on real queries: relevant questions score ~+1.5 to +7.4, off-topic ~-9 to -11, so
-    # -5.0 sits in the empty gap — it short-circuits only clearly off-topic asks, never a real one.
-    # Set to None to disable.
-    relevance_floor: float | None = -5.0
+    # Calibrated on real queries: specific questions score ~+1.5 to +7.4, but a broad-but-valid
+    # "what does this project do" scores ~-7 (no single chunk answers it), while genuinely
+    # off-topic asks ("weather in Paris") sit at ~-11. -9.0 answers real questions — including
+    # vague overview ones — and still short-circuits only the clearly off-topic. Set to None to
+    # disable. (-5.0 was too strict: it refused legitimate broad questions, the first ones asked.)
+    relevance_floor: float | None = -9.0
 
     # LLM (chat) via OpenRouter by default; all free, no card needed.
     llm_base_url: str = "https://openrouter.ai/api/v1"

@@ -55,7 +55,7 @@ def test_low_relevance_refuses_without_calling_the_llm(tmp_path) -> None:
     llm = _CountingLLM()
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
     app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
-    app.dependency_overrides[get_reranker] = lambda: _ScoringReranker(score=-9.0)
+    app.dependency_overrides[get_reranker] = lambda: _ScoringReranker(score=-12.0)
     app.dependency_overrides[get_llm] = lambda: llm
     try:
         body = TestClient(app).post("/api/ask", json={"question": "what is the weather"}).json()
@@ -67,6 +67,29 @@ def test_low_relevance_refuses_without_calling_the_llm(tmp_path) -> None:
     assert body["sources"] == []
     assert body["meta"]["grounded"] is False
     assert llm.calls == 0  # the deterministic floor saved the LLM call
+
+
+def test_broad_question_above_floor_is_answered(tmp_path) -> None:
+    """A valid-but-broad question (score ~-7, above the -9 floor) is answered, not refused.
+
+    This is the first thing users ask ("what does this project do"); a -5 floor wrongly refused
+    it, so this pins that it now reaches the model.
+    """
+    chunk = make_chunk("def login(): ...", name="login", path="auth.py", start=1, end=2)
+    llm = _CountingLLM()
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
+    app.dependency_overrides[get_reranker] = lambda: _ScoringReranker(score=-7.0)
+    app.dependency_overrides[get_llm] = lambda: llm
+    try:
+        body = (
+            TestClient(app).post("/api/ask", json={"question": "what does this project do"}).json()
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert body["meta"]["grounded"] is True  # -7 clears the -9 floor
+    assert llm.calls == 1  # the model was asked, not short-circuited
 
 
 def test_high_relevance_passes_through_to_the_llm(tmp_path) -> None:
@@ -93,7 +116,7 @@ def test_stream_refuses_low_relevance_without_calling_the_llm(tmp_path) -> None:
     llm = _CountingLLM()
     app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
     app.dependency_overrides[get_store] = lambda: _store_with(tmp_path, [chunk])
-    app.dependency_overrides[get_reranker] = lambda: _ScoringReranker(score=-9.0)
+    app.dependency_overrides[get_reranker] = lambda: _ScoringReranker(score=-12.0)
     app.dependency_overrides[get_llm] = lambda: llm
     try:
         resp = TestClient(app).post("/api/ask/stream", json={"question": "who won the cup"})
