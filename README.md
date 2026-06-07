@@ -19,7 +19,9 @@
 
 </div>
 
-![Glyph demo: pick fast indexing, ingest a codebase, ask a question, get a grounded answer with citations](docs/demo.gif)
+![Glyph's live architecture graph of its own codebase: every file as a gem node, clustered by language and wired by its real imports](docs/demo.gif)
+
+**🎬 Full walkthrough video** (silent, ~75s — ingest → ask → grounded answer → citations → code viewer → architecture graph → command palette → query log): [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
 > 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
 > 🔬 Technical deep-dive: [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md) ·
