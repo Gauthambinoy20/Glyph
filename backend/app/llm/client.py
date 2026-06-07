@@ -34,8 +34,11 @@ class LLMClient:
         fallback_model: str,
         app_url: str = "",
     ) -> None:
-        # A dummy key is fine for construction; real calls need a valid key.
-        self._client = OpenAI(base_url=base_url, api_key=api_key or "unset")
+        # A dummy key is fine for construction; real calls need a valid key. max_retries lets the
+        # SDK retry transient 429/5xx with exponential backoff before we even fall back to the
+        # second model — so a momentary blip of the free tier (which has no SLA and queues under
+        # load) is ridden out instead of surfacing a 502 to the user.
+        self._client = OpenAI(base_url=base_url, api_key=api_key or "unset", max_retries=4)
         self._model = model
         self._fallback_model = fallback_model
         # Optional OpenRouter attribution headers; harmless if blank.
