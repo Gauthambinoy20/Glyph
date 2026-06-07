@@ -22,5 +22,16 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 usermod -aG docker ubuntu
 systemctl enable --now docker
 
+# A small swap file as a safety margin: the box loads ONNX models into RAM, and a 2 GB host
+# can get tight. Swap turns a momentary memory spike into a brief slowdown instead of an OOM
+# kill of the backend. Skipped if a swapfile already exists (idempotent across re-runs).
+if ! swapon --show | grep -q /swapfile; then
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo "/swapfile none swap sw 0 0" >>/etc/fstab
+fi
+
 # Marker the deploy step polls on to know cloud-init has finished.
 touch /var/lib/glyph-bootstrap-done
