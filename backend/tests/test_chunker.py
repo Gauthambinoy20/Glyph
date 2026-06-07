@@ -86,6 +86,28 @@ def test_js_function_and_arrow_const_captured() -> None:  # T08
     _assert_line_accuracy(chunks, lines)
 
 
+def test_js_member_assignment_api_methods_captured() -> None:
+    """Capture the `obj.prop = function () {...}` API style as its own named chunk.
+
+    This style (res.json, app.use) is used across JS libraries; without it the method is lost
+    inside a module blob. This is the JS hit-rate fix.
+    """
+    source = (
+        b"res.json = function json(obj) {\n  return this.send(obj);\n};\n\n"
+        b"app.use = function use(fn) {\n  this.stack.push(fn);\n};\n\n"
+        b"res.headersSent = true;\n"  # a non-function assignment stays module code, not a symbol
+        b'console.log("ready");\n'  # a plain statement is not mistaken for an API method
+    )
+    chunks = chunk_file("response.js", source)
+    names = {c.symbol_name for c in chunks}
+
+    assert "json" in names and "use" in names  # both API methods are their own symbols
+    assert "headersSent" not in names  # only function assignments become symbols
+    json_chunk = next(c for c in chunks if c.symbol_name == "json")
+    assert json_chunk.type == "function"
+    assert "this.send(obj)" in json_chunk.code  # the whole method is the chunk's code
+
+
 # ----- TypeScript -----
 
 

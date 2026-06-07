@@ -126,6 +126,10 @@ def _decorated_inner(node: Node) -> Node | None:
     return None
 
 
+# The JS/TS node types that represent a function value (assigned to a name or a member).
+_JS_FUNCS = ("arrow_function", "function_expression", "function")
+
+
 def _arrow_declarator(node: Node) -> Node | None:
     """For a JS/TS const/let declaration, return the declarator that holds a function.
 
@@ -135,12 +139,32 @@ def _arrow_declarator(node: Node) -> Node | None:
     for child in node.named_children:
         if child.type == "variable_declarator":
             value = child.child_by_field_name("value")
-            if value is not None and value.type in (
-                "arrow_function",
-                "function_expression",
-                "function",
-            ):
+            if value is not None and value.type in _JS_FUNCS:
                 return child
+    return None
+
+
+def _member_fn_assignment(node: Node) -> Node | None:
+    """For a JS/TS `obj.prop = function/arrow` statement, return the property-name node.
+
+    This is the prototype/object-assignment API style that JS libraries lean on
+    (`res.json = function () {...}`, `app.use = function () {...}`, `exports.run = () => {}`).
+    tree-sitter doesn't treat these as function declarations, so without this they'd be swept
+    into a generic module chunk and retrieve poorly — the cause of Glyph's weak JS hit-rate.
+    """
+    if node.type != "expression_statement":
+        return None
+    for child in node.named_children:
+        if child.type == "assignment_expression":
+            left = child.child_by_field_name("left")
+            right = child.child_by_field_name("right")
+            if (
+                left is not None
+                and left.type == "member_expression"
+                and right is not None
+                and right.type in _JS_FUNCS
+            ):
+                return left.child_by_field_name("property")
     return None
 
 
@@ -163,6 +187,9 @@ def _produces_symbol(node: Node, lang: str) -> bool:
         return True
     if node.type in ("lexical_declaration", "variable_declaration"):
         return _arrow_declarator(node) is not None
+    # `res.json = function () {...}` — a function assigned to an object/prototype member.
+    if node.type == "expression_statement":
+        return _member_fn_assignment(node) is not None
     # `export function ...`, `export const x = () => ...`, `export interface ...`
     if node.type == "export_statement":
         return any(_produces_symbol(child, lang) for child in node.named_children)
@@ -205,6 +232,23 @@ def extract_symbol_chunks(root: Node, source: bytes, lang: str, path: str) -> li
                 span = _span_with_export(node)
                 chunks.append(_make_chunk(span, declarator, source, lang, path, "function"))
                 return
+
+        # JS/TS `obj.prop = function () {...}` — the property name becomes the symbol, the whole
+        # statement is the chunk, so library API methods are retrievable on their own.
+        prop = _member_fn_assignment(node)
+        if prop is not None and prop.text is not None:
+            chunks.append(
+                Chunk(
+                    file_path=path,
+                    language=lang,
+                    symbol_name=prop.text.decode("utf-8", "replace"),
+                    type="function",
+                    start_line=node.start_point[0] + 1,
+                    end_line=node.end_point[0] + 1,
+                    code=_slice(source, node),
+                )
+            )
+            return
 
         # Anything else: keep looking inside it (covers `export ...` wrappers too).
         for child in node.named_children:
