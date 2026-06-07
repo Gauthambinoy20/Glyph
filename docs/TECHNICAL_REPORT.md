@@ -60,25 +60,28 @@ This is the reference behind the choices summarized in plain words in [JOURNAL.m
 at pinned commits and measures top-5 hit-rate **on real models, in both shipped modes** — nothing is
 mocked, so these are the numbers a user actually gets. Latest run (top-5, reranked):
 
-| repo | language | fast (Model2Vec) | careful (bge-small) |
-|------|----------|-----------------:|--------------------:|
-| glyph-backend | Python | 100% | 100% |
-| pallets/click | Python | 100% | 100% |
-| expressjs/express | JavaScript | 40% | 40% |
-| axios/axios | JavaScript | 40% | 40% |
-| pmndrs/zustand | TypeScript | 75% | 75% |
-| **overall (29 questions)** | | **76%** | **76%** |
+| repo | language | hit-rate (fast) |
+|------|----------|----------------:|
+| glyph-backend | Python | 100% |
+| pallets/click | Python | 100% |
+| expressjs/express | JavaScript | 80% |
+| pmndrs/zustand | TypeScript | 100% |
+| axios/axios | JavaScript | 20% |
+| **overall (29 questions)** | | **82%** |
 
-Two things this measures honestly:
-- **Fast == careful on every repo.** The static-embedding default loses no retrieval accuracy versus
-  the transformer — BM25 + the cross-encoder recover it. This is the evidence behind shipping fast mode
-  by default, not an assumption.
-- **A real weakness it surfaced (diagnosed, not guessed):** JS retrieval (40%) lags Python (100%). The
-  tree-sitter chunker captures `function`/`class`/`method` *declarations*, but a JS library's public API
-  is usually prototype/object *assignments* (`res.json = function …`, `app.use = …`) — not named symbols,
-  so they fall into generic module chunks and retrieve less precisely. Python, where the API is `def`/
-  `class`, hits 100%. Capturing member-assignment functions for JS/TS is tracked as future work — the
-  point of the eval is that this gap is now a measured number on a dashboard, not a surprise in a demo.
+What this measures honestly:
+- **Fast == careful.** In the full two-mode run the static-embedding default scored identically to the
+  bge-small transformer — BM25 + the cross-encoder recover any difference. That is the evidence behind
+  shipping fast mode by default, not an assumption. (Careful mode is re-measured by the weekly CI Eval
+  job; it OOMs on a 2 GB laptop running all repos, which is why the table above is the fast-mode run.)
+- **The eval drove a real fix — and is honest about the trade-off.** An earlier run measured JS at 40%
+  vs 100% Python: the chunker only treated `function`/`class`/`method` *declarations* as symbols, but a JS
+  library's public API is mostly prototype/object *assignments* (`res.json = function …`, `app.use = …`).
+  Teaching the chunker to capture those lifted **express 40%→80%** and **zustand 75%→100%** (overall
+  76%→82%). It did **not** help everywhere: **axios regressed 40%→20%**, because the same change emits many
+  small `utils.x = …` helper chunks there that crowd the expected file out of the top-5. Net positive, but
+  a real trade-off the eval makes *visible* rather than hides — the next step is a test-file / utility
+  down-weight in ranking, tracked as future work.
 
 ### 1.3 LLM (OpenRouter)
 - OpenAI-compatible chat at `https://openrouter.ai/api/v1`; use `openai==1.109.1` SDK with

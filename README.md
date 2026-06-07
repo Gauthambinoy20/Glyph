@@ -70,7 +70,7 @@ understand a repo fast, and it runs completely free (local embeddings + an OpenR
 - **Ingest a GitHub repo or local folder** — sandboxed, with live progress (clone → walk → chunk → embed).
 - **AST chunking** (tree-sitter) for Python / JS / TS / TSX, so citations land on exact line ranges.
 - **Two-stage retrieval** — hybrid recall (semantic + BM25, fused with RRF) → a cross-encoder reranker that puts the best code first.
-- **Measured retrieval quality** — a real eval harness clones 5 pinned repos (Python / JS / TS) and scores top-5 hit-rate on real models in both modes (weekly in CI). Not a claim, a number: **76% overall, identical in fast and careful** ([details](docs/TECHNICAL_REPORT.md#12b-measured-retrieval-quality-real-cross-language-eval)).
+- **Measured retrieval quality** — a real eval harness clones 5 pinned repos (Python / JS / TS) and scores top-5 hit-rate on real models (weekly in CI). Not a claim, a number: **82% overall**, with the eval itself driving a chunker fix that lifted JS retrieval ([details](docs/TECHNICAL_REPORT.md#12b-measured-retrieval-quality-real-cross-language-eval)).
 - **Fast or Careful indexing** — Model2Vec static embeddings (~100× faster ingest) or the bge-small transformer (more precise).
 - **Grounded, streaming answers** with `file:line` citations, a sources panel, and follow-up suggestions.
 - **Project Intelligence panel** — language breakdown, index stats, repo overview, live dependency graph, most-depended-on files, session metrics.

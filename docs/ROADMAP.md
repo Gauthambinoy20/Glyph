@@ -395,7 +395,7 @@ can *watch it* in production.
   divergence where the quality script reranked a narrower pool than production).
 - [x] **Real eval harness** — `evaluate_repos` clones 5 pinned repos (Python/JS/TS) and measures
   top-5 hit-rate on real models in both modes; weekly `Eval` workflow + `make eval-repos`.
-  Measured: **76% overall, fast == careful** (see TECHNICAL_REPORT §1.2b).
+  Measured: **82% overall** (the eval drove a chunker fix lifting JS retrieval; see TECHNICAL_REPORT §1.2b).
 - [x] **Scenario tests** — mode-switch isolation, empty repo, large repo, full ingest→ask→file chain
   (real pipeline, offline).
 - [x] **Observability** — log the files behind every answer + a `grounded` flag (fixed a real
