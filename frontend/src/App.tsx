@@ -554,7 +554,7 @@ export default function App() {
             <button
               className="iconbtn"
               aria-label="Toggle theme"
-              onClick={() => pushToast("Light theme is on the roadmap — dark is the primary system.")}
+              onClick={() => pushToast("Light theme is planned — dark is the primary system.")}
             >
               <Icon name="moon" size={17} />
             </button>

@@ -525,11 +525,11 @@ describe("App", () => {
     await waitFor(() => expect(document.querySelector(".modal-scrim")).toBeNull());
   });
 
-  it("shows a roadmap toast when the theme toggle is clicked", async () => {
+  it("shows a planned-feature toast when the theme toggle is clicked", async () => {
     const user = userEvent.setup();
     await intoWorkspace(user);
     await user.click(screen.getByRole("button", { name: /toggle theme/i }));
-    expect(await screen.findByText(/light theme is on the roadmap/i)).toBeTruthy();
+    expect(await screen.findByText(/light theme is planned/i)).toBeTruthy();
   });
 
   it("asks a follow-up suggestion from an answer", async () => {
