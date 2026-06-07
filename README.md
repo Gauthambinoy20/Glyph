@@ -12,7 +12,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Tests](https://img.shields.io/badge/tests-471%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-487%20passing-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 [**Live demo**](https://52-215-125-206.sslip.io) · [**Technical report**](docs/TECHNICAL_REPORT.md) · [**Report a bug**](https://github.com/Gauthambinoy20/Glyph/issues)

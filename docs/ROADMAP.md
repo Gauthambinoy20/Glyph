@@ -22,7 +22,7 @@ errors are handled, the docs are updated, and there is a command Gautham can run
 **Definition of done for the whole project:** see the final section.
 
 > **🔎 Verification audit (2026-06-05).** Walked the real code against this list. The engine is solid
-> and committed (**18 endpoints live, 139 backend + 53 frontend tests at 92% coverage**, full CI/CD
+> and committed (**19 endpoints live, 220 backend + 267 frontend tests at 100% coverage**, full CI/CD
 > green with auto-deploy to AWS, clean git history). The earlier still-open gaps (Docker/compose,
 > streaming, CORS + global error handler + request-id, README + screenshots) are **all now closed**.
 > Added phases below — **13 (performance & latency)**, **14 (UI/UX polish)** — and ticked the commit
@@ -419,11 +419,15 @@ can *watch it* in production.
   (GHSA-9crc-q9x8-hgqq) and a vite/esbuild HIGH. These are **dev/test tooling only**, never shipped to
   production, so CI scopes them out with `npm audit --omit=dev`. The real fix is the vitest 2→4 / vite
   5→8 bump in Dependabot PR #5.
-- **No IaC security scan yet.** `infra.yml` runs `terraform fmt`/`validate` + `tflint` but no Trivy/tfsec
-  config scan, deferred because it flags the deliberate public-HTTP (port 80, `0.0.0.0/0`) demo rule.
-  To close: add a Trivy `config` scan with a documented `.trivyignore` for that single rule.
-- **Live demo is plain HTTP (no TLS).** Port 443 is not served, so traffic is cleartext. TLS
-  (Caddy/nginx + Let's Encrypt, or an ALB + ACM cert) is the planned hardening step.
+- **SSH is open to the world on the demo box.** `infra/variables.tf` defaults `ssh_cidr` to
+  `0.0.0.0/0`. It can't simply be locked to one IP because continuous deployment connects over SSH from
+  GitHub-hosted runners (dynamic IPs); the real fix is moving CD to AWS SSM (no inbound SSH at all).
+  The IaC Trivy scan (now in `infra.yml`, gating) documents this as an accepted finding in
+  `infra/.trivyignore` so a *new* over-open rule turns the build red.
+- **TLS edge lives in host config outside this repo.** The live demo serves HTTPS via a host-level
+  Caddy reverse proxy with Let's Encrypt on :443 (and an HTTP→HTTPS redirect), so traffic is *not*
+  cleartext — but that Caddy config sits on the box, not in version control, so a clean clone
+  reproduces the app but not the TLS edge. Folding it into Terraform / user_data is the remaining step.
 - **No auth / single-user.** No accounts or per-user data isolation; public repos and local folders only.
 
 ## ⏭️ Next

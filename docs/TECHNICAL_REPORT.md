@@ -324,7 +324,7 @@ flowchart LR
 | mypy `2.1.0` | type checking (every function typed) | clean |
 | bandit `1.9.4` | code security scan | clean |
 | pip-audit `2.10.0` | dependency CVE scan | 5/6 fixed |
-| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 135 passed (+4 integration, local-only), 92% |
+| pytest `9.0.3` + pytest-cov `7.1.0` | tests + coverage | 220 backend + 267 frontend passing, 100% (gated in CI) |
 
 **Security decisions:**
 - Bumped pytest → 9.0.3 and FastAPI → 0.136.3 (pulls patched Starlette 1.2.1), re-ran the full
@@ -333,9 +333,11 @@ flowchart LR
   step skips that single ID on purpose (documented in `requirements.txt` and the workflow); revisit
   when a fix ships.
 
-**Not yet:** the workflow is verified locally and as valid YAML, but its first real run happens on
-the first push to GitHub. The frontend CI job and a real deploy (CD) are intentionally out of scope
-for now (frontend not built yet; no deploy target for a take-home).
+**Shipped since:** the React + Vite + TypeScript frontend is built and has its own CI gate (eslint,
+prettier, tsc, vitest at 100%, production build), and continuous deployment is live — every push to
+`main` builds images to GHCR and rolls the stack on an AWS EC2 box behind HTTPS (host Caddy + Let's
+Encrypt). Seven workflows run in total (CI, Security, CodeQL, Docker, Infra, Deploy, and a weekly
+real-repo Eval).
 
 ---
 
