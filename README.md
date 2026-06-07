@@ -5,28 +5,32 @@
 **Ask any codebase a question and get an answer grounded in the real code, with file + line citations.**
 
 [![CI](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml)
 [![Security](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/security.yml)
 [![Docker](https://github.com/Gauthambinoy20/Glyph/actions/workflows/docker.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/docker.yml)
-[![CodeQL](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gauthambinoy20/Glyph/actions/workflows/codeql.yml)
+
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)
+
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-487%20passing-brightgreen)
+![Ruff](https://img.shields.io/badge/lint-ruff-d7ff64?logo=ruff&logoColor=black)
+![Prettier](https://img.shields.io/badge/style-prettier-1A2C34?logo=prettier&logoColor=F7B93E)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025E8C?logo=dependabot&logoColor=white)](https://github.com/Gauthambinoy20/Glyph/network/updates)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 [![Live demo](https://img.shields.io/badge/Live%20demo-online-brightgreen?logo=amazonaws&logoColor=white)](https://52-215-125-206.sslip.io)
 [![Release](https://img.shields.io/github/v/release/Gauthambinoy20/Glyph?logo=github&color=blue)](https://github.com/Gauthambinoy20/Glyph/releases)
-![Ruff](https://img.shields.io/badge/lint-ruff-d7ff64?logo=ruff&logoColor=black)
-![Prettier](https://img.shields.io/badge/style-prettier-1A2C34?logo=prettier&logoColor=F7B93E)
-[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025E8C?logo=dependabot&logoColor=white)](https://github.com/Gauthambinoy20/Glyph/network/updates)
 
 [**Live demo**](https://52-215-125-206.sslip.io) · [**Technical report**](docs/TECHNICAL_REPORT.md) · [**Report a bug**](https://github.com/Gauthambinoy20/Glyph/issues)
 
 </div>
 
 ![Glyph's live architecture graph of its own codebase: every file as a gem node, clustered by language and wired by its real imports](docs/demo.gif)
+
+![Ask your codebase: a natural-language question answered from the real code, with file:line citations](docs/demo-ask.gif)
 
 **🎬 Full walkthrough video** (silent, ~2 min): paste a GitHub repo → live ingest → a grounded answer with `file:line` citations → click a citation into the exact code → a second and third question → the project-intelligence panel → the live architecture graph → ⌘K palette, model picker, query log → and a question it **refuses** because the answer isn't in the code. [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
