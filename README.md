@@ -28,15 +28,13 @@
 
 </div>
 
-![Glyph's live architecture graph of its own codebase: every file as a gem node, clustered by language and wired by its real imports](docs/demo.gif)
+![Glyph in action — ingest a repo, ask, get answers grounded in the real code with file:line citations, and explore the live architecture graph](docs/demo-fast.gif)
 
-![Ask your codebase: a natural-language question answered from the real code, with file:line citations](docs/demo-ask.gif)
+![Glyph's live architecture graph of its own codebase: every file a gem node, clustered by language and wired by its real imports](docs/demo.gif)
 
-**🎬 Full walkthrough video** (silent, ~2 min): paste a GitHub repo → live ingest → a grounded answer with `file:line` citations → click a citation into the exact code → a second and third question → the project-intelligence panel → the live architecture graph → ⌘K palette, model picker, query log → and a question it **refuses** because the answer isn't in the code. [docs/walkthrough.mp4](docs/walkthrough.mp4)
+**▶ Full walkthrough (2 min):** [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
-> 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
-> 🔬 Technical deep-dive: [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md) ·
-> 🗺️ Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+> **More:** [Build journal](docs/JOURNAL.md) · [Technical report](docs/TECHNICAL_REPORT.md) · [Roadmap](docs/ROADMAP.md)
 
 ---
 
