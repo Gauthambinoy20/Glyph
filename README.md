@@ -248,7 +248,7 @@ Glyph/
 │       ├── api.ts            backend client (REST + SSE)
 │       └── App.tsx           app shell
 ├── infra/                    Terraform for the AWS EC2 box
-├── docs/                     technical report, journal, deployment, screenshots
+├── docs/                     technical report, deployment, screenshots
 ├── docker-compose.yml        local dev stack
 └── docker-compose.prod.yml   production stack
 ```
