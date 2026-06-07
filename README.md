@@ -21,7 +21,7 @@
 
 ![Glyph's live architecture graph of its own codebase: every file as a gem node, clustered by language and wired by its real imports](docs/demo.gif)
 
-**🎬 Full walkthrough video** (silent, ~75s — ingest → ask → grounded answer → citations → code viewer → architecture graph → command palette → query log): [docs/walkthrough.mp4](docs/walkthrough.mp4)
+**🎬 Full walkthrough video** (silent, ~2½ min): paste a GitHub repo → live ingest → tour the project panel → three real questions answered with `file:line` citations → click a citation into the exact code → the live architecture graph → ⌘K palette, model picker, query log → and a question it **refuses** because the answer isn't in the code. [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
 > 📔 Plain-English build story: [docs/JOURNAL.md](docs/JOURNAL.md) ·
 > 🔬 Technical deep-dive: [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md) ·
@@ -56,7 +56,6 @@ understand a repo fast, and it runs completely free (local embeddings + an OpenR
 - [Testing](#testing)
 - [Deployment & Scaling](#deployment--scaling)
 - [Engineering Standards](#engineering-standards)
-- [Roadmap](#roadmap)
 - [What I'd Do Differently](#what-id-do-differently)
 - [How I Used AI Tools](#how-i-used-ai-tools)
 - [Contributing](#contributing)
@@ -268,11 +267,11 @@ graph LR
       RET --> BM
       RET --> RR[Cross-encoder reranker<br/>top candidates]
       RR --> FLOOR{Relevance<br/>floor?}
-      FLOOR -->|too weak| REFUSE[Refuse:<br/>'Not found']
+      FLOOR -->|too weak| REFUSE["Refuse: Not found"]
       FLOOR -->|ok| PR[Grounded prompt] --> LLM[OpenRouter free model]
     end
-    API --> LOG[(Query log<br/>files · grounded · latency)]
-    LOG --> MET[/api/metrics<br/>live aggregate]
+    API --> LOG[("Query log<br/>files · grounded · latency")]
+    LOG --> MET["/api/metrics<br/>live aggregate"]
 ```
 
 A question hits the API, which runs a wide hybrid recall over Chroma + BM25, reranks the candidates with
@@ -407,21 +406,6 @@ backend, I covered the important logic and components but did not chase full cov
 deferred the Trivy infrastructure scan, because it flags the deliberate public HTTP rule and I could
 not verify it in this environment, so I left it as a documented follow-up instead of shipping a red
 check.
-
----
-
-## Roadmap
-
-- [x] Core: ingest, hybrid retrieval + reranking, grounded answers with `file:line` citations
-- [x] Project Intelligence panel, code viewer, ⌘K palette, model picker
-- [x] Full CI/CD, Docker, Terraform, continuous deploy to AWS
-- [ ] Accounts + private repo support
-- [ ] Fully async ingest via a queue with live progress
-- [ ] More chunker languages (Go, Rust, Java)
-- [ ] Larger labelled quality eval, tracked per change
-- [ ] Light theme + short demo video
-
-Full milestone history with cumulative % in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
