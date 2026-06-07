@@ -486,6 +486,22 @@ describe("App", () => {
     }
   });
 
+  it("toggles the project panel drawer open and shut on narrow screens", async () => {
+    const user = userEvent.setup();
+    await intoWorkspace(user);
+
+    // The drawer starts closed; the navbar toggle slides it open.
+    expect(document.querySelector("aside.panel-col.open")).toBeNull();
+    await user.click(screen.getByRole("button", { name: /toggle panel/i }));
+    expect(document.querySelector("aside.panel-col.open")).toBeTruthy();
+
+    // A backdrop appears; tapping it closes the drawer again.
+    const scrim = document.querySelector(".sheet-scrim") as HTMLElement;
+    expect(scrim).toBeTruthy();
+    fireEvent.click(scrim);
+    await waitFor(() => expect(document.querySelector("aside.panel-col.open")).toBeNull());
+  });
+
   it("opens the observability log and closes it", async () => {
     streamFinal();
     const user = userEvent.setup();

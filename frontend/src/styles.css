@@ -171,6 +171,10 @@ button {
   gap: 8px;
   justify-self: end;
 }
+/* The drawer toggle only appears on narrow screens (see the responsive block). */
+.panel-toggle {
+  display: none;
+}
 
 /* ---- Logo / wordmark ---- */
 .logo {
@@ -2579,6 +2583,34 @@ button {
   }
   .panel-col.open {
     transform: translateX(0);
+  }
+  /* With the panel out of flow, the chat takes the whole width instead of staying at 60%. */
+  .chat-col {
+    flex-basis: 100%;
+  }
+  /* Show the drawer toggle and condense the navbar so its controls never overflow. */
+  .panel-toggle {
+    display: inline-flex;
+  }
+  .nav {
+    padding: 0 12px;
+  }
+  .nav-center {
+    display: none;
+  }
+  .nav-right {
+    gap: 6px;
+  }
+  .nav-right .kbar {
+    display: none;
+  }
+  .modelpick-btn {
+    max-width: 44vw;
+  }
+  .modelpick-btn > span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .code-col {
     position: fixed;

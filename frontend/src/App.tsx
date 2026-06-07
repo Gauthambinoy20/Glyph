@@ -177,6 +177,8 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [graphModal, setGraphModal] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  // On narrow screens the project panel is an off-canvas drawer, toggled from the navbar.
+  const [panelOpen, setPanelOpen] = useState(false);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelIdx, setModelIdx] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -503,6 +505,13 @@ export default function App() {
       {screen === "workspace" && (
         <nav className="nav">
           <div className="nav-left">
+            <button
+              className="iconbtn panel-toggle"
+              aria-label="Toggle panel"
+              onClick={() => setPanelOpen((o) => !o)}
+            >
+              <Icon name="layers" size={17} />
+            </button>
             {screen === "workspace" && repo && (
               <span className="repo-chip">
                 <span className="dot-live" />
@@ -564,11 +573,16 @@ export default function App() {
         />
       ) : (
         <div className={"workspace" + (code ? " has-code" : "")}>
+          {panelOpen && <div className="sheet-scrim" onClick={() => setPanelOpen(false)} />}
           <ProjectPanel
             data={{ ...panel, latencies }}
             session={session}
+            open={panelOpen}
             onAsk={ask}
-            onExpandGraph={() => setGraphModal(true)}
+            onExpandGraph={() => {
+              setPanelOpen(false);
+              setGraphModal(true);
+            }}
             onChangeRepo={reset}
             onOpenRecent={reset}
           />
