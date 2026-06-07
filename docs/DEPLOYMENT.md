@@ -165,7 +165,7 @@ variable "admin_cidr" {
 In `infra/main.tf`, change the SSH (port 22) ingress `cidr_blocks` from `["0.0.0.0/0"]` to
 `[var.admin_cidr]`, then `terraform apply -var "admin_cidr=$(curl -s ifconfig.me)/32"`.
 
-> Trade-off noted in the ROADMAP: the public port-80 demo rule stays open on purpose; only SSH
+> Trade-off, on purpose: the public port-80 demo rule stays open; only SSH
 > is locked. Re-run apply if your IP changes.
 
 ---

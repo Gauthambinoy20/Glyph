@@ -6,7 +6,7 @@
 #   HTTP (80) and HTTPS (443) are world-open ON PURPOSE: this is a public demo site.
 #   SSH (22) is world-open because continuous deployment connects over SSH from GitHub-hosted
 #   runners, whose IPs are dynamic, so it cannot be pinned to a single CIDR. The real fix is
-#   moving CD to AWS SSM (no inbound SSH at all); tracked as future work in docs/ROADMAP.md.
+#   moving CD to AWS SSM (no inbound SSH at all); tracked as future work.
 AVD-AWS-0107
 
 # AVD-AWS-0104 — egress open to 0.0.0.0/0.

@@ -1,7 +1,7 @@
 # 🔬 Glyph — Technical Report
 
 Verified research (live sources, June 2026), the design, and an adversarial review of the plan.
-This is the reference behind the choices summarized in plain words in [JOURNAL.md](./JOURNAL.md).
+This is the reference behind the choices summarized in plain words in the README.
 
 ---
 
@@ -190,12 +190,11 @@ sequenceDiagram
 
 ### 2.3 Build order
 Highest-risk-first: skeleton → chunker → embed/store/cache → ingest pipeline → hybrid retrieval →
-grounded answer + model picker + logging → extra endpoints → UI → docker/CI/docs. See
-[ROADMAP.md](./ROADMAP.md).
+grounded answer + model picker + logging → extra endpoints → UI → docker/CI/docs.
 
 ### 2.4 Data model
 Chunk vectors + metadata live in **Chroma** (built). Conversation history is persisted in **SQLite**
-(`app/db/history.py`, built — ROADMAP Phase 7 #65), exposed through the `/api/history` endpoints and
+(`app/db/history.py`, built), exposed through the `/api/history` endpoints and
 covered by `tests/test_history.py`. The two real tables are shown below; chunks themselves live in
 Chroma, not SQLite.
 
@@ -363,7 +362,7 @@ Measured/estimated on a small repo, local backend, free OpenRouter model:
 Takeaway: the model call dominates, so the highest-leverage work is **perceived** latency (stream it)
 plus removing the one piece of genuinely wasted work (the per-request BM25 rebuild).
 
-### 7.2 Optimizations (ROADMAP Phase 13 — shipped, except #5)
+### 7.2 Optimizations (shipped, except #5)
 1. **Stream answers over SSE** (`/api/ask/stream`). Same total time, but words appear in ~1 s instead
    of a multi-second spinner. Biggest felt-speed win; the citations ride in the final SSE event.
 2. **Per-repo BM25 cache.** Build the keyword index once at ingest and keep it in memory keyed by repo;
