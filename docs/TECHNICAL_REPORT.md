@@ -162,20 +162,27 @@ sequenceDiagram
     participant R as Hybrid Retriever
     participant V as Chroma
     participant B as BM25 index
+    participant RR as Cross-encoder
     participant P as Prompt builder
     participant L as OpenRouter (free model)
-    participant Lg as JSON logger
+    participant Lg as Query log + /api/metrics
     User->>UI: ask a question (+ chosen model)
     UI->>API: POST /api/ask/stream
     API->>R: retrieve(question)
-    R->>V: semantic search (top 20, cosine)
-    R->>B: keyword search (top 20, BM25)
-    R-->>API: top 5 chunks (RRF fused, exact-symbol boosted)
-    API->>P: build grounded prompt (numbered file:line blocks)
-    API->>L: chat completion (temp 0, retry on 429/5xx)
-    L-->>API: answer (streamed) + token usage
-    API-->>UI: answer + citations (file:line)
-    API->>Lg: one JSON line {question, chunk_ids, latency_ms, token_usage}
+    R->>V: semantic search (cosine)
+    R->>B: keyword search (BM25)
+    R-->>API: fused candidates (RRF + exact-symbol boost)
+    API->>RR: rerank (each candidate trimmed to the model window)
+    RR-->>API: top 5 by true relevance
+    alt nothing clears the relevance floor
+        API-->>UI: "Not found in the provided code" (no LLM call)
+    else grounded
+        API->>P: build grounded prompt (numbered file:line blocks)
+        API->>L: chat completion (temp 0, retry on 429/5xx)
+        L-->>API: answer (streamed) + token usage
+        API-->>UI: answer + citations (file:line)
+    end
+    API->>Lg: one JSON line {question, retrieved_files, grounded, latency_ms, tokens}
 ```
 
 ### 2.3 Build order

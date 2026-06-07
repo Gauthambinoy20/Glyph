@@ -265,14 +265,19 @@ graph LR
       RET --> CH
       RET --> BM
       RET --> RR[Cross-encoder reranker<br/>top candidates]
-      RR --> PR[Grounded prompt] --> LLM[OpenRouter free model]
+      RR --> FLOOR{Relevance<br/>floor?}
+      FLOOR -->|too weak| REFUSE[Refuse:<br/>'Not found']
+      FLOOR -->|ok| PR[Grounded prompt] --> LLM[OpenRouter free model]
     end
-    API --> LOG[(JSON query log)]
+    API --> LOG[(Query log<br/>files · grounded · latency)]
+    LOG --> MET[/api/metrics<br/>live aggregate]
 ```
 
 A question hits the API, which runs a wide hybrid recall over Chroma + BM25, reranks the candidates with
-a cross-encoder, builds a grounded prompt from the top chunks, and calls the LLM, logging one JSON line
-per query. **18 endpoints** including `/api/ingest`, `/api/ask`, `/api/graph`, `/api/stack` and `/api/file`.
+a cross-encoder, and — if nothing clears the relevance floor — refuses up front instead of guessing.
+Otherwise it builds a grounded prompt from the top chunks and calls the LLM, logging one JSON line per
+query (which files answered it, whether it was grounded, latency) that `/api/metrics` aggregates live.
+**19 endpoints** including `/api/ingest`, `/api/ask`, `/api/graph`, `/api/metrics` and `/api/file`.
 The detailed architecture, data-flow, sequence and ER diagrams live in
 [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md).
 
