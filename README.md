@@ -30,8 +30,6 @@
 
 ![Glyph in action — ingest a repo, ask, get answers grounded in the real code with file:line citations, and explore the live architecture graph](docs/demo-fast.gif)
 
-![Glyph's live architecture graph of its own codebase: every file a gem node, clustered by language and wired by its real imports](docs/demo.gif)
-
 **▶ Full walkthrough (2 min):** [docs/walkthrough.mp4](docs/walkthrough.mp4)
 
 > **Technical deep-dive:** [docs/TECHNICAL_REPORT.md](docs/TECHNICAL_REPORT.md)
