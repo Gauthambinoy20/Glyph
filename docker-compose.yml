@@ -25,6 +25,11 @@ services:
     restart: unless-stopped
     ports:
       - "5173:80"
+    # Local dev has no TLS terminator, so serve directly over http with a redirect-free
+    # config. The production image (docker-compose.prod.yml) keeps the baked nginx.conf,
+    # whose http->https redirect is needed behind the host Caddy.
+    volumes:
+      - ./frontend/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
 
