@@ -56,6 +56,16 @@ def test_python_function_has_exact_lines() -> None:  # T04
     _assert_line_accuracy(chunks, lines)
 
 
+def test_crlf_source_yields_clean_chunks_with_exact_lines() -> None:  # T04b
+    """A CRLF-encoded file (Windows checkout) yields carriage-return-free chunks, exact lines."""
+    source = b"def add(a, b):\r\n    return a + b\r\n\r\ndef sub(a, b):\r\n    return a - b\r\n"
+    chunks = chunk_file("crlf.py", source)
+    add = _by_name(chunks, "add")[0]
+    assert "\r" not in add.code  # carriage returns stripped before storing
+    assert add.code == "def add(a, b):\n    return a + b"
+    assert (add.start_line, add.end_line) == (1, 2)  # line numbers unaffected by CRLF
+
+
 def test_python_class_and_method_captured() -> None:  # T05
     chunks, _ = _chunks_for("sample_py.py")
     assert _by_name(chunks, "Calculator") and _by_name(chunks, "Calculator")[0].type == "class"

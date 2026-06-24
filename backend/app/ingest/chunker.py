@@ -346,12 +346,25 @@ def chunk_text_fallback(path: str, source: bytes, max_lines: int = 40) -> list[C
     return chunks
 
 
+def _normalize_newlines(source: bytes) -> bytes:
+    """Convert CRLF and lone-CR line endings to LF before chunking.
+
+    Repos authored on Windows (or checked out with autocrlf) carry CRLF endings. tree-sitter
+    counts the rows correctly either way, so citations stay accurate, but the carriage
+    returns would otherwise end up inside the stored chunk text — polluting the embeddings
+    and the code shown behind a citation. Normalising here, at the one entry point every
+    ingest path flows through, keeps every chunk's code clean regardless of the source OS.
+    """
+    return source.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def chunk_file(path: str, source: bytes, max_lines: int = 120) -> list[Chunk]:
     """Turn one file's bytes into a list of chunks (the main entry point).
 
     Supported languages are parsed by tree-sitter into symbol + module chunks, then any
     oversized chunk is sub-split. Unsupported files fall back to plain text chunks.
     """
+    source = _normalize_newlines(source)
     lang = language_for_path(path)
     if lang is None:
         return chunk_text_fallback(path, source)

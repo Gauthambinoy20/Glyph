@@ -5,7 +5,7 @@ edges between files that are both in the repo are kept). Works from the chunks a
 the store, so no re-reading of the original repo is needed.
 """
 
-import os
+import posixpath
 import re
 from collections.abc import Iterable
 
@@ -33,7 +33,9 @@ def _resolve_relative(spec: str, importer: str, known: set[str]) -> str | None:
     """Map a relative JS/TS import (./x, ../y) from the importing file to a known file."""
     if not spec.startswith("."):
         return None
-    target = os.path.normpath(os.path.join(os.path.dirname(importer), spec))
+    # File keys are always forward-slash repo paths (see walker), so resolve with posixpath:
+    # os.path would emit backslashes on Windows and never match the stored keys.
+    target = posixpath.normpath(posixpath.join(posixpath.dirname(importer), spec))
     for suffix in ("", ".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.js"):
         if target + suffix in known:
             return target + suffix
@@ -71,7 +73,7 @@ def build_import_graph(store: ChromaStore) -> dict:
                 edges.add((path, target))
 
     nodes = [
-        {"id": path, "label": os.path.basename(path), "language": lang_by_file.get(path, "")}
+        {"id": path, "label": posixpath.basename(path), "language": lang_by_file.get(path, "")}
         for path in sorted(files)
     ]
     return {

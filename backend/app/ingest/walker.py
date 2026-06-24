@@ -71,5 +71,9 @@ def walk_files(
             continue
         if resolved.stat().st_size > max_file_bytes:
             continue
-        collected.append((str(relative), resolved.read_bytes()))
+        # Always key files by their forward-slash path. On Windows str(relative) would use
+        # backslashes, which then fail to match the forward-slash candidates the import graph
+        # and Python-module resolver build — silently dropping dependency edges and showing
+        # backslashed citations. as_posix() keeps the index identical on every OS.
+        collected.append((relative.as_posix(), resolved.read_bytes()))
     return collected

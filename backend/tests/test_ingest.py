@@ -35,6 +35,17 @@ def test_walker_keeps_source_files_and_skips_junk(tmp_path) -> None:  # T22
     assert names == ["a.py"]  # only the supported file, junk dir and .md skipped
 
 
+def test_walker_keys_nested_files_with_forward_slashes(tmp_path) -> None:  # T22b
+    """File keys are always forward-slash, even on Windows (so graph/citation paths match)."""
+    pkg = tmp_path / "src" / "embed"
+    pkg.mkdir(parents=True)
+    (pkg / "factory.py").write_text("def make(): pass\n")
+
+    names = [name for name, _ in walk_files(str(tmp_path))]
+
+    assert names == ["src/embed/factory.py"]  # never "src\\embed\\factory.py"
+
+
 def test_walker_rejects_symlink_escaping_root(tmp_path) -> None:  # T23
     outside = tmp_path / "outside.py"
     outside.write_text("secret = 1\n")

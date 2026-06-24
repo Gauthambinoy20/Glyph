@@ -1,0 +1,18 @@
+# Normalise line endings so a checkout is identical on Windows, macOS and Linux.
+# Without this, a Windows checkout (autocrlf) rewrites every file to CRLF, which breaks
+# Prettier's format check and the chunker's exact-line tests. Pin text to LF everywhere.
+* text=auto eol=lf
+
+# Keep binary assets byte-for-byte (never line-ending converted).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.mp4  binary
+*.mov  binary
+*.woff  binary
+*.woff2 binary
+*.pdf  binary
+*.zip  binary

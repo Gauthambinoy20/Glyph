@@ -86,8 +86,10 @@ _DIM = "\033[2m"
 _BOLD = "\033[1m"
 _RESET = "\033[0m"
 
-# Collected results: filename -> list of (description, passed?).
-_results: dict[str, list[tuple[str, bool]]] = collections.defaultdict(list)
+# Collected results: filename -> list of (description, outcome), where outcome is one of
+# "passed" | "failed" | "skipped". A skip is its own outcome, not a failure — e.g. the
+# symlink test skips on a platform without symlink privilege, which is expected, not a bug.
+_results: dict[str, list[tuple[str, str]]] = collections.defaultdict(list)
 
 
 def _describe(nodeid: str) -> str:
@@ -98,19 +100,37 @@ def _describe(nodeid: str) -> str:
 
 
 def pytest_runtest_logreport(report) -> None:
-    """Record the outcome of each test's main call phase."""
+    """Record each test's outcome once: a skip from setup, otherwise the call phase."""
+    # A skipped test reports during setup (skipif/fixture) or call (pytest.skip in the body);
+    # record it once and stop, so it is never also counted as a passed/failed call.
+    if report.skipped:
+        filename = report.nodeid.split("::")[0].split("/")[-1]
+        if not any(desc == _describe(report.nodeid) for desc, _ in _results[filename]):
+            _results[filename].append((_describe(report.nodeid), "skipped"))
+        return
     if report.when != "call":
         return
     filename = report.nodeid.split("::")[0].split("/")[-1]
-    _results[filename].append((_describe(report.nodeid), report.passed))
+    _results[filename].append((_describe(report.nodeid), "passed" if report.passed else "failed"))
+
+
+_YELLOW = "\033[33m"
+
+# How each outcome renders next to a test line.
+_MARKS = {
+    "passed": f"{_GREEN}✓{_RESET}",
+    "failed": f"{_RED}✗ FAILED{_RESET}",
+    "skipped": f"{_YELLOW}∼ SKIPPED{_RESET}",
+}
 
 
 def pytest_terminal_summary(terminalreporter) -> None:
     """Print the grouped, plain-English report after the run."""
     write = terminalreporter.write_line
     total = sum(len(items) for items in _results.values())
-    passed = sum(1 for items in _results.values() for _, ok in items if ok)
-    failed = total - passed
+    passed = sum(1 for items in _results.values() for _, o in items if o == "passed")
+    failed = sum(1 for items in _results.values() for _, o in items if o == "failed")
+    skipped = sum(1 for items in _results.values() for _, o in items if o == "skipped")
 
     # Known files first (in a sensible order), then any others.
     ordered = [f for f in _GROUP_TITLES if f in _results]
@@ -123,16 +143,17 @@ def pytest_terminal_summary(terminalreporter) -> None:
         title = _GROUP_TITLES.get(filename, filename)
         write("")
         write(f"  {_BOLD}{title}{_RESET}")
-        for description, ok in _results[filename]:
-            mark = f"{_GREEN}✓{_RESET}" if ok else f"{_RED}✗ FAILED{_RESET}"
-            write(f"      {mark}  {description}")
+        for description, outcome in _results[filename]:
+            write(f"      {_MARKS[outcome]}  {description}")
 
     write("")
     write(f"{_DIM}  ──────────────────────────────────────────────────────{_RESET}")
+    # Green only when nothing failed; a skip alone keeps the run green.
     summary_colour = _GREEN if failed == 0 else _RED
     write(
         f"  {summary_colour}{_BOLD}{passed} passed{_RESET}"
         f"   {_DIM}·{_RESET}   {failed} failed"
+        f"   {_DIM}·{_RESET}   {skipped} skipped"
         f"   {_DIM}·{_RESET}   {total} tests"
     )
     write("")
