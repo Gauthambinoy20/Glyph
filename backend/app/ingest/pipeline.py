@@ -64,6 +64,11 @@ def ingest_path_events(
         store.add(batch_ids, batch_chunks, vectors)
         yield {"stage": "embed", "done": min(start + EMBED_BATCH, total), "total": total}
 
+    # Warm the full-chunk cache once, while still "in progress", so the panel's analyze calls
+    # (stats/graph/endpoints/stack/symbols) read it instantly instead of each re-reading the
+    # whole store — which is what made the UI sit for a few seconds after ingest hit 100%.
+    store.all_chunks()
+
     yield {
         "stage": "done",
         "files": len(files),

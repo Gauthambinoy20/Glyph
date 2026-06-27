@@ -43,6 +43,11 @@ class ChromaStore:
         self._client = chromadb.PersistentClient(path=path)
         self._name = collection_name(embed_model, dim)
         self._collection = self._make_collection()
+        # Cache of the full documents+metadata read. The whole repo is fetched by every analyze
+        # call (stats, graph, endpoints, stack, symbols), and that Chroma read is the slow part.
+        # The data only changes when chunks are added or the store is reset, so memoise it and
+        # invalidate there — turning five full re-reads after an ingest into one.
+        self._all_cache: dict | None = None
 
     def _make_collection(self) -> Any:
         """Get or create the collection with cosine space.
@@ -66,6 +71,7 @@ class ChromaStore:
         """
         self._client.delete_collection(self._name)
         self._collection = self._make_collection()
+        self._all_cache = None
 
     def existing_ids(self, ids: Sequence[str]) -> set[str]:
         """Return which of the given ids are already stored (for the cache check)."""
@@ -99,6 +105,7 @@ class ChromaStore:
             embeddings=cast(Any, [list(vector) for vector in vectors]),
             metadatas=[_metadata(chunk) for chunk in chunks],
         )
+        self._all_cache = None  # the stored set changed; drop the memoised full read
 
     def query(self, vector: Sequence[float], k: int) -> dict:
         """Return up to k chunks closest to the query vector."""
@@ -114,5 +121,12 @@ class ChromaStore:
         return self._collection.count()
 
     def all_chunks(self) -> dict:
-        """Return all stored ids, documents and metadata (used to build the keyword index)."""
-        return cast(dict, self._collection.get(include=["documents", "metadatas"]))
+        """Return all stored ids, documents and metadata, memoised until the chunks change.
+
+        Every analyze view (stats, graph, endpoints, stack, symbols) needs the whole repo, so
+        without this they each pay the full Chroma read. The cache makes the first read pay it
+        and the rest instant; it is invalidated on add() and reset().
+        """
+        if self._all_cache is None:
+            self._all_cache = cast(dict, self._collection.get(include=["documents", "metadatas"]))
+        return self._all_cache

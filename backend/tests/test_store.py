@@ -33,3 +33,21 @@ def test_store_rejects_wrong_vector_size(tmp_path) -> None:  # T18
     store = ChromaStore(path=str(tmp_path / "c"), embed_model="fake", dim=4)
     with pytest.raises(ValueError):
         store.add(["id1"], [make_chunk("x")], [[1.0, 0.0, 0.0]])  # length 3, not 4
+
+
+def test_all_chunks_is_memoised_and_invalidated(tmp_path) -> None:  # T18b
+    """all_chunks caches the full read, and adding or resetting drops the cache."""
+    store = ChromaStore(path=str(tmp_path / "c"), embed_model="fake", dim=4)
+    store.add(["id1"], [make_chunk("a", path="a.py")], [[1.0, 0.0, 0.0, 0.0]])
+
+    first = store.all_chunks()
+    assert store.all_chunks() is first  # second call returns the same cached object
+
+    # Adding a chunk invalidates the cache, so the next read reflects the new chunk.
+    store.add(["id2"], [make_chunk("b", path="b.py")], [[0.0, 1.0, 0.0, 0.0]])
+    refreshed = store.all_chunks()
+    assert refreshed is not first
+    assert len(refreshed["ids"]) == 2
+
+    store.reset()
+    assert store.all_chunks()["ids"] == []  # reset drops everything and the cache
