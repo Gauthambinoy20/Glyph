@@ -453,11 +453,11 @@ button {
 .hero {
   position: relative;
   z-index: 2;
-  width: min(720px, 88vw);
+  width: min(880px, 92vw);
   text-align: center;
   /* The hero sits near the top of the scrollable landing; the marketing sections follow below. */
-  margin: 5vh auto 2vh;
-  padding-bottom: 2vh;
+  margin: 4vh auto 1vh;
+  padding-bottom: 1vh;
 }
 
 .badge {
@@ -504,11 +504,37 @@ button {
 }
 .subtitle {
   margin: 22px auto 0;
-  max-width: 540px;
+  max-width: 600px;
   font-size: 16.5px;
   line-height: 1.62;
   color: var(--muted);
   text-wrap: pretty;
+}
+
+/* Proof strip: a centred row of small fact chips under the subtitle. Gives the hero more
+   presence and width, and adds instant credibility instead of empty space. */
+.hero-proof {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 22px auto 0;
+}
+.hero-proof-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.hero-proof-item svg {
+  color: var(--accent);
 }
 
 /* Phones: drop the ingest button under the input and tighten the hero rhythm so the demo
@@ -540,11 +566,12 @@ button {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(38% 30% at 50% 4%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
-    radial-gradient(30% 26% at 20% 26%, color-mix(in srgb, #58e0b0 20%, transparent), transparent 72%),
-    radial-gradient(32% 28% at 82% 22%, color-mix(in srgb, #5aa6ff 12%, transparent), transparent 74%);
-  filter: blur(42px) saturate(125%);
-  opacity: 0.9;
+    radial-gradient(50% 40% at 50% 2%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 72%),
+    radial-gradient(42% 36% at 10% 20%, color-mix(in srgb, #58e0b0 22%, transparent), transparent 72%),
+    radial-gradient(44% 38% at 90% 16%, color-mix(in srgb, #5aa6ff 14%, transparent), transparent 74%),
+    radial-gradient(40% 32% at 50% 58%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 72%);
+  filter: blur(46px) saturate(125%);
+  opacity: 0.95;
   animation: aurora-drift 20s var(--ease) infinite alternate;
 }
 @keyframes aurora-drift {
@@ -2246,7 +2273,7 @@ button {
   padding: 0 24px 64px;
 }
 .ls-sec {
-  margin-top: 66px;
+  margin-top: 52px;
 }
 .ls-h2 {
   font-size: clamp(24px, 3vw, 32px);

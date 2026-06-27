@@ -61,6 +61,21 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
           real code — with file and line citations.
         </p>
 
+        <div className="hero-proof">
+          <span className="hero-proof-item">
+            <Icon name="file" size={14} /> Grounded citations
+          </span>
+          <span className="hero-proof-item">
+            <Icon name="check" size={14} /> 82% retrieval accuracy
+          </span>
+          <span className="hero-proof-item">
+            <Icon name="zap" size={14} /> Indexes in seconds
+          </span>
+          <span className="hero-proof-item">
+            <Icon name="compass" size={14} /> Fully free
+          </span>
+        </div>
+
         <form className="ingest" onSubmit={submit}>
           <span className="lead">
             <Icon name="github" />
