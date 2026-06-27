@@ -46,11 +46,32 @@ describe("GlyphAnswer", () => {
     expect(onOpenCode).toHaveBeenCalledWith(answer.citations[0]);
   });
 
-  it("renders a not-found answer as a calm note with no citations", () => {
-    const nf: Extract<Message, { role: "glyph" }> = { ...answer, answer: "Not found in the provided code." };
+  it("renders a not-found refusal as a calm note with no citations", () => {
+    const nf: Extract<Message, { role: "glyph" }> = {
+      ...answer,
+      answer: "I could not find anything in the indexed code that answers this.",
+      meta: { ...answer.meta!, grounded: false, kind: "not_found" },
+    };
     render(<GlyphAnswer msg={nf} onOpenCode={() => {}} onAsk={() => {}} />);
-    expect(screen.getByText(/not found/i)).toBeTruthy();
+    expect(screen.getByText(/could not find/i)).toBeTruthy();
     expect(screen.queryByText(/grounded on/i)).toBeNull();
+  });
+
+  it("renders a greeting note with starter questions that call onAsk", async () => {
+    const onAsk = vi.fn();
+    const user = userEvent.setup();
+    const greet: Extract<Message, { role: "glyph" }> = {
+      ...answer,
+      answer: "Hello. I am Glyph, a code-intelligence assistant.",
+      citations: [],
+      sources: [],
+      meta: { ...answer.meta!, grounded: false, kind: "greeting" },
+    };
+    render(<GlyphAnswer msg={greet} onOpenCode={() => {}} onAsk={onAsk} />);
+    expect(screen.getByText(/I am Glyph/i)).toBeTruthy();
+    expect(screen.queryByText(/grounded on/i)).toBeNull();
+    await user.click(screen.getByRole("button", { name: /how does authentication work/i }));
+    expect(onAsk).toHaveBeenCalledWith("How does authentication work?");
   });
 
   it("pluralises the grounding badge and renders an empty model gracefully", () => {

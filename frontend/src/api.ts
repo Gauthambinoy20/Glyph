@@ -32,7 +32,10 @@ export interface AnswerMeta {
   stage_ms?: { retrieve_ms: number; llm_ms: number };
   cached?: boolean;
   reranked?: boolean; // whether the cross-encoder reranker actually ran for this answer
-  grounded?: boolean; // false when the answer was a "not found in the code" refusal
+  grounded?: boolean; // false when the answer was a refusal or a conversational reply
+  // What kind of reply this is, so the UI can render greetings and refusals distinctly:
+  // a normal grounded "answer", a "greeting"/"thanks"/"capabilities" note, or a "not_found".
+  kind?: "answer" | "greeting" | "thanks" | "capabilities" | "not_found";
 }
 
 export interface AskResponse {

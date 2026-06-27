@@ -44,6 +44,7 @@ from app.obs.metrics import snapshot as metrics_snapshot
 from app.rag.cache import answer_cache
 from app.rag.overview import build_overview
 from app.rag.prompt import build_messages, parse_citations
+from app.rag.replies import NOT_FOUND_REPLY, detect_smalltalk, smalltalk_reply
 from app.rerank.base import Reranker
 from app.rerank.factory import make_reranker
 from app.retrieve.hybrid import HybridRetriever
@@ -505,7 +506,9 @@ def _prepare_answer(
     return chunks, system_prompt, user_prompt
 
 
-NOT_FOUND_ANSWER = "Not found in the provided code."
+# The deterministic refusal returned when retrieval is too weak to answer (a full, helpful
+# message rather than a one-line "not found"). Defined once in app.rag.replies.
+NOT_FOUND_ANSWER = NOT_FOUND_REPLY
 
 
 def _below_floor(chunks: list[dict], reranked: bool) -> bool:
@@ -545,6 +548,32 @@ def _not_found_result(
             "cached": False,
             "reranked": reranked,
             "grounded": False,
+            "kind": "not_found",
+        },
+    }
+
+
+def _smalltalk_result(request: "AskRequest", kind: str) -> dict:
+    """Build a conversational reply for a greeting / thanks / capabilities message.
+
+    Shaped exactly like an /ask answer but with no sources and meta.grounded False, so the UI
+    renders it as a friendly note. meta.kind tells the UI which note this is (greeting vs the
+    not-found refusal), so it can show starter suggestions for a greeting.
+    """
+    return {
+        "answer": smalltalk_reply(kind),
+        "citations": [],
+        "retrieved_chunk_ids": [],
+        "sources": [],
+        "meta": {
+            "model": request.model or get_settings().llm_model,
+            "latency_ms": 0,
+            "token_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            "stage_ms": {"retrieve_ms": 0, "llm_ms": 0},
+            "cached": False,
+            "reranked": False,
+            "grounded": False,
+            "kind": kind,
         },
     }
 
@@ -573,6 +602,12 @@ def ask(
     """Answer a question grounded in the repo's code, with file:line citations."""
     if request.model is not None and not is_known_model(request.model):
         raise HTTPException(status_code=400, detail=f"unknown model: {request.model}")
+
+    # A greeting or "what can you do" never needs retrieval or the model; reply directly.
+    # Follow-ups always go through retrieval so conversational context is honoured.
+    smalltalk = detect_smalltalk(request.question)
+    if smalltalk and not request.history:
+        return _smalltalk_result(request, smalltalk)
 
     # A per-question rerank=False turns the reranker off for this answer only. Whether the
     # reranker actually ran, and which backend indexed the repo, both change the grounding
@@ -654,6 +689,7 @@ def ask(
             "cached": False,
             "reranked": reranked,
             "grounded": True,
+            "kind": "answer",
         },
     }
     if cacheable:
@@ -696,6 +732,13 @@ def ask_stream(
 
     def events() -> Iterator[str]:
         """Drive the model stream and translate each step into an SSE message."""
+        # A greeting / "what can you do" replies directly, before retrieval or the model.
+        smalltalk = detect_smalltalk(request.question)
+        if smalltalk and not request.history:
+            result = _smalltalk_result(request, smalltalk)
+            yield _sse({"type": "token", "text": result["answer"]})
+            yield _sse({"type": "final", **result})
+            return
         # Cache hit: replay the stored answer instantly (one token, then the final payload).
         if cached is not None:
             yield _sse({"type": "token", "text": cached["answer"]})
@@ -775,6 +818,7 @@ def ask_stream(
                 "cached": False,
                 "reranked": reranked,
                 "grounded": True,
+                "kind": "answer",
             },
         }
         if cacheable:

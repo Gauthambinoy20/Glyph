@@ -7,6 +7,7 @@ covers both /api/ask and /api/ask/stream. The relevance floor short-circuits to 
 
 from app.ingest.cache import embed_new_chunks
 from app.main import app, get_embedder, get_llm, get_reranker, get_store
+from app.rag.replies import NOT_FOUND_REPLY
 from app.store.chroma_store import ChromaStore
 from fastapi.testclient import TestClient
 
@@ -75,10 +76,11 @@ def test_low_relevance_refuses_without_calling_the_llm(tmp_path) -> None:
     finally:
         app.dependency_overrides.clear()
 
-    assert body["answer"] == "Not found in the provided code."
+    assert body["answer"] == NOT_FOUND_REPLY
     assert body["citations"] == []
     assert body["sources"] == []
     assert body["meta"]["grounded"] is False
+    assert body["meta"]["kind"] == "not_found"
     assert llm.calls == 0  # the deterministic floor saved the LLM call
 
 
@@ -137,5 +139,5 @@ def test_stream_refuses_low_relevance_without_calling_the_llm(tmp_path) -> None:
         app.dependency_overrides.clear()
 
     assert resp.status_code == 200
-    assert "Not found in the provided code." in resp.text
+    assert NOT_FOUND_REPLY in resp.text
     assert llm.calls == 0

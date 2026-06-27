@@ -4,12 +4,19 @@ import { useEffect, useRef, useState } from "react";
 
 import type { Citation, Source } from "../api";
 import type { Message, Suggestion } from "../types";
-import { Icon } from "./Icon";
+import { GlyphMark, Icon } from "./Icon";
 import { Markdown, highlightLine } from "./Markdown";
 
 export type CodeRef = Citation | Source;
 
 const shortModel = (m: string) => (m || "").split("/").pop();
+
+// Starter questions shown under a greeting reply, so a new user has a one-click way in.
+const NOTE_STARTERS = [
+  "Where are the API endpoints defined?",
+  "How does authentication work?",
+  "Give me an overview of this codebase",
+];
 
 // ── Empty state ──────────────────────────────────────────────────────────────
 export function ChatEmpty({
@@ -73,7 +80,7 @@ export function Thinking() {
   return (
     <div className="msg">
       <div className="msg-head">
-        <span className="avatar glyph">G</span>
+        <GlyphMark className="avatar glyph" size={24} />
         <span className="msg-who">Glyph</span>
       </div>
       <div className="thinking">
@@ -97,18 +104,32 @@ export function GlyphAnswer({
   onAsk: (q: string) => void;
   streaming?: boolean;
 }) {
-  const notFound = /^not found/i.test(msg.answer.trim());
+  // A reply with grounded=false is either a conversational note (greeting / thanks /
+  // "what can you do") or a "not found" refusal — both render as a calm card rather than a
+  // cited answer. A greeting also offers one-click starter questions.
+  const note = msg.meta?.grounded === false;
+  const conversational =
+    msg.meta?.kind === "greeting" || msg.meta?.kind === "thanks" || msg.meta?.kind === "capabilities";
 
   return (
     <div className="msg">
       <div className="msg-head">
-        <span className="avatar glyph">G</span>
+        <GlyphMark className="avatar glyph" size={24} />
         <span className="msg-who">Glyph</span>
       </div>
 
-      {notFound ? (
-        <div className="notfound">
-          <div className="nf-body">{msg.answer}</div>
+      {note ? (
+        <div className="glyph-note" data-kind={msg.meta?.kind}>
+          <div className="gn-body">{msg.answer}</div>
+          {conversational && (
+            <div className="gn-starters">
+              {NOTE_STARTERS.map((q) => (
+                <button key={q} className="gn-starter" onClick={() => onAsk(q)}>
+                  <Icon name="arrowRight" size={13} /> {q}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <>
