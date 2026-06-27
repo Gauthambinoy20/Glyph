@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import type { Recent } from "../types";
 import { Icon, LogoMark } from "./Icon";
 import { IngestProgress, type IngestState } from "./IngestProgress";
+import { LandingSections } from "./LandingSections";
 
 interface Props {
   onIngest: (value: string) => void;
@@ -167,6 +168,8 @@ export function Landing({ onIngest, busy, recent, progress, mode, onMode }: Prop
           </div>
         )}
       </div>
+
+      <LandingSections />
     </div>
   );
 }

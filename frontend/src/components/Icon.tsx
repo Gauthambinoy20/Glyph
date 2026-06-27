@@ -1,6 +1,6 @@
 // Minimal single-weight stroke icon set + the Glyph logo mark. Standard UI glyphs only.
 
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 
 const ICON_PATHS: Record<string, string> = {
   arrowRight: "M5 12h14M13 6l6 6-6 6",
@@ -61,13 +61,58 @@ export function Icon({ name, size = 18, style, className }: IconProps) {
   );
 }
 
-/** The gradient "G" logo tile. `large` is used on the landing hero. */
-export function LogoMark({ large }: { large?: boolean }) {
+/**
+ * The Glyph mark: a machined dark tile with a geometric green "G" (a clean C-arc plus a
+ * centre tongue). Self-contained SVG — the same vector is reused at every size, from the
+ * 16px favicon to the landing hero, so the brand never relies on a font-rendered letter.
+ * Gradient ids are made unique per instance so multiple marks on a page never collide.
+ */
+export function GlyphMark({ size = 28, className }: { size?: number; className?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const grn = `glyph-grn-${uid}`;
+  const tile = `glyph-tile-${uid}`;
   return (
-    <span className={large ? "logo-mark lg" : "logo-mark"} aria-hidden="true">
-      G
-    </span>
+    <svg className={className} width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={grn} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#9ff5a6" />
+          <stop offset="0.5" stopColor="#7ee787" />
+          <stop offset="1" stopColor="#58c97e" />
+        </linearGradient>
+        <linearGradient id={tile} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1a1d22" />
+          <stop offset="1" stopColor="#0c0d10" />
+        </linearGradient>
+      </defs>
+      <rect
+        x="0.75"
+        y="0.75"
+        width="38.5"
+        height="38.5"
+        rx="11"
+        fill={`url(#${tile})`}
+        stroke="#7ee787"
+        strokeOpacity="0.34"
+      />
+      <rect x="2" y="2" width="36" height="16" rx="9.5" fill="#ffffff" opacity="0.05" />
+      <text
+        x="20"
+        y="29.5"
+        textAnchor="middle"
+        fontFamily="Inter, 'Segoe UI', system-ui, sans-serif"
+        fontWeight="800"
+        fontSize="28"
+        fill={`url(#${grn})`}
+      >
+        G
+      </text>
+    </svg>
   );
+}
+
+/** Sizing wrapper used by the navbar and the landing hero (CSS sets the box; the SVG fills it). */
+export function LogoMark({ large }: { large?: boolean }) {
+  return <GlyphMark className={large ? "logo-mark lg" : "logo-mark"} size={large ? 46 : 28} />;
 }
 
 /** Logo tile + "Glyph." wordmark. */

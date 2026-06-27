@@ -184,49 +184,21 @@ button {
   user-select: none;
   line-height: 1;
 }
+/* Sizing wrapper for the GlyphMark SVG (the SVG itself draws the tile, border and "G").
+   Only the box size and a soft accent glow live here now. */
 .logo-mark {
-  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 9px;
   flex: 0 0 28px;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0;
-  color: #052309;
-  /* Two-stop diagonal: a white-lifted top edge melting into the two accent greens. */
-  background:
-    radial-gradient(120% 120% at 28% 18%, rgba(255, 255, 255, 0.55) 0%, transparent 42%),
-    linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--accent) 90%, white) 0%,
-      var(--accent) 46%,
-      var(--accent-2) 100%
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -3px 6px rgba(5, 35, 9, 0.28),
-    0 0 0 1px rgba(126, 231, 135, 0.3),
-    0 6px 20px var(--accent-glow);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-/* A crisp specular sheen across the top half for a glassy, machined tile. */
-.logo-mark::after {
-  content: "";
-  position: absolute;
-  inset: 1px 1px 52% 1px;
-  border-radius: 8px 8px 11px 11px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.04) 70%, transparent);
-  pointer-events: none;
+  display: block;
+  box-shadow: 0 6px 18px var(--accent-glow);
 }
 .logo-mark.lg {
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  font-size: 26px;
+  flex-basis: 46px;
 }
 .logo-word {
   font-weight: 650;
@@ -445,9 +417,15 @@ button {
   position: relative;
   flex: 1;
   min-height: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Scroll when the hero is taller than the viewport instead of clipping it. The old
+     grid-centering hid the bottom of the hero (the demo repos + recents) on short screens
+     with no way to scroll to them. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 0;
 }
 .landing-grid {
   position: absolute;
@@ -477,7 +455,9 @@ button {
   z-index: 2;
   width: min(720px, 88vw);
   text-align: center;
-  padding-bottom: 6vh;
+  /* The hero sits near the top of the scrollable landing; the marketing sections follow below. */
+  margin: 5vh auto 2vh;
+  padding-bottom: 2vh;
 }
 
 .badge {
@@ -529,6 +509,26 @@ button {
   line-height: 1.62;
   color: var(--muted);
   text-wrap: pretty;
+}
+
+/* Phones: drop the ingest button under the input and tighten the hero rhythm so the demo
+   repos and recents stay comfortably on screen. */
+@media (max-width: 600px) {
+  .brand-hero {
+    gap: 12px;
+    margin: 2vh 0 18px;
+  }
+  .ingest {
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .subtitle {
+    font-size: 15px;
+    margin-top: 18px;
+  }
 }
 
 /* ---- Landing redesign: aurora, hero brand, clone link ---- */
@@ -617,17 +617,10 @@ button {
   height: clamp(64px, 7vw, 80px);
   border-radius: 22px;
   flex: 0 0 auto;
-  font-size: clamp(38px, 4.4vw, 48px);
-  /* Premium depth + a soft aurora halo behind the mark. */
+  /* A soft aurora halo behind the mark (the tile + sheen now live inside the SVG). */
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -4px 9px rgba(5, 35, 9, 0.3),
-    0 0 0 1px rgba(126, 231, 135, 0.32),
     0 14px 44px var(--accent-glow),
     0 0 78px color-mix(in srgb, var(--accent) 32%, transparent);
-}
-.brand-hero .logo-mark::after {
-  border-radius: 20px 20px 26px 26px;
 }
 /* Slightly smaller than the "Ask your codebase" h1 (clamp 40 → 62px). */
 .brand-word {
@@ -1739,8 +1732,7 @@ button {
   color: var(--text-2);
 }
 .avatar.glyph {
-  color: #06270d;
-  background: linear-gradient(155deg, var(--accent), var(--accent-2));
+  background: none;
   box-shadow: 0 2px 10px var(--accent-glow);
 }
 .msg-who {
@@ -2171,18 +2163,257 @@ button {
 }
 
 /* not-found note */
-.notfound {
+/* A grounded=false reply: a greeting/capabilities note or a "not found" refusal. */
+.glyph-note {
   padding-left: 33px;
 }
-.notfound .nf-body {
+.glyph-note .gn-body {
   font-size: 14px;
-  line-height: 1.6;
-  color: var(--muted);
+  line-height: 1.62;
+  color: var(--text-2);
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-left: 2px solid var(--faint);
   border-radius: var(--r-md);
   padding: 13px 15px;
+}
+/* A greeting is a welcome, not a refusal — give it the green accent edge. */
+.glyph-note[data-kind="greeting"] .gn-body,
+.glyph-note[data-kind="capabilities"] .gn-body,
+.glyph-note[data-kind="thanks"] .gn-body {
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.gn-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.gn-starter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.16s var(--ease),
+    color 0.16s var(--ease),
+    transform 0.16s var(--ease);
+}
+.gn-starter svg {
+  color: var(--muted);
+  transition: color 0.16s var(--ease);
+}
+.gn-starter:hover {
+  border-color: var(--accent-line);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.gn-starter:hover svg {
+  color: var(--accent);
+}
+
+/* ============================================================================
+   LANDING MARKETING SECTIONS (below the hero, scrollable)
+   ============================================================================ */
+.landing-sections {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+.ls-sec {
+  margin-top: 66px;
+}
+.ls-h2 {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+}
+.ls-sub {
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  margin: 10px 0 28px;
+}
+.ls-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.ls-step {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: left;
+}
+.ls-step-n {
+  color: var(--accent);
+  font-size: 13px;
+}
+.ls-step-t {
+  font-size: 15px;
+  font-weight: 640;
+  color: var(--text);
+  margin: 8px 0 6px;
+}
+.ls-step-d {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+.ls-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.ls-feature {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: left;
+  transition:
+    border-color 0.16s var(--ease),
+    transform 0.16s var(--ease);
+}
+.ls-feature:hover {
+  border-color: var(--accent-line);
+  transform: translateY(-2px);
+}
+.ls-feature-ic {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+.ls-feature-t {
+  font-size: 15px;
+  font-weight: 640;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+.ls-feature-d {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+.ls-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.ls-chip {
+  font-size: 13px;
+  color: var(--text-2);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+}
+.ls-quickstart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ls-cmd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 12px 12px 16px;
+}
+.ls-cmd code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--text);
+}
+.ls-copy {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--muted);
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    color 0.16s var(--ease),
+    border-color 0.16s var(--ease);
+}
+.ls-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+.ls-note {
+  text-align: center;
+  color: var(--faint);
+  font-size: 12.5px;
+  margin: 14px 0 0;
+}
+.ls-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+.ls-foot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-2);
+  text-decoration: none;
+}
+.ls-foot-link:hover {
+  color: var(--accent);
+}
+.ls-foot-dot {
+  color: var(--faint);
+}
+@media (max-width: 860px) {
+  .ls-steps,
+  .ls-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .ls-steps,
+  .ls-features {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* composer */
@@ -2892,16 +3123,15 @@ button {
 
 /* ---- Landing: quick-add demo repo chips ---- */
 .land-demos {
-  margin-top: 30px;
+  margin-top: 28px;
   display: flex;
-  gap: 11px;
+  gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
-  /* Break out wider than the 720px hero so all five repo chips sit on one centred line. */
-  width: min(960px, 94vw);
-  margin-left: 50%;
-  transform: translateX(-50%);
+  /* Chips wrap within the hero width and stay centred — no breakout that could overflow or
+     clip on narrow screens. */
+  width: 100%;
 }
 /* Label takes the whole row so the chips below stay on one tidy, centred line. */
 .ld-label {
