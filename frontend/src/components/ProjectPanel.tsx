@@ -550,6 +550,7 @@ export function ProjectPanel({
   onChangeRepo,
   onOpenRecent,
   open,
+  loading,
 }: {
   data: PanelData;
   session: PanelSession;
@@ -558,22 +559,38 @@ export function ProjectPanel({
   onChangeRepo: () => void;
   onOpenRecent: (r: Recent) => void;
   open?: boolean;
+  loading?: boolean;
 }) {
   return (
     <aside className={"panel-col scroll" + (open ? " open" : "")}>
       <div className="panel-inner">
         <RepoHeader repo={data.repo} onChangeRepo={onChangeRepo} />
-        <LanguageStats languages={data.languages} stats={data.stats} />
-        <IndexIntel intel={data.intel} />
-        <Overview text={data.overview} stack={data.stack} />
-        <GraphCard graph={data.graph} onExpand={onExpandGraph} onPick={(n) => onAsk(`Explain ${n.label}.`)} />
-        <TopFiles graph={data.graph} onPick={(f) => onAsk(`Explain ${f.path || f.label}.`)} />
-        <Endpoints
-          endpoints={data.endpoints}
-          onPick={(e) => onAsk(`Explain the ${e.method} ${e.path} endpoint.`)}
-        />
-        <SessionMetrics session={session} latencies={data.latencies} />
-        <RecentRepos recent={data.recent} onOpen={onOpenRecent} />
+        {loading ? (
+          // The repo is indexed and the chat is already usable; the panel's analysis is still
+          // loading in the background, so show a calm placeholder instead of empty widgets.
+          <div className="panel-loading">
+            <span className="spinner" />
+            Analyzing the codebase…
+          </div>
+        ) : (
+          <>
+            <LanguageStats languages={data.languages} stats={data.stats} />
+            <IndexIntel intel={data.intel} />
+            <Overview text={data.overview} stack={data.stack} />
+            <GraphCard
+              graph={data.graph}
+              onExpand={onExpandGraph}
+              onPick={(n) => onAsk(`Explain ${n.label}.`)}
+            />
+            <TopFiles graph={data.graph} onPick={(f) => onAsk(`Explain ${f.path || f.label}.`)} />
+            <Endpoints
+              endpoints={data.endpoints}
+              onPick={(e) => onAsk(`Explain the ${e.method} ${e.path} endpoint.`)}
+            />
+            <SessionMetrics session={session} latencies={data.latencies} />
+            <RecentRepos recent={data.recent} onOpen={onOpenRecent} />
+          </>
+        )}
       </div>
     </aside>
   );

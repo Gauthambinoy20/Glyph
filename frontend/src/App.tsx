@@ -160,6 +160,8 @@ export default function App() {
   const [screen, setScreen] = useState<"landing" | "workspace">("landing");
   const [repo, setRepo] = useState<Repo | null>(null);
   const [panel, setPanel] = useState<PanelData | null>(null);
+  // True while the workspace is shown but its project-panel analysis is still loading.
+  const [panelLoading, setPanelLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [pending, setPending] = useState(false);
   const [streamText, setStreamText] = useState<string | null>(null);
@@ -301,70 +303,13 @@ export default function App() {
       // One call for the whole panel (stats + graph + endpoints + stack + symbols) instead of
       // five — they share a single warm read on the server, so the workspace loads fast. The
       // AI overview stays out of this (slow on the free tier) and is patched in below.
-      const { stats, graph, endpoints, stack, symbols: symbolRows } = await api.panel();
-      // The repo header's one-line description is taken from the overview, so it too fills in
-      // once the background overview resolves (no placeholders, no guesses in the meantime).
+      // The repo header's one-line description is taken from the overview, so it fills in once
+      // the background overview resolves (no placeholders, no guesses in the meantime).
       const repoMeta: Repo = {
         ...parsed,
         branch: summary.branch,
       };
-      // Real "code intelligence" counts from the index — no estimates.
-      const intel = {
-        functions: symbolRows.filter((s) => /function|method/i.test(s.type)).length,
-        classes: symbolRows.filter((s) => /class|interface|type|struct/i.test(s.type)).length,
-        endpoints: endpoints.length,
-        frameworks: stack.length,
-      };
-      // Tailor the starter questions to this repo: a real endpoint, a real symbol, a detected
-      // framework, and whether there is a dependency graph to ask about. The bumped seed rotates
-      // the picks so re-indexing the same repo surfaces fresh prompts.
-      ingestSeed.current += 1;
-      setSuggestions(
-        buildSuggestions({
-          endpoints,
-          symbols: symbolRows,
-          hasDeps: graph.edges.length > 0,
-          frameworks: stack.map((s) => s.name),
-          rotate: ingestSeed.current,
-        }),
-      );
-      setSymbols(
-        symbolRows.map((s) => ({
-          id: `${s.file_path}:${s.start_line}`,
-          file_path: s.file_path,
-          symbol_name: s.symbol_name,
-          type: s.type,
-          start_line: s.start_line,
-          end_line: s.end_line,
-          code: "",
-          language: "",
-        })),
-      );
-      const total = stats.chunks || 1;
-      const languages = stats.languages.map((l) => ({
-        name: prettyLang(l.language),
-        pct: Math.round((l.chunks / total) * 100),
-        color: langColor(prettyLang(l.language)),
-      }));
       setRepo(repoMeta);
-      setPanel({
-        repo: repoMeta,
-        languages,
-        stats: { files: stats.files, chunks: stats.chunks, cached: summary.cached },
-        overview: "",
-        stack: stack.map((s) => s.name),
-        graph,
-        endpoints,
-        recent: [],
-        latencies: [],
-        intel,
-      });
-      setRecent((r) =>
-        [
-          { owner: parsed.owner, name: parsed.name, when: "now" },
-          ...r.filter((x) => x.name !== parsed.name),
-        ].slice(0, 4),
-      );
 
       // Restore a saved chat for this repo if there is one; otherwise start fresh.
       const savedSid = localStorage.getItem(`glyph:session:${repoKey(parsed)}`);
@@ -380,8 +325,88 @@ export default function App() {
       } else {
         setMessages([]);
       }
+      setRecent((r) =>
+        [
+          { owner: parsed.owner, name: parsed.name, when: "now" },
+          ...r.filter((x) => x.name !== parsed.name),
+        ].slice(0, 4),
+      );
       setCode(null);
+      setSuggestions([]);
+      // Show the workspace INSTANTLY with the panel in its loading state. The index is ready, so
+      // the chat is immediately usable while the panel analysis loads in the background — no more
+      // "stuck at 100%" pause after ingest.
+      setPanel({
+        repo: repoMeta,
+        languages: [],
+        stats: { files: 0, chunks: 0, cached: summary.cached },
+        overview: "",
+        stack: [],
+        graph: { nodes: [], edges: [] },
+        endpoints: [],
+        recent: [],
+        latencies: [],
+        intel: { functions: 0, classes: 0, endpoints: 0, frameworks: 0 },
+      });
+      setPanelLoading(true);
       setScreen("workspace");
+
+      // Background: load the whole panel in one call, then patch it in and drop the loading state.
+      void api
+        .panel()
+        .then(({ stats, graph, endpoints, stack, symbols: symbolRows }) => {
+          // Real "code intelligence" counts from the index — no estimates.
+          const intel = {
+            functions: symbolRows.filter((s) => /function|method/i.test(s.type)).length,
+            classes: symbolRows.filter((s) => /class|interface|type|struct/i.test(s.type)).length,
+            endpoints: endpoints.length,
+            frameworks: stack.length,
+          };
+          // Tailor the starter questions to this repo from real endpoints/symbols/frameworks.
+          ingestSeed.current += 1;
+          setSuggestions(
+            buildSuggestions({
+              endpoints,
+              symbols: symbolRows,
+              hasDeps: graph.edges.length > 0,
+              frameworks: stack.map((s) => s.name),
+              rotate: ingestSeed.current,
+            }),
+          );
+          setSymbols(
+            symbolRows.map((s) => ({
+              id: `${s.file_path}:${s.start_line}`,
+              file_path: s.file_path,
+              symbol_name: s.symbol_name,
+              type: s.type,
+              start_line: s.start_line,
+              end_line: s.end_line,
+              code: "",
+              language: "",
+            })),
+          );
+          const total = stats.chunks || 1;
+          const languages = stats.languages.map((l) => ({
+            name: prettyLang(l.language),
+            pct: Math.round((l.chunks / total) * 100),
+            color: langColor(prettyLang(l.language)),
+          }));
+          setPanel((prev) => {
+            /* v8 ignore next -- the panel is always set once the workspace is showing */
+            if (!prev) return prev;
+            return {
+              ...prev,
+              languages,
+              stats: { files: stats.files, chunks: stats.chunks, cached: summary.cached },
+              stack: stack.map((s) => s.name),
+              graph,
+              endpoints,
+              intel,
+            };
+          });
+          setPanelLoading(false);
+        })
+        .catch(() => setPanelLoading(false));
 
       // Background: the AI overview is slow on the free tier, so load it after the workspace is
       // already up and patch it into the panel + repo description when it arrives.
@@ -590,6 +615,7 @@ export default function App() {
             data={{ ...panel, latencies }}
             session={session}
             open={panelOpen}
+            loading={panelLoading}
             onAsk={ask}
             onExpandGraph={() => {
               setPanelOpen(false);
