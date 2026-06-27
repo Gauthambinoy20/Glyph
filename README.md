@@ -62,7 +62,6 @@ understand a repo fast, and it runs completely free (local embeddings + an OpenR
 - [Deployment & Scaling](#deployment--scaling)
 - [Engineering Standards](#engineering-standards)
 - [What I'd Do Differently](#what-id-do-differently)
-- [How I Used AI Tools](#how-i-used-ai-tools)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -403,15 +402,6 @@ real models marked so CI stays fast and free. There is a full CI pipeline (lint,
 security scan, dependency audit, dead-code check, tests) and the infrastructure itself is written as
 Terraform. No secrets live in the repo. The `.env` is ignored and only an example is committed.
 
-**What I skipped, and why.** There is no auth or multi-user support yet, because it is a single-user
-demo, so there are no accounts or per-user data isolation. Precise chunking covers Python, JavaScript,
-TypeScript and TSX; other files fall back to plain text chunks rather than syntax-aware ones. I did not
-harden for heavy concurrency, since it assumes light traffic. Frontend tests are lighter than the
-backend, I covered the important logic and components but did not chase full coverage there. I also
-deferred the Trivy infrastructure scan, because it flags the deliberate public HTTP rule and I could
-not verify it in this environment, so I left it as a documented follow-up instead of shipping a red
-check.
-
 ---
 
 ## What I'd Do Differently
@@ -423,38 +413,6 @@ up a request. I would grow the quality eval from the small golden set it uses no
 set and track accuracy on every change. I would teach the chunker more languages like Go, Rust and Java
 so citations stay precise on more repos. And I would finish the Trivy infrastructure scan with a
 documented exception for the public HTTP rule.
-
-**Known limitations / edge cases skipped (and why).** Very large repos are not a target, there are caps
-on file count and size, but a huge monorepo would be slow and could hit memory limits. Binary and
-generated files are skipped rather than parsed. Source that is not UTF-8 is decoded with replacement, so
-unusual characters may not come through exactly. Private repos are out (no auth yet), so it works on
-public repos and local folders only. The free LLM tier can rate-limit under load, and there is no retry
-queue for that yet. These are all known and fine for the scope here, and most map directly onto the next
-steps above.
-
----
-
-## How I Used AI Tools
-
-I built this with an AI coding assistant, but on a short leash.
-
-The most important thing I did was write the rules down first. There is a standing instructions file the
-assistant has to follow on every task: work in small slices, write tests with each slice, wait for my go
-before writing code, keep commits clean, and stop and ask before adding a dependency or doing anything
-risky. Putting that in writing is what made the work repeatable instead of a different result every
-session.
-
-**My do's.** I let the assistant handle the boilerplate, the test scaffolding, the wiring, and the first
-draft of code, because it is fast and good at that. I read every change before it landed. I ran the tests
-after each slice. I made it show its plan before it touched anything.
-
-**My don'ts.** I did not let it add dependencies or change the architecture without asking first. I did
-not accept code I had not read. For the parts that are my own judgment, like these decision write-ups, I
-use it only for a first draft and then rewrite in my own words, so what you read here is my thinking
-rather than whatever it generated.
-
-Where I trusted it less I checked harder, mainly anything touching security, retrieval quality, and the
-deploy. Where the task was clear and well covered by tests, I trusted it more and moved faster.
 
 ---
 
