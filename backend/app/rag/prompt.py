@@ -17,11 +17,12 @@ SYSTEM_PROMPT = (
 )
 
 # Matches a citation like [app/main.py:10-20], tolerating the variants different models emit:
-# ASCII, full-width 【】 or round () brackets; and any Unicode dash between the line numbers
+# ASCII, full-width 【】 or round () brackets; any Unicode dash between the line numbers
 # (‐-― covers hyphen, non-breaking hyphen, figure/en/em dashes — gpt-oss emits U+2011,
-# which an ASCII-only "-" would silently drop, losing a real citation). Spaces around the dash and
-# numbers are allowed too.
-_CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):\s*(\d+)\s*[-‐-―]\s*(\d+)\s*[\])】]")
+# which an ASCII-only "-" would silently drop, losing a real citation); and a SINGLE line with
+# no range at all ([main.py:42]), which models emit often — without this it was silently
+# dropped, leaving a grounded answer with no clickable citation. Spaces are allowed throughout.
+_CITATION = re.compile(r"[\[(【]\s*([^\[\]()【】:]+):\s*(\d+)(?:\s*[-‐-―]\s*(\d+))?\s*[\])】]")
 
 
 def build_messages(
@@ -59,7 +60,9 @@ def parse_citations(answer: str, chunks: list[dict]) -> list[dict]:
     seen: set[tuple[str, int, int]] = set()
     citations: list[dict] = []
     for match in _CITATION.finditer(answer):
-        file_path, start, end = match.group(1), int(match.group(2)), int(match.group(3))
+        file_path, start = match.group(1), int(match.group(2))
+        # A single-line citation ([file:42]) has no end; treat it as the one line.
+        end = int(match.group(3)) if match.group(3) else start
         key = (file_path, start, end)
         if key in seen:
             continue

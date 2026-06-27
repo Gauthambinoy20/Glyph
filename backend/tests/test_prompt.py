@@ -58,6 +58,17 @@ def test_citations_handle_unicode_dashes() -> None:
         assert citations == [{"file_path": "p.py", "start_line": 55, "end_line": 60}], dash
 
 
+def test_citations_accept_a_single_line_with_no_range() -> None:
+    # Models often cite a single line as [file:42] with no range. Without accepting that, a
+    # perfectly grounded answer would show no clickable citation at all.
+    chunks = [
+        {"file_path": "main.py", "start_line": 40, "end_line": 60, "symbol_name": "s", "code": "x"}
+    ]
+    citations = parse_citations("the route is defined at [main.py:42].", chunks)
+
+    assert citations == [{"file_path": "main.py", "start_line": 42, "end_line": 42}]
+
+
 def test_prompt_includes_conversation_history() -> None:  # T43
     chunks = [
         {"file_path": "a.py", "start_line": 1, "end_line": 2, "symbol_name": "f", "code": "x"}
