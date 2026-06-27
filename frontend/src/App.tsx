@@ -298,22 +298,16 @@ export default function App() {
           .catch(reject);
       });
       const parsed = parseRepo(value);
-      // The overview is AI-generated and slow on the free tier, so it must NOT block the
-      // workspace from appearing. Fetch only the fast index data here; the overview loads in
-      // the background below and is patched in when it arrives.
-      const [stats, graph, endpoints, stack] = await Promise.all([
-        api.stats(),
-        api.graph().catch(() => ({ nodes: [], edges: [] })),
-        api.endpoints().catch(() => []),
-        api.stack().catch(() => []),
-      ]);
+      // One call for the whole panel (stats + graph + endpoints + stack + symbols) instead of
+      // five — they share a single warm read on the server, so the workspace loads fast. The
+      // AI overview stays out of this (slow on the free tier) and is patched in below.
+      const { stats, graph, endpoints, stack, symbols: symbolRows } = await api.panel();
       // The repo header's one-line description is taken from the overview, so it too fills in
       // once the background overview resolves (no placeholders, no guesses in the meantime).
       const repoMeta: Repo = {
         ...parsed,
         branch: summary.branch,
       };
-      const symbolRows = await api.symbols().catch(() => []);
       // Real "code intelligence" counts from the index — no estimates.
       const intel = {
         functions: symbolRows.filter((s) => /function|method/i.test(s.type)).length,

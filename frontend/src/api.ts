@@ -70,6 +70,21 @@ export interface StatsResponse {
   languages: LanguageStat[];
 }
 
+// Everything the project panel needs, fetched in one request instead of five.
+export interface PanelData {
+  stats: StatsResponse;
+  graph: GraphData;
+  endpoints: { method: string; path: string }[];
+  stack: { name: string; package: string; files: number }[];
+  symbols: {
+    file_path: string;
+    symbol_name: string;
+    type: string;
+    start_line: number;
+    end_line: number;
+  }[];
+}
+
 export interface IndexedFile {
   file_path: string;
   language: string;
@@ -308,6 +323,14 @@ export const api = {
   stats: async (): Promise<StatsResponse> => {
     const res = await fetch("/api/stats");
     if (!res.ok) throw new Error("could not load stats");
+    return res.json();
+  },
+
+  // One request for the whole project panel (stats + graph + endpoints + stack + symbols),
+  // so the workspace loads in a single round-trip instead of five.
+  panel: async (): Promise<PanelData> => {
+    const res = await fetch("/api/panel");
+    if (!res.ok) throw new Error("could not load panel");
     return res.json();
   },
 

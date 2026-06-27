@@ -60,3 +60,19 @@ def test_stats_on_empty_index_is_zero(tmp_path) -> None:  # edge: nothing ingest
     stats = build_stats(store)
 
     assert stats == {"files": 0, "chunks": 0, "languages": []}
+
+
+def test_panel_endpoint_bundles_every_analyze_view(tmp_path) -> None:
+    """/api/panel returns stats, graph, endpoints, stack and symbols in one response."""
+    store = _store_with(tmp_path, [make_chunk("def a(): pass", name="a", path="x.py")])
+    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder(dim=8)
+    app.dependency_overrides[get_store] = lambda: store
+    try:
+        body = TestClient(app).get("/api/panel").json()
+    finally:
+        app.dependency_overrides.clear()
+
+    assert set(body) == {"stats", "graph", "endpoints", "stack", "symbols"}
+    assert body["stats"]["files"] == 1
+    assert body["symbols"][0]["symbol_name"] == "a"
+    assert body["graph"]["nodes"][0]["id"] == "x.py"

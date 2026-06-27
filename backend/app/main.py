@@ -896,6 +896,27 @@ def symbols(
     return {"symbols": list_symbols(store)}
 
 
+@app.get("/api/panel")
+def panel(
+    embedder: Embedder = Depends(get_embedder),
+    store: ChromaStore = Depends(get_store),
+) -> dict:
+    """Everything the project panel needs, in one request.
+
+    The five analyze views each need the whole repo; served separately that is five HTTP
+    round-trips. Bundled here they share one (memoised) full-store read, so the workspace's
+    panel loads in a single fast call instead of five — the slow part right after an ingest.
+    """
+    _ = embedder
+    return {
+        "stats": build_stats(store),
+        "graph": build_import_graph(store),
+        "endpoints": detect_endpoints(store),
+        "stack": detect_stack(store),
+        "symbols": list_symbols(store),
+    }
+
+
 @app.post("/api/history")
 def save_history(request: HistorySaveRequest, history: History = Depends(get_history)) -> dict:
     """Save (create or replace) a chat session and return its id."""

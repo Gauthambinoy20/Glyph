@@ -295,6 +295,26 @@ describe("api GET methods", () => {
     await expect(api.stats()).rejects.toThrow("could not load stats");
   });
 
+  it("panel fetches /api/panel and returns the bundled body", async () => {
+    const body = {
+      stats: { files: 1, chunks: 2, languages: [] },
+      graph: { nodes: [], edges: [] },
+      endpoints: [],
+      stack: [],
+      symbols: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await api.panel()).toEqual(body);
+    expect(fetchMock).toHaveBeenCalledWith("/api/panel");
+  });
+
+  it("panel throws when the response is not ok", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({}, false, 500)));
+    await expect(api.panel()).rejects.toThrow("could not load panel");
+  });
+
   it("stack fetches /api/stack and unwraps the stack array", async () => {
     const stack = [{ name: "React", package: "react", files: 3 }];
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ stack }));

@@ -18,6 +18,7 @@ vi.mock("./api", () => ({
     stack: vi.fn(),
     overview: vi.fn(),
     graph: vi.fn(),
+    panel: vi.fn(),
     models: vi.fn(),
     askStream: vi.fn(),
     file: vi.fn(),
@@ -143,6 +144,27 @@ beforeEach(() => {
   vi.mocked(api.symbols).mockResolvedValue([
     { file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 },
   ]);
+  // The workspace now loads the whole panel in one call.
+  vi.mocked(api.panel).mockResolvedValue({
+    stats: {
+      files: 3,
+      chunks: 10,
+      languages: [
+        { language: "python", files: 2, chunks: 7 },
+        { language: "typescript", files: 1, chunks: 3 },
+      ],
+    },
+    graph: {
+      nodes: [
+        { id: "a", label: "a.py", language: "python" },
+        { id: "b", label: "b.ts", language: "typescript" },
+      ],
+      edges: [{ source: "a", target: "b" }],
+    },
+    endpoints: [{ method: "POST", path: "/api/ask" }],
+    stack: [{ name: "FastAPI", package: "fastapi", files: 2 }],
+    symbols: [{ file_path: "a.py", symbol_name: "f", type: "function", start_line: 1, end_line: 2 }],
+  });
   vi.mocked(api.saveHistory).mockResolvedValue({ session_id: "s1" });
   vi.mocked(api.setMode).mockResolvedValue({ mode: "fast", backend: "static" });
   localStorage.clear();
@@ -806,10 +828,12 @@ describe("App", () => {
   });
 
   it("labels a blank language as Other and avoids divide-by-zero on empty chunks", async () => {
-    vi.mocked(api.stats).mockResolvedValue({
-      files: 1,
-      chunks: 0,
-      languages: [{ language: "", files: 1, chunks: 0 }],
+    vi.mocked(api.panel).mockResolvedValue({
+      stats: { files: 1, chunks: 0, languages: [{ language: "", files: 1, chunks: 0 }] },
+      graph: { nodes: [], edges: [] },
+      endpoints: [],
+      stack: [],
+      symbols: [],
     });
     const user = userEvent.setup();
     await intoWorkspace(user);
