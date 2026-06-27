@@ -298,22 +298,20 @@ export default function App() {
           .catch(reject);
       });
       const parsed = parseRepo(value);
-      const [stats, overview, graph, endpoints, stack] = await Promise.all([
+      // The overview is AI-generated and slow on the free tier, so it must NOT block the
+      // workspace from appearing. Fetch only the fast index data here; the overview loads in
+      // the background below and is patched in when it arrives.
+      const [stats, graph, endpoints, stack] = await Promise.all([
         api.stats(),
-        api
-          .overview()
-          .then((o) => o.overview)
-          .catch(() => ""),
         api.graph().catch(() => ({ nodes: [], edges: [] })),
         api.endpoints().catch(() => []),
         api.stack().catch(() => []),
       ]);
-      // Fill the repo header with real data only: the actual branch from the clone and a
-      // one-line description taken from the generated overview (no placeholders, no guesses).
+      // The repo header's one-line description is taken from the overview, so it too fills in
+      // once the background overview resolves (no placeholders, no guesses in the meantime).
       const repoMeta: Repo = {
         ...parsed,
         branch: summary.branch,
-        description: overview ? overview.split(/(?<=[.!?])\s/)[0] : undefined,
       };
       const symbolRows = await api.symbols().catch(() => []);
       // Real "code intelligence" counts from the index — no estimates.
@@ -359,7 +357,7 @@ export default function App() {
         repo: repoMeta,
         languages,
         stats: { files: stats.files, chunks: stats.chunks, cached: summary.cached },
-        overview,
+        overview: "",
         stack: stack.map((s) => s.name),
         graph,
         endpoints,
@@ -390,6 +388,26 @@ export default function App() {
       }
       setCode(null);
       setScreen("workspace");
+
+      // Background: the AI overview is slow on the free tier, so load it after the workspace is
+      // already up and patch it into the panel + repo description when it arrives.
+      void api
+        .overview()
+        .then((o) => o.overview)
+        .catch(() => "")
+        .then((ov) => {
+          if (!ov) return;
+          setPanel((p) => {
+            /* v8 ignore next -- the panel is always set once the workspace is showing */
+            if (!p) return p;
+            return { ...p, overview: ov };
+          });
+          setRepo((r) => {
+            /* v8 ignore next -- the repo is always set once the workspace is showing */
+            if (!r) return r;
+            return { ...r, description: ov.split(/(?<=[.!?])\s/)[0] };
+          });
+        });
     } catch (e) {
       pushToast((e as Error).message);
     } finally {
