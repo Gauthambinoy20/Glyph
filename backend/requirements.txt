@@ -1,18 +1,18 @@
 # Backend dependencies, pinned. Only what this step needs; we add more as we go.
 # fastapi 0.136.3 pulls a patched Starlette (clears the Starlette security advisories).
-fastapi==0.136.3
-uvicorn[standard]==0.34.0
-pydantic-settings==2.7.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+pydantic-settings==2.15.0
 
 # Code parsing / chunking (AST aware, by function and class)
-tree-sitter==0.25.2
-tree-sitter-language-pack==1.8.1
+tree-sitter==0.26.0
+tree-sitter-language-pack==1.14.3
 
 # Embeddings (local, free) + vector store
 fastembed==0.8.0
 # Static embeddings (Model2Vec) for the optional "fast mode": ~100x faster ingest on CPU,
 # no neural inference. Opt-in via EMBED_BACKEND=static.
-model2vec==0.8.2
+model2vec==0.9.0
 # chromadb 1.5.9 has an open advisory (CVE-2026-45829) with no fixed release yet.
 # The CI dependency audit skips this one ID on purpose; bump as soon as a fix ships.
 chromadb==1.5.9
@@ -20,8 +20,8 @@ chromadb==1.5.9
 rank-bm25==0.2.2
 
 # LLM client: the OpenAI SDK, pointed at OpenRouter for the chat models.
-openai==1.109.1
+openai==3.2.0
 
 # Testing
-pytest==9.0.3
+pytest==9.1.1
 httpx==0.28.1
